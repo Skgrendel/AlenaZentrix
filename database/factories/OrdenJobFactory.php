@@ -25,8 +25,6 @@ class OrdenJobFactory extends Factory
             'medidor' => fake()->numerify('MED-######'),
             'tipo_medidor' => fake()->optional()->randomElement(['digital', 'analógico']),
             'ciclo' => fake()->numerify('C##'),
-            'latitud' => fake()->optional()->latitude(),
-            'longitud' => fake()->optional()->longitude(),
             'titulo' => fake()->optional()->sentence(),
             'descripcion' => fake()->optional()->paragraph(),
             'prioridad' => fake()->randomElement(PrioridadOrden::cases())->value,

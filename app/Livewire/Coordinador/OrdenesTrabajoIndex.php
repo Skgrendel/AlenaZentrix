@@ -25,6 +25,7 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -68,6 +69,12 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state instanceof EstadoOrden ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof EstadoOrden ? $state->color() : 'gray'),
+                Tables\Columns\ImageColumn::make('fotos')
+                    ->label('Fotos')
+                    ->disk('s3')
+                    ->stacked()
+                    ->limit(3)
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('personal.nombres')
                     ->label('Técnico Asignado')
                     ->formatStateUsing(fn ($state, OrdenJob $record): string => $record->personal
@@ -120,7 +127,17 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->modalHeading('Crear Orden de Trabajo')
                     ->form($this->ordenFormSchema())
                     ->action(function (array $data): void {
+                        // Extract fotos before create; they're in temp dir on S3
+                        $fotosTemp = $data['fotos'] ?? [];
+                        unset($data['fotos']);
+
                         $orden = OrdenJob::create($data);
+
+                        if (! empty($fotosTemp)) {
+                            $orden->update([
+                                'fotos' => $this->moverFotos($fotosTemp, $orden->numero_orden),
+                            ]);
+                        }
 
                         if (! empty($data['personals_id'])) {
                             $this->notificarTecnico($orden);
@@ -130,7 +147,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
             ->actions([
                 EditAction::make()
                     ->modalHeading(fn (OrdenJob $record): string => "Editar Orden: {$record->numero_orden}")
-                    ->form($this->ordenFormSchema())
+                    ->form(fn (OrdenJob $record) => $this->ordenFormSchema($record))
                     ->using(function (OrdenJob $record, array $data): OrdenJob {
                         $tecnicoAnterior = $record->personals_id;
                         $record->update($data);
@@ -155,12 +172,19 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
             ->defaultSort('created_at', 'desc');
     }
 
-    protected function ordenFormSchema(): array
+    /**
+     * @param  OrdenJob|null  $record  Cuando se edita, para apuntar al directorio correcto en S3.
+     */
+    protected function ordenFormSchema(?OrdenJob $record = null): array
     {
         $tecnicos = personals::query()
             ->select(['id', 'nombres', 'apellidos'])
             ->get()
             ->mapWithKeys(fn ($p) => [$p->id => "{$p->nombres} {$p->apellidos}"]);
+
+        $fotoDirectorio = $record
+            ? "ordenes/{$record->numero_orden}"
+            : 'ordenes/temp';
 
         return [
             Section::make('Datos del Punto de Servicio')
@@ -195,16 +219,21 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         ->maxLength(255)
                         ->columnSpanFull(),
                 ]),
-            Section::make('Ubicación')
-                ->columns(2)
-                ->collapsed()
+            Section::make('Fotos de la Orden')
                 ->schema([
-                    Forms\Components\TextInput::make('latitud')
-                        ->label('Latitud')
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('longitud')
-                        ->label('Longitud')
-                        ->maxLength(255),
+                    Forms\Components\FileUpload::make('fotos')
+                        ->label('Subir fotos')
+                        ->disk('s3')
+                        ->directory($fotoDirectorio)
+                        ->visibility('public')
+                        ->multiple()
+                        ->image()
+                        ->imagePreviewHeight('120')
+                        ->maxFiles(10)
+                        ->maxSize(5120) // 5 MB por foto
+                        ->reorderable()
+                        ->panelLayout('grid')
+                        ->columnSpanFull(),
                 ]),
             Section::make('Gestión de la Orden')
                 ->columns(2)
@@ -252,6 +281,40 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         ->columnSpanFull(),
                 ]),
         ];
+    }
+
+    /**
+     * Mueve fotos desde el directorio temporal al directorio definitivo de la orden en S3.
+     *
+     * @param  array<string>  $fotos
+     * @return array<string>
+     */
+    protected function moverFotos(array $fotos, string $numeroOrden): array
+    {
+        $directorio = "ordenes/{$numeroOrden}";
+        $resultado = [];
+
+        foreach ($fotos as $rutaTemp) {
+            $nombreArchivo = basename($rutaTemp);
+            $rutaFinal = "{$directorio}/{$nombreArchivo}";
+
+            try {
+                if (Storage::disk('s3')->exists($rutaTemp)) {
+                    Storage::disk('s3')->move($rutaTemp, $rutaFinal);
+                }
+            } catch (\Exception $e) {
+                Log::error('No se pudo mover foto de orden.', [
+                    'origen' => $rutaTemp,
+                    'destino' => $rutaFinal,
+                    'error' => $e->getMessage(),
+                ]);
+                $rutaFinal = $rutaTemp;
+            }
+
+            $resultado[] = $rutaFinal;
+        }
+
+        return $resultado;
     }
 
     protected function notificarTecnico(OrdenJob $orden): void

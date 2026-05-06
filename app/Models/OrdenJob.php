@@ -27,8 +27,7 @@ class OrdenJob extends Model
         'medidor',
         'tipo_medidor',
         'ciclo',
-        'latitud',
-        'longitud',
+        'fotos',
         'titulo',
         'descripcion',
         'prioridad',
@@ -42,6 +41,7 @@ class OrdenJob extends Model
     protected $casts = [
         'prioridad' => PrioridadOrden::class,
         'estado' => EstadoOrden::class,
+        'fotos' => 'array',
         'estado_servicio' => 'boolean',
         'fecha_asignacion' => 'datetime',
         'fecha_limite' => 'datetime',

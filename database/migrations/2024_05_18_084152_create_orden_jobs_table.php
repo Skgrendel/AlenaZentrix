@@ -21,8 +21,7 @@ return new class extends Migration
             $table->string('medidor');
             $table->string('tipo_medidor')->nullable();
             $table->string('ciclo');
-            $table->string('latitud')->nullable();
-            $table->string('longitud')->nullable();
+            $table->json('fotos')->nullable();
 
             // Gestión de la orden
             $table->string('titulo')->nullable();
