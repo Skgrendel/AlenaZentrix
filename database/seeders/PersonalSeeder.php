@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\personals;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class PersonalSeeder extends Seeder
@@ -15,13 +14,21 @@ class PersonalSeeder extends Seeder
     {
         // Personal de Administrador Predeterminado
         $personal = personals::create([
-            'tipo_documento'=>'CC',
-            'numero_documento'=>'0000',
-            'nombres'=>'Administrador',
-            'apellidos'=>'Sistema',
-            'estado'=>'3'
+            'tipo_documento' => 'CC',
+            'numero_documento' => '0000',
+            'nombres' => 'Administrador',
+            'apellidos' => 'Sistema',
+            'estado' => '3',
         ]);
 
+        // Personal de Auditor Predeterminado
+        personals::create([
+            'tipo_documento' => 'CC',
+            'numero_documento' => '0001',
+            'nombres' => 'Auditor',
+            'apellidos' => 'Sistema',
+            'estado' => '3',
+        ]);
 
     }
 }

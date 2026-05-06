@@ -28,5 +28,18 @@ class UserSeeder extends Seeder
         $Role = Role::where('name', 'Administrador')->firstOrFail();
         $user->assignRole($Role);
 
+        // Usuario Auditor Predeterminado
+        $personalAuditor = personals::where('numero_documento', '0001')->firstOrFail();
+
+        $userAuditor = User::create([
+            'email' => 'auditor@proderi.com',
+            'personals_id' => $personalAuditor->id,
+            'password' => bcrypt('0001.**'),
+            'estado' => 1,
+            'email_verified_at' => now(),
+        ]);
+
+        $roleAuditor = Role::where('name', 'Auditor')->firstOrFail();
+        $userAuditor->assignRole($roleAuditor);
     }
 }

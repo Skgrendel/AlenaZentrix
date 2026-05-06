@@ -41,5 +41,14 @@ class RolSeeder extends Seeder
         $agente->syncPermissions(
             Permission::where('category', 'Agentes')->get()
         );
+
+        $auditor = Role::create([
+            'name' => 'Auditor',
+            'guard_name' => 'web',
+            'estado' => 1,
+        ]);
+        $auditor->syncPermissions(
+            Permission::where('category', 'Auditor')->get()
+        );
     }
 }
