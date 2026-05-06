@@ -15,7 +15,7 @@ class reportes extends Model
         'comercios_id',
         'orden_job_id',
         'numero_orden',
-        'descripcion_medidor',
+        'numero_medidor',
         'lectura',
         'anomalia',
         'tipo_imposibilidad_id',

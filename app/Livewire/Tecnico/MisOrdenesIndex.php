@@ -39,6 +39,8 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                         EstadoOrden::Pendiente->value,
                         EstadoOrden::Asignada->value,
                         EstadoOrden::EnProgreso->value,
+                        EstadoOrden::EnRevision->value,
+                        EstadoOrden::Rechazada->value,
                     ]);
 
                 if (! auth()->user()->hasRole('Administrador')) {
@@ -97,7 +99,17 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                     ->label('Crear Reporte')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->color('primary')
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::EnProgreso &&
+                        $record->reportes()->doesntExist()
+                    )
                     ->url(fn (OrdenJob $record): string => route('tecnico.ordenes.reportar', $record)),
+
+                Action::make('editar_reporte')
+                    ->label('Editar Reporte')
+                    ->icon('heroicon-o-pencil-square')
+                    ->color('danger')
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Rechazada)
+                    ->url(fn (OrdenJob $record): string => route('tecnico.ordenes.reporte.editar', $record)),
             ])
             ->emptyStateHeading('Sin órdenes asignadas')
             ->emptyStateDescription('No tienes órdenes activas en este momento.')

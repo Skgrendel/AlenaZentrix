@@ -139,6 +139,12 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     }),
             ])
             ->actions([
+                Action::make('revisar')
+                    ->label('Revisar')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->color('warning')
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::EnRevision)
+                    ->url(fn (OrdenJob $record): string => route('operaciones.ordenes-trabajo.revisar', $record)),
                 Action::make('view')
                     ->label('Ver')
                     ->icon('heroicon-o-eye')
@@ -147,6 +153,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                 EditAction::make()
                     ->modalHeading(fn (OrdenJob $record): string => "Editar Orden: {$record->numero_orden}")
                     ->form(fn (OrdenJob $record) => $this->ordenFormSchema($record))
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Pendiente)
                     ->using(function (OrdenJob $record, array $data): OrdenJob {
                         $tecnicoAnterior = $record->personals_id;
                         $record->update($data);
@@ -161,7 +168,8 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
 
                         return $record;
                     }),
-                DeleteAction::make(),
+                DeleteAction::make()
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Pendiente),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -261,9 +269,6 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         )
                         ->required()
                         ->default(EstadoOrden::Pendiente->value),
-                    Forms\Components\DateTimePicker::make('fecha_asignacion')
-                        ->label('Fecha de Asignación')
-                        ->nullable(),
                     Forms\Components\DateTimePicker::make('fecha_limite')
                         ->label('Fecha Límite')
                         ->nullable(),

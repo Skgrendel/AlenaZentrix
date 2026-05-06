@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignUuid('comercios_id')->constrained('comercios')->cascadeOnDelete();
             $table->foreignUuid('orden_job_id')->constrained('orden_jobs')->cascadeOnDelete();
             $table->string('numero_orden');
-            $table->string('descripcion_medidor')->nullable();
+            $table->string('numero_medidor')->nullable();
             $table->string('lectura');
             $table->json('anomalia')->nullable();
             $table->uuid('tipo_imposibilidad_id')->nullable();

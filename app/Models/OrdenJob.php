@@ -60,6 +60,10 @@ class OrdenJob extends Model
                 $model->creado_por_id = auth()->id();
             }
 
+            if (empty($model->fecha_asignacion)) {
+                $model->fecha_asignacion = now();
+            }
+
             if (! empty($model->personals_id) && $model->estado === EstadoOrden::Pendiente) {
                 $model->estado = EstadoOrden::Asignada;
             }

@@ -3,12 +3,14 @@
 namespace App\Livewire\Tecnico;
 
 use App\Enums\EstadoOrden;
+use App\Mail\ReporteEnRevision;
 use App\Models\comercio;
 use App\Models\MarcaMedidor;
 use App\Models\MarcaRegulador;
 use App\Models\OrdenJob;
 use App\Models\reportes;
 use App\Models\TipoAnomalia;
+use App\Models\TipoComercio;
 use App\Models\TipoImposibilidad;
 use App\Models\TipoRegulador;
 use App\Models\ubicacion;
@@ -18,6 +20,8 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -60,15 +64,21 @@ class ReporteCreate extends Component implements HasForms
                             ->label('Lectura del Medidor')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('descripcion_medidor')
-                            ->label('Descripción del Medidor')
+                        Forms\Components\TextInput::make('numero_medidor')
+                            ->label('Número de Medidor')
                             ->maxLength(255),
-                        Forms\Components\Select::make('comercios_id')
-                            ->label('Comercio')
+                        Forms\Components\TextInput::make('nombre_comercio')
+                            ->label('Nombre del Comercio')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+                        Forms\Components\Select::make('tipo_comercio_id')
+                            ->label('Tipo de Comercio')
                             ->options(
-                                comercio::query()
-                                    ->orderBy('nombre_comercio')
-                                    ->pluck('nombre_comercio', 'id')
+                                TipoComercio::query()
+                                    ->where('activo', true)
+                                    ->orderBy('nombre')
+                                    ->pluck('nombre', 'id')
                             )
                             ->searchable()
                             ->required()
@@ -148,6 +158,7 @@ class ReporteCreate extends Component implements HasForms
                             ->maxSize(5120)
                             ->reorderable()
                             ->panelLayout('grid')
+                            ->extraInputAttributes(['capture' => 'environment'])
                             ->columnSpanFull(),
                         Forms\Components\TextInput::make('video')
                             ->label('URL del Video')
@@ -170,6 +181,13 @@ class ReporteCreate extends Component implements HasForms
     {
         $data = $this->form->getState();
 
+        $comercioRecord = comercio::create([
+            'nombre_comercio' => $data['nombre_comercio'],
+            'tipo_comercio_id' => $data['tipo_comercio_id'],
+        ]);
+
+        unset($data['nombre_comercio'], $data['tipo_comercio_id']);
+
         $ubicacionRecord = ubicacion::create([
             'latitud' => $this->latitud,
             'longitud' => $this->longitud,
@@ -181,11 +199,34 @@ class ReporteCreate extends Component implements HasForms
             'orden_job_id' => $this->orden->id,
             'numero_orden' => $this->orden->numero_orden,
             'ubicacions_id' => $ubicacionRecord->id,
+            'comercios_id' => $comercioRecord->id,
         ]);
 
-        $this->orden->update(['estado' => EstadoOrden::EnProgreso]);
+        $this->orden->update(['estado' => EstadoOrden::EnRevision]);
+
+        $this->notificarCoordinador();
 
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
+    }
+
+    protected function notificarCoordinador(): void
+    {
+        $email = $this->orden->creadoPor?->email;
+        $tecnico = $this->orden->personal;
+
+        if (! $email || ! $tecnico) {
+            return;
+        }
+
+        try {
+            Mail::to($email)->send(new ReporteEnRevision($this->orden, $tecnico));
+        } catch (\Exception $e) {
+            Log::error('No se pudo notificar al coordinador sobre el reporte.', [
+                'orden' => $this->orden->numero_orden,
+                'email' => $email,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function render(): View
