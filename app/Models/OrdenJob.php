@@ -54,9 +54,21 @@ class OrdenJob extends Model
             if (empty($model->numero_orden)) {
                 $model->numero_orden = self::generateNumeroOrden();
             }
+
+            if (! empty($model->personals_id) && $model->estado === EstadoOrden::Pendiente) {
+                $model->estado = EstadoOrden::Asignada;
+            }
         });
 
         static::updating(function (self $model): void {
+            if (
+                $model->isDirty('personals_id') &&
+                ! empty($model->personals_id) &&
+                $model->estado === EstadoOrden::Pendiente
+            ) {
+                $model->estado = EstadoOrden::Asignada;
+            }
+
             if (
                 $model->isDirty('estado') &&
                 $model->estado === EstadoOrden::Completada &&

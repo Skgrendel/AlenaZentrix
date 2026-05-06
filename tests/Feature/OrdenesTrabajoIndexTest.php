@@ -1,6 +1,8 @@
 <?php
 
+use App\Enums\EstadoOrden;
 use App\Models\OrdenJob;
+use App\Models\personals;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -68,4 +70,40 @@ test('numero orden is not overwritten if provided explicitly', function () {
     $orden = OrdenJob::factory()->create(['numero_orden' => 'ODT-999999']);
 
     expect($orden->numero_orden)->toBe('ODT-999999');
+});
+
+test('orden created without tecnico stays pendiente', function () {
+    $orden = OrdenJob::factory()->create(['personals_id' => null]);
+
+    expect($orden->estado)->toBe(EstadoOrden::Pendiente);
+});
+
+test('orden created with tecnico is automatically set to asignada', function () {
+    $tecnico = personals::factory()->create();
+    $orden = OrdenJob::factory()->create(['personals_id' => $tecnico->id]);
+
+    expect($orden->estado)->toBe(EstadoOrden::Asignada);
+});
+
+test('assigning tecnico to pendiente orden changes estado to asignada', function () {
+    $orden = OrdenJob::factory()->create(['personals_id' => null]);
+    expect($orden->estado)->toBe(EstadoOrden::Pendiente);
+
+    $tecnico = personals::factory()->create();
+    $orden->update(['personals_id' => $tecnico->id]);
+
+    expect($orden->fresh()->estado)->toBe(EstadoOrden::Asignada);
+});
+
+test('changing tecnico on non-pendiente orden does not change estado', function () {
+    $tecnico1 = personals::factory()->create();
+    $tecnico2 = personals::factory()->create();
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $tecnico1->id,
+        'estado' => EstadoOrden::EnProgreso,
+    ]);
+
+    $orden->update(['personals_id' => $tecnico2->id]);
+
+    expect($orden->fresh()->estado)->toBe(EstadoOrden::EnProgreso);
 });
