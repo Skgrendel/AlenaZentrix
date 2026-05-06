@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('auditorias', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('reportes_id')->constrained('reportes')->cascadeOnDelete();
+            $table->uuid('reportes_id');
             $table->foreignUuid('auditado_por_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('estado')->default('pendiente_auditoria');
             $table->json('evidencias')->nullable();

@@ -31,10 +31,29 @@ return new class extends Migration
             $table->string('estado')->default('pendiente');
             $table->timestamps();
         });
+
+        // Añadir FK a `auditorias.reportes_id` ahora que `reportes` existe
+        Schema::table('auditorias', function (Blueprint $table) {
+            if (Schema::hasColumn('auditorias', 'reportes_id')) {
+                $table->foreign('reportes_id')
+                    ->references('id')
+                    ->on('reportes')
+                    ->cascadeOnDelete();
+            }
+        });
     }
 
     public function down(): void
     {
+        // Eliminar la FK en auditorias antes de soltar la tabla reportes
+        if (Schema::hasTable('auditorias')) {
+            Schema::table('auditorias', function (Blueprint $table) {
+                if (Schema::hasColumn('auditorias', 'reportes_id')) {
+                    $table->dropForeign(['reportes_id']);
+                }
+            });
+        }
+
         Schema::dropIfExists('reportes');
     }
 };
