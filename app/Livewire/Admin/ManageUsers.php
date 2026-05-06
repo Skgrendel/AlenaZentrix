@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\TipoDocumento;
+use App\Mail\WelcomeNewUser;
 use App\Models\personals;
 use App\Models\User;
 use Filament\Actions\Action;
@@ -27,7 +28,6 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Spatie\Permission\Models\Role;
-use App\Mail\WelcomeNewUser;
 
 #[Layout('layouts.app')]
 #[Title('Gestión de Usuarios')]
@@ -105,7 +105,7 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                                 route('login'),
                             ));
                         } catch (\Exception $e) {
-                            \Log::error('Welcome email failed for user: ' . $user->email, ['error' => $e->getMessage()]);
+                            \Log::error('Welcome email failed for user: '.$user->email, ['error' => $e->getMessage()]);
                         }
                     }),
             ])
