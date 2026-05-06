@@ -84,15 +84,28 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                             'estado' => '1',
                         ]);
 
+                        $plainPassword = $data['password'];
                         $user = User::create([
                             'personals_id' => $personal->id,
                             'email' => $data['email'],
-                            'password' => Hash::make($data['password']),
+                            'password' => Hash::make($plainPassword),
                             'estado' => $data['estado'] ?? true,
                         ]);
 
                         if (! empty($data['rol'])) {
                             $user->assignRole($data['rol']);
+                        }
+
+                        try {
+                            Mail::to($user->email)->send(new WelcomeNewUser(
+                                $user->email,
+                                $personal->nombres,
+                                $personal->apellidos,
+                                $plainPassword,
+                                route('login'),
+                            ));
+                        } catch (\Exception $e) {
+                            \Log::error('Welcome email failed for user: ' . $user->email, ['error' => $e->getMessage()]);
                         }
                     }),
             ])
