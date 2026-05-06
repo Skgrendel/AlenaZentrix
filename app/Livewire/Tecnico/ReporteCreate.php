@@ -150,7 +150,6 @@ class ReporteCreate extends Component implements HasForms
                             ->label('Imágenes')
                             ->disk('s3')
                             ->directory('reportes/'.$this->orden->numero_orden)
-                            ->visibility('public')
                             ->multiple()
                             ->image()
                             ->imagePreviewHeight('100')

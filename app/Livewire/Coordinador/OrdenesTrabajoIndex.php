@@ -115,6 +115,12 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->label('Servicio Activo'),
             ])
             ->headerActions([
+                Action::make('exportar')
+                    ->label('Exportar CSV')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->url(route('operaciones.exportar-ordenes'))
+                    ->openUrlInNewTab(),
                 Action::make('create')
                     ->label('Nueva Orden')
                     ->icon('heroicon-o-plus')

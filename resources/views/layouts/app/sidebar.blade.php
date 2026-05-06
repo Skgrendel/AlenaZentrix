@@ -25,9 +25,15 @@
             <flux:sidebar.group :heading="__('Operaciones')" class="grid">
                 <flux:sidebar.item icon="clipboard-document-list"
                     :href="route('operaciones.ordenes-trabajo')"
-                    :current="request()->routeIs('operaciones.ordenes-trabajo*')"
+                    :current="request()->routeIs('operaciones.ordenes-trabajo') || request()->routeIs('operaciones.ordenes-trabajo.show') || request()->routeIs('operaciones.ordenes-trabajo.revisar')"
                     wire:navigate>
                     {{ __('Órdenes de Trabajo') }}
+                </flux:sidebar.item>
+                <flux:sidebar.item icon="check-circle"
+                    :href="route('operaciones.ordenes-completadas')"
+                    :current="request()->routeIs('operaciones.ordenes-completadas')"
+                    wire:navigate>
+                    {{ __('Órdenes Completadas') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
             @endhasanyrole

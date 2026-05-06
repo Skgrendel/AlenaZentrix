@@ -5,6 +5,8 @@ namespace App\Providers;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -24,6 +26,20 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureS3TemporaryUrls();
+    }
+
+    protected function configureS3TemporaryUrls(): void
+    {
+        Storage::disk('s3')->buildTemporaryUrlsUsing(
+            function (string $path, \DateTime $expiration, array $options): string {
+                return URL::temporarySignedRoute(
+                    'operaciones.foto',
+                    $expiration,
+                    ['path' => $path],
+                );
+            }
+        );
     }
 
     /**

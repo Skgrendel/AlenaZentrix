@@ -7,6 +7,11 @@ use App\Mail\OrdenCompletada;
 use App\Mail\OrdenRechazada;
 use App\Models\OrdenJob;
 use App\Models\reportes;
+use Filament\Actions\Action;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Illuminate\Contracts\View\View;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Log;
@@ -17,8 +22,11 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Revisar Reporte')]
-class ReporteRevisar extends Component
+class ReporteRevisar extends Component implements HasActions, HasForms
 {
+    use InteractsWithActions;
+    use InteractsWithForms;
+
     public OrdenJob $orden;
 
     public reportes $reporte;
@@ -38,15 +46,26 @@ class ReporteRevisar extends Component
             ->firstOrFail();
     }
 
-    public function completar(): void
+    public function completarAction(): Action
     {
-        $this->orden->update(['estado' => EstadoOrden::Completada]);
+        return Action::make('completar')
+            ->label('Marcar como Completada')
+            ->icon('heroicon-o-check-circle')
+            ->color('success')
+            ->requiresConfirmation()
+            ->modalHeading('Confirmar completar orden')
+            ->modalDescription("¿Confirmas que el reporte de la orden {$this->orden->numero_orden} es correcto y el trabajo fue realizado?")
+            ->modalSubmitActionLabel('Sí, marcar como completada')
+            ->extraAttributes(['class' => 'w-full justify-center'])
+            ->action(function (): void {
+                $this->orden->update(['estado' => EstadoOrden::Completada]);
 
-        $this->notificarTecnico(new OrdenCompletada($this->orden, $this->orden->personal));
+                $this->notificarTecnico(new OrdenCompletada($this->orden, $this->orden->personal));
 
-        session()->flash('success', "Orden {$this->orden->numero_orden} marcada como completada.");
+                session()->flash('success', "Orden {$this->orden->numero_orden} marcada como completada.");
 
-        $this->redirect(route('operaciones.ordenes-trabajo'), navigate: true);
+                $this->redirect(route('operaciones.ordenes-trabajo'), navigate: true);
+            });
     }
 
     public function rechazar(): void

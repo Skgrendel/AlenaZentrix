@@ -228,20 +228,14 @@
                 <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Decisión</h3>
 
                 {{-- Botones de acción --}}
-                <div x-show="!rechazo" class="space-y-3">
-                    <flux:button
-                        variant="primary"
-                        icon="check-circle"
-                        class="w-full"
-                        wire:click="completar"
-                        wire:confirm="¿Confirmas que el reporte es correcto y la orden está completada?"
-                    >
-                        Marcar como Completada
-                    </flux:button>
+                <div x-show="!rechazo" class="flex flex-col items-stretch gap-3">
+                    <div class="[&>button]:w-full [&>button]:justify-center">
+                        {{ $this->completarAction }}
+                    </div>
                     <flux:button
                         variant="danger"
                         icon="x-circle"
-                        class="w-full"
+                        class="w-full justify-center"
                         @click="rechazo = true"
                     >
                         Rechazar Reporte
@@ -284,4 +278,6 @@
 
         </div>
     </div>
+
+    <x-filament-actions::modals />
 </div>

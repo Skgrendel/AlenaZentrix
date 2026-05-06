@@ -80,6 +80,14 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                     ->sortable()
                     ->placeholder('—'),
             ])
+            ->headerActions([
+                Action::make('exportar')
+                    ->label('Exportar CSV')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->url(route('tecnico.exportar-mis-ordenes'))
+                    ->openUrlInNewTab(),
+            ])
             ->actions([
                 Action::make('iniciar')
                     ->label('Iniciar')
