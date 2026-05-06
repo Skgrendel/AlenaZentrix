@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\EstadoAuditoria;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class auditoria extends Model
 {
@@ -15,16 +17,26 @@ class auditoria extends Model
 
     protected $fillable = [
         'reportes_id',
-        'medidor_coincide',
-        'lectura_correcta',
-        'foto_correcta',
-        'comercio_coincide',
-        'intento_soborno',
+        'auditado_por_id',
+        'estado',
+        'evidencias',
         'observaciones',
+        'fecha_auditoria',
     ];
 
-    public function reporte()
+    protected $casts = [
+        'estado' => EstadoAuditoria::class,
+        'evidencias' => 'array',
+        'fecha_auditoria' => 'datetime',
+    ];
+
+    public function reporte(): BelongsTo
     {
         return $this->belongsTo(reportes::class, 'reportes_id');
+    }
+
+    public function auditadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'auditado_por_id');
     }
 }

@@ -10,13 +10,12 @@ return new class extends Migration
     {
         Schema::create('auditorias', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('reportes_id');
-            $table->boolean('medidor_coincide')->nullable();
-            $table->boolean('lectura_correcta')->nullable();
-            $table->boolean('foto_correcta')->nullable();
-            $table->boolean('comercio_coincide')->nullable();
-            $table->boolean('intento_soborno')->nullable();
+            $table->foreignUuid('reportes_id')->constrained('reportes')->cascadeOnDelete();
+            $table->foreignUuid('auditado_por_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('estado')->default('pendiente_auditoria');
+            $table->json('evidencias')->nullable();
             $table->text('observaciones')->nullable();
+            $table->timestamp('fecha_auditoria')->nullable();
             $table->timestamps();
         });
     }

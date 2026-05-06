@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -84,6 +85,19 @@ class OrdenJob extends Model
                 $model->getOriginal('fecha_completado') === null
             ) {
                 $model->fecha_completado = now();
+            }
+        });
+
+        static::updated(function (self $model): void {
+            if ($model->wasChanged('estado') && $model->estado === EstadoOrden::Completada) {
+                $reporte = $model->reportes()->latest()->first();
+
+                if ($reporte) {
+                    auditoria::create([
+                        'reportes_id' => $reporte->id,
+                        'estado' => EstadoAuditoria::PendienteAuditoria,
+                    ]);
+                }
             }
         });
     }

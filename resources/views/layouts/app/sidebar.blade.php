@@ -38,6 +38,17 @@
             </flux:sidebar.group>
             @endhasanyrole
 
+            @hasanyrole('Administrador|Auditor')
+            <flux:sidebar.group :heading="__('Auditorías')" class="grid">
+                <flux:sidebar.item icon="clipboard-document-check"
+                    :href="route('auditor.auditorias')"
+                    :current="request()->routeIs('auditor.*')"
+                    wire:navigate>
+                    {{ __('Auditorías') }}
+                </flux:sidebar.item>
+            </flux:sidebar.group>
+            @endhasanyrole
+
             @hasanyrole('Administrador|Lector')
             <flux:sidebar.group :heading="__('Mis Tareas')" class="grid">
                 <flux:sidebar.item icon="clipboard-document-check"

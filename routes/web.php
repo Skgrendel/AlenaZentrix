@@ -3,6 +3,7 @@
 use App\Enums\EstadoOrden;
 use App\Livewire\Admin\Configuracion;
 use App\Livewire\Admin\ManageUsers;
+use App\Livewire\Auditor\AuditoriasIndex;
 use App\Livewire\Coordinador\OrdenesCompletadasIndex;
 use App\Livewire\Coordinador\OrdenesTrabajoIndex;
 use App\Livewire\Coordinador\OrdenJobShow;
@@ -165,6 +166,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 fclose($handle);
             }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
         })->name('exportar-mis-ordenes');
+    });
+
+    Route::middleware('role:Administrador|Auditor')->prefix('auditor')->name('auditor.')->group(function () {
+        Route::get('auditorias', AuditoriasIndex::class)->name('auditorias');
     });
 
     Route::middleware('role:Administrador')->prefix('admin')->name('admin.')->group(function () {
