@@ -49,6 +49,8 @@
     }
 }
 
+[x-cloak] { display: none !important; }
+
 @layer base {
 
     *,

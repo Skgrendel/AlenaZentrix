@@ -21,6 +21,9 @@
                     <flux:sidebar.item icon="users" :href="route('admin.users')" :current="request()->routeIs('admin.users')" wire:navigate>
                         {{ __('Usuarios') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="cog-6-tooth" :href="route('admin.configuracion')" :current="request()->routeIs('admin.configuracion')" wire:navigate>
+                        {{ __('Configuración') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 

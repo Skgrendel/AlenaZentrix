@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "PowerShell(head -30)",
-      "mcp__laravel-boost__browser-logs"
+      "mcp__laravel-boost__browser-logs",
+      "Bash(php artisan *)"
     ]
   }
 }
