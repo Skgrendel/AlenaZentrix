@@ -4,6 +4,7 @@ namespace App\Livewire\Tecnico;
 
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
+use App\Mail\OrdenIniciada;
 use App\Models\OrdenJob;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -15,6 +16,8 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -76,6 +79,20 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                     ->placeholder('—'),
             ])
             ->actions([
+                Action::make('iniciar')
+                    ->label('Iniciar')
+                    ->icon('heroicon-o-play')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading('Iniciar orden')
+                    ->modalDescription(fn (OrdenJob $record): string => "¿Confirmas que vas a iniciar la atención de la orden {$record->numero_orden}?")
+                    ->modalSubmitActionLabel('Sí, iniciar')
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Asignada)
+                    ->action(function (OrdenJob $record): void {
+                        $record->update(['estado' => EstadoOrden::EnProgreso]);
+                        $this->notificarCreador($record);
+                    }),
+
                 Action::make('reportar')
                     ->label('Crear Reporte')
                     ->icon('heroicon-o-clipboard-document-check')
@@ -86,6 +103,26 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
             ->emptyStateDescription('No tienes órdenes activas en este momento.')
             ->emptyStateIcon('heroicon-o-clipboard-document-list')
             ->defaultSort('fecha_limite', 'asc');
+    }
+
+    protected function notificarCreador(OrdenJob $orden): void
+    {
+        $email = $orden->creadoPor?->email;
+        $tecnico = $orden->personal;
+
+        if (! $email || ! $tecnico) {
+            return;
+        }
+
+        try {
+            Mail::to($email)->send(new OrdenIniciada($orden, $tecnico));
+        } catch (\Exception $e) {
+            Log::error('No se pudo enviar notificación de orden iniciada.', [
+                'orden' => $orden->numero_orden,
+                'email' => $email,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     public function render(): View

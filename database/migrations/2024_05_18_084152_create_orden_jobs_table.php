@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('orden_jobs', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('personals_id')->nullable();
+            $table->foreignUuid('creado_por_id')->nullable()->constrained('users')->nullOnDelete();
 
             // Datos del punto de servicio (gas)
             $table->string('numero_orden');
@@ -27,7 +28,7 @@ return new class extends Migration
             $table->string('titulo')->nullable();
             $table->text('descripcion')->nullable();
             $table->enum('prioridad', ['baja', 'media', 'alta', 'urgente'])->default('media'); // baja | media | alta | urgente
-            $table->enum('estado', ['pendiente', 'asignada', 'en_progreso', 'completada', 'cancelada'])->default('pendiente'); // pendiente | asignada | en_progreso | completada | cancelada
+            $table->enum('estado', ['pendiente', 'asignada', 'en_progreso', 'en_revision', 'completada', 'rechazada', 'cancelada'])->default('pendiente');
             $table->boolean('estado_servicio')->default(true);
 
             // Fechas de seguimiento

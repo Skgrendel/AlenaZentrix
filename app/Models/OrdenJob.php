@@ -19,6 +19,7 @@ class OrdenJob extends Model
 
     protected $fillable = [
         'personals_id',
+        'creado_por_id',
         'numero_orden',
         'contrato',
         'cliente',
@@ -53,6 +54,10 @@ class OrdenJob extends Model
         static::creating(function (self $model): void {
             if (empty($model->numero_orden)) {
                 $model->numero_orden = self::generateNumeroOrden();
+            }
+
+            if (empty($model->creado_por_id) && auth()->check()) {
+                $model->creado_por_id = auth()->id();
             }
 
             if (! empty($model->personals_id) && $model->estado === EstadoOrden::Pendiente) {
@@ -93,6 +98,11 @@ class OrdenJob extends Model
     public function personal(): BelongsTo
     {
         return $this->belongsTo(personals::class, 'personals_id');
+    }
+
+    public function creadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'creado_por_id');
     }
 
     public function reportes(): HasMany
