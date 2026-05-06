@@ -1,0 +1,95 @@
+<?php
+
+namespace App\Livewire\Tecnico;
+
+use App\Enums\EstadoOrden;
+use App\Enums\PrioridadOrden;
+use App\Models\OrdenJob;
+use Filament\Actions\Action;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Tables;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
+use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+
+#[Layout('layouts.app')]
+#[Title('Mis Órdenes')]
+class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTable
+{
+    use InteractsWithActions;
+    use InteractsWithForms;
+    use InteractsWithTable;
+
+    public function table(Table $table): Table
+    {
+        return $table
+            ->query(function () {
+                $query = OrdenJob::query()
+                    ->whereIn('estado', [
+                        EstadoOrden::Pendiente->value,
+                        EstadoOrden::Asignada->value,
+                        EstadoOrden::EnProgreso->value,
+                    ]);
+
+                if (! auth()->user()->hasRole('Administrador')) {
+                    $query->where('personals_id', auth()->user()->personals_id);
+                }
+
+                return $query;
+            })
+            ->columns([
+                Tables\Columns\TextColumn::make('numero_orden')
+                    ->label('N° Orden')
+                    ->badge()
+                    ->color('primary')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('cliente')
+                    ->label('Cliente')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('direccion')
+                    ->label('Dirección')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('barrio')
+                    ->label('Barrio'),
+                Tables\Columns\TextColumn::make('estado')
+                    ->label('Estado')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state instanceof EstadoOrden ? $state->label() : $state)
+                    ->color(fn ($state) => $state instanceof EstadoOrden ? $state->color() : 'gray'),
+                Tables\Columns\TextColumn::make('prioridad')
+                    ->label('Prioridad')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state instanceof PrioridadOrden ? $state->label() : $state)
+                    ->color(fn ($state) => $state instanceof PrioridadOrden ? $state->color() : 'gray'),
+                Tables\Columns\TextColumn::make('fecha_limite')
+                    ->label('Fecha Límite')
+                    ->date('d/m/Y')
+                    ->sortable()
+                    ->placeholder('—'),
+            ])
+            ->actions([
+                Action::make('reportar')
+                    ->label('Crear Reporte')
+                    ->icon('heroicon-o-clipboard-document-check')
+                    ->color('primary')
+                    ->url(fn (OrdenJob $record): string => route('tecnico.ordenes.reportar', $record)),
+            ])
+            ->emptyStateHeading('Sin órdenes asignadas')
+            ->emptyStateDescription('No tienes órdenes activas en este momento.')
+            ->emptyStateIcon('heroicon-o-clipboard-document-list')
+            ->defaultSort('fecha_limite', 'asc');
+    }
+
+    public function render(): View
+    {
+        return view('livewire.tecnico.mis-ordenes-index');
+    }
+}

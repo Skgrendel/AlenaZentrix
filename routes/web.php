@@ -4,6 +4,8 @@ use App\Livewire\Admin\Configuracion;
 use App\Livewire\Admin\ManageUsers;
 use App\Livewire\Coordinador\OrdenesTrabajoIndex;
 use App\Livewire\Coordinador\OrdenJobShow;
+use App\Livewire\Tecnico\MisOrdenesIndex;
+use App\Livewire\Tecnico\ReporteCreate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -13,14 +15,11 @@ Route::view('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 
-    Route::middleware('role:Administrador|Coordinador')->prefix('operaciones')->name('operaciones.')->group(function () {
-        Route::get('ordenes-trabajo', OrdenesTrabajoIndex::class)->name('ordenes-trabajo');
-        Route::get('ordenes-trabajo/{orden}', OrdenJobShow::class)->name('ordenes-trabajo.show');
-
-        Route::get('foto', function (Request $request) {
+    Route::middleware('role:Administrador|Coordinador|Lector')
+        ->get('operaciones/foto', function (Request $request) {
             $path = $request->query('path', '');
 
-            if (! str_starts_with($path, 'ordenes/')) {
+            if (! str_starts_with($path, 'ordenes/') && ! str_starts_with($path, 'reportes/')) {
                 abort(403);
             }
 
@@ -35,7 +34,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 200,
                 ['Content-Type' => $disk->mimeType($path), 'Cache-Control' => 'max-age=3600, private'],
             );
-        })->name('foto');
+        })->name('operaciones.foto');
+
+    Route::middleware('role:Administrador|Coordinador')->prefix('operaciones')->name('operaciones.')->group(function () {
+        Route::get('ordenes-trabajo', OrdenesTrabajoIndex::class)->name('ordenes-trabajo');
+        Route::get('ordenes-trabajo/{orden}', OrdenJobShow::class)->name('ordenes-trabajo.show');
+    });
+
+    Route::middleware('role:Administrador|Lector')->prefix('tecnico')->name('tecnico.')->group(function () {
+        Route::get('mis-ordenes', MisOrdenesIndex::class)->name('mis-ordenes');
+        Route::get('ordenes/{orden}/reportar', ReporteCreate::class)->name('ordenes.reportar');
     });
 
     Route::middleware('role:Administrador')->prefix('admin')->name('admin.')->group(function () {

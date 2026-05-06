@@ -7,7 +7,9 @@ enum EstadoOrden: string
     case Pendiente = 'pendiente';
     case Asignada = 'asignada';
     case EnProgreso = 'en_progreso';
+    case EnRevision = 'en_revision';
     case Completada = 'completada';
+    case Rechazada = 'rechazada';
     case Cancelada = 'cancelada';
 
     public function label(): string
@@ -16,7 +18,9 @@ enum EstadoOrden: string
             self::Pendiente => 'Pendiente',
             self::Asignada => 'Asignada',
             self::EnProgreso => 'En Progreso',
+            self::EnRevision => 'En Revisión',
             self::Completada => 'Completada',
+            self::Rechazada => 'Rechazada',
             self::Cancelada => 'Cancelada',
         };
     }
@@ -27,8 +31,10 @@ enum EstadoOrden: string
             self::Pendiente => 'gray',
             self::Asignada => 'info',
             self::EnProgreso => 'warning',
+            self::EnRevision => 'purple',
             self::Completada => 'success',
-            self::Cancelada => 'danger',
+            self::Rechazada => 'danger',
+            self::Cancelada => 'gray',
         };
     }
 }

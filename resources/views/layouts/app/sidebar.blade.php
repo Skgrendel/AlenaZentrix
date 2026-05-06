@@ -25,9 +25,20 @@
             <flux:sidebar.group :heading="__('Operaciones')" class="grid">
                 <flux:sidebar.item icon="clipboard-document-list"
                     :href="route('operaciones.ordenes-trabajo')"
-                    :current="request()->routeIs('operaciones.ordenes-trabajo')"
+                    :current="request()->routeIs('operaciones.ordenes-trabajo*')"
                     wire:navigate>
                     {{ __('Órdenes de Trabajo') }}
+                </flux:sidebar.item>
+            </flux:sidebar.group>
+            @endhasanyrole
+
+            @hasanyrole('Administrador|Lector')
+            <flux:sidebar.group :heading="__('Mis Tareas')" class="grid">
+                <flux:sidebar.item icon="clipboard-document-check"
+                    :href="route('tecnico.mis-ordenes')"
+                    :current="request()->routeIs('tecnico.*')"
+                    wire:navigate>
+                    {{ __('Mis Órdenes') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
             @endhasanyrole

@@ -140,8 +140,10 @@
                                 'pendiente'   => 'zinc',
                                 'asignada'    => 'blue',
                                 'en_progreso' => 'yellow',
+                                'en_revision' => 'purple',
                                 'completada'  => 'green',
-                                'cancelada'   => 'red',
+                                'rechazada'   => 'red',
+                                'cancelada'   => 'zinc',
                                 default       => 'zinc',
                             }">
                                 {{ $orden->estado->label() }}
