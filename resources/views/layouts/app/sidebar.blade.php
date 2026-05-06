@@ -21,12 +21,22 @@
                 </flux:sidebar.item>
             </flux:sidebar.group>
 
-
+            @hasanyrole('Administrador|Coordinador')
+            <flux:sidebar.group :heading="__('Operaciones')" class="grid">
+                <flux:sidebar.item icon="clipboard-document-list"
+                    :href="route('operaciones.ordenes-trabajo')"
+                    :current="request()->routeIs('operaciones.ordenes-trabajo')"
+                    wire:navigate>
+                    {{ __('Órdenes de Trabajo') }}
+                </flux:sidebar.item>
+            </flux:sidebar.group>
+            @endhasanyrole
         </flux:sidebar.nav>
 
         <flux:spacer />
 
         <flux:sidebar.nav>
+            @role('Administrador')
             <flux:sidebar.group :heading="__('Administración')" class="grid">
                 <flux:sidebar.item icon="users" :href="route('admin.users')"
                     :current="request()->routeIs('admin.users')" wire:navigate>
@@ -37,6 +47,7 @@
                     {{ __('Configuración') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
+            @endrole
         </flux:sidebar.nav>
 
         <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
