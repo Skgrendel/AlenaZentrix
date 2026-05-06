@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -25,18 +24,22 @@ class RolSeeder extends Seeder
 
         $admin->syncPermissions($Permissions);
 
-        // $coordinador = Role::create([
-        //     'name' => 'Coordinador',
-        //     'guard_name' => 'web',
-        //     'estado' => 1,
-        // ]);
-        // $coordinador->syncPermissions(['coordinador']);
+        $coordinador = Role::create([
+            'name' => 'Coordinador',
+            'guard_name' => 'web',
+            'estado' => 1,
+        ]);
+        $coordinador->syncPermissions(
+            Permission::where('category', 'Coordinador')->get()
+        );
 
-        // $agente = Role::create([
-        //     'name' => 'Lector',
-        //     'guard_name' => 'web',
-        //     'estado' => 1,
-        // ]);
-        // $agente->syncPermissions(['agente']);
+        $agente = Role::create([
+            'name' => 'Lector',
+            'guard_name' => 'web',
+            'estado' => 1,
+        ]);
+        $agente->syncPermissions(
+            Permission::where('category', 'Agentes')->get()
+        );
     }
 }

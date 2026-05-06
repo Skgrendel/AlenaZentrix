@@ -130,7 +130,6 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                             'nombres' => $data['nombres'],
                             'apellidos' => $data['apellidos'],
                             'telefono' => $data['telefono'] ?? null,
-                            'correo' => $data['correo'],
                         ]);
 
                         $record->update([

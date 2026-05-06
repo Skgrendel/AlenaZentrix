@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\personals;
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 
@@ -23,11 +22,11 @@ class UserSeeder extends Seeder
             'personals_id' => $personal->id,
             'password' => bcrypt('0000.**'),
             'estado' => 1,
+            'email_verified_at' => now(),
         ]);
 
         $Role = Role::where('name', 'Administrador')->firstOrFail();
         $user->assignRole($Role);
-
 
     }
 }
