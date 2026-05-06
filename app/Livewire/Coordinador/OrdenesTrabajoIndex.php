@@ -69,12 +69,6 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state instanceof EstadoOrden ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof EstadoOrden ? $state->color() : 'gray'),
-                Tables\Columns\ImageColumn::make('fotos')
-                    ->label('Fotos')
-                    ->disk('s3')
-                    ->stacked()
-                    ->limit(3)
-                    ->toggleable(),
                 Tables\Columns\TextColumn::make('personal.nombres')
                     ->label('Técnico Asignado')
                     ->formatStateUsing(fn ($state, OrdenJob $record): string => $record->personal
@@ -145,6 +139,11 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     }),
             ])
             ->actions([
+                Action::make('view')
+                    ->label('Ver')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->url(fn (OrdenJob $record): string => route('operaciones.ordenes-trabajo.show', $record)),
                 EditAction::make()
                     ->modalHeading(fn (OrdenJob $record): string => "Editar Orden: {$record->numero_orden}")
                     ->form(fn (OrdenJob $record) => $this->ordenFormSchema($record))
