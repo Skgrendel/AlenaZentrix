@@ -32,6 +32,7 @@ class OrdenJob extends Model
         'tipo_medidor',
         'ciclo',
         'numero_noticia_criminal',
+        'tipo_investigacion',
         'fotos',
         'titulo',
         'descripcion',
@@ -69,7 +70,10 @@ class OrdenJob extends Model
                 $model->fecha_asignacion = now();
             }
 
-            if (! empty($model->personals_id) && $model->estado === EstadoOrden::Pendiente) {
+            // Vigilancia no tiene técnico asignado, arranca directo en progreso
+            if ($model->tipo_servicio === TipoServicio::Vigilancia) {
+                $model->estado = EstadoOrden::EnProgreso;
+            } elseif (! empty($model->personals_id) && $model->estado === EstadoOrden::Pendiente) {
                 $model->estado = EstadoOrden::Asignada;
             }
         });
@@ -93,7 +97,11 @@ class OrdenJob extends Model
         });
 
         static::updated(function (self $model): void {
-            if ($model->wasChanged('estado') && $model->estado === EstadoOrden::Completada) {
+            if (
+                $model->wasChanged('estado') &&
+                $model->estado === EstadoOrden::Completada &&
+                $model->tipo_servicio === TipoServicio::Fraudes
+            ) {
                 $reporte = $model->reportes()->latest()->first();
 
                 if ($reporte) {

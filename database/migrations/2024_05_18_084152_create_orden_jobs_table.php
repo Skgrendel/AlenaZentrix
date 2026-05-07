@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('tipo_medidor')->nullable();
             $table->string('ciclo')->nullable();
             $table->string('numero_noticia_criminal')->nullable();
+            $table->string('tipo_investigacion')->nullable(); // 'interna' | 'contratista' (solo para Investigación)
             $table->json('fotos')->nullable();
 
             // Gestión de la orden

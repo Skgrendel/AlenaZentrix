@@ -10,12 +10,14 @@ return new class extends Migration
     {
         Schema::create('reportes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('ubicacions_id')->constrained('ubicacions')->cascadeOnDelete();
-            $table->foreignUuid('comercios_id')->constrained('comercios')->cascadeOnDelete();
+            $table->foreignUuid('ubicacions_id')->nullable()->constrained('ubicacions')->nullOnDelete();
+            $table->foreignUuid('comercios_id')->nullable()->constrained('comercios')->nullOnDelete();
             $table->foreignUuid('orden_job_id')->constrained('orden_jobs')->cascadeOnDelete();
+            $table->foreignUuid('personals_id')->nullable()->constrained('personals')->nullOnDelete();
             $table->string('numero_orden');
             $table->string('numero_medidor')->nullable();
-            $table->string('lectura');
+            $table->string('lectura')->nullable();
+            $table->json('datos_servicio')->nullable();
             $table->json('anomalia')->nullable();
             $table->uuid('tipo_imposibilidad_id')->nullable();
             $table->uuid('tipo_regulador_id')->nullable();

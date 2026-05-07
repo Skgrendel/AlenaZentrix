@@ -3,10 +3,15 @@
 namespace App\Livewire\Coordinador;
 
 use App\Enums\EstadoOrden;
+use App\Enums\TipoServicio;
 use App\Mail\OrdenCompletada;
 use App\Mail\OrdenRechazada;
+use App\Models\Convencion;
 use App\Models\OrdenJob;
 use App\Models\reportes;
+use App\Models\ResultadoReporte;
+use App\Models\TipoComercio;
+use App\Models\TipologiaOrden;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -37,13 +42,24 @@ class ReporteRevisar extends Component implements HasActions, HasForms
 
     public function mount(OrdenJob $orden): void
     {
-        abort_unless(in_array($orden->estado, [EstadoOrden::EnRevision, EstadoOrden::Completada]), 403);
+        $estadosPermitidos = [EstadoOrden::EnRevision, EstadoOrden::Completada];
+
+        if ($orden->tipo_servicio === TipoServicio::Vigilancia) {
+            $estadosPermitidos[] = EstadoOrden::EnProgreso;
+        }
+
+        abort_unless(in_array($orden->estado, $estadosPermitidos), 403);
 
         $this->orden = $orden->load('personal');
-        $this->reporte = $orden->reportes()
-            ->with(['ubicacion', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador', 'marcaMedidor', 'marcaRegulador'])
-            ->latest()
-            ->firstOrFail();
+
+        $reporteId = request()->query('reporte');
+
+        $query = $orden->reportes()
+            ->with(['ubicacion', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador', 'marcaMedidor', 'marcaRegulador', 'personal']);
+
+        $this->reporte = $reporteId
+            ? $query->where('id', $reporteId)->firstOrFail()
+            : $query->latest()->firstOrFail();
     }
 
     public function completarAction(): Action
@@ -113,10 +129,60 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             ->all();
     }
 
+    /** @return array<string, mixed> */
+    public function datosServicioDisplay(): array
+    {
+        $datos = $this->reporte->datos_servicio ?? [];
+        $tipo = $this->orden->tipo_servicio;
+
+        if ($tipo === TipoServicio::Investigacion) {
+            return [
+                'convencion' => Convencion::find($datos['convencion_id'] ?? null)?->nombre,
+                'acompanamiento_tecnico' => $datos['acompanamiento_tecnico'] ?? false,
+                'acompanante_nombre' => $datos['acompanante_nombre'] ?? null,
+                'acompanante_identificacion' => $datos['acompanante_identificacion'] ?? null,
+                'acompanante_cargo' => $datos['acompanante_cargo'] ?? null,
+                'acompanante_cuadrilla' => $datos['acompanante_cuadrilla'] ?? null,
+                'tipo_investigado' => $datos['tipo_investigado'] ?? null,
+                'nombre_investigado' => $datos['nombre_investigado'] ?? null,
+                'identificacion' => $datos['identificacion'] ?? null,
+                'descripcion_fisica' => $datos['descripcion_fisica'] ?? null,
+                'nombre_comercio_inv' => $datos['nombre_comercio_inv'] ?? null,
+                'tipo_comercio_inv' => TipoComercio::find($datos['tipo_comercio_inv_id'] ?? null)?->nombre,
+                'resultado' => ResultadoReporte::find($datos['resultado_reporte_id'] ?? null)?->nombre,
+            ];
+        }
+
+        if (in_array($tipo, [TipoServicio::Capturas, TipoServicio::Bandas])) {
+            return [
+                'tipologia' => TipologiaOrden::find($datos['tipologia_orden_id'] ?? null)?->nombre,
+                'fecha_ejecucion' => $datos['fecha_ejecucion'] ?? null,
+                'departamento' => $datos['departamento'] ?? null,
+                'municipio' => $datos['municipio'] ?? null,
+                'radio_objetivo' => $datos['radio_objetivo'] ?? null,
+            ];
+        }
+
+        if ($tipo === TipoServicio::Vigilancia) {
+            return [
+                'fecha_turno' => $datos['fecha_turno'] ?? null,
+                'hora_inicio' => $datos['hora_inicio'] ?? null,
+                'hora_fin' => $datos['hora_fin'] ?? null,
+                'hay_novedad' => $datos['hay_novedad'] ?? false,
+                'descripcion_novedad' => $datos['descripcion_novedad'] ?? null,
+                'hay_reincidencia' => $datos['hay_reincidencia'] ?? false,
+                'resultado' => ResultadoReporte::find($datos['resultado_reporte_id'] ?? null)?->nombre,
+            ];
+        }
+
+        return [];
+    }
+
     public function render(): View
     {
         return view('livewire.coordinador.reporte-revisar', [
             'imagenUrls' => $this->imagenUrls(),
+            'datosServicio' => $this->datosServicioDisplay(),
         ]);
     }
 }

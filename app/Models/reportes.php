@@ -14,6 +14,7 @@ class reportes extends Model
         'ubicacions_id',
         'comercios_id',
         'orden_job_id',
+        'personals_id',
         'numero_orden',
         'numero_medidor',
         'coincide_medidor',
@@ -30,6 +31,7 @@ class reportes extends Model
         'video',
         'observaciones',
         'comentarios',
+        'datos_servicio',
         'revisado',
         'confirmado',
         'estado',
@@ -38,6 +40,7 @@ class reportes extends Model
     protected $casts = [
         'anomalia' => 'array',
         'imagenes' => 'array',
+        'datos_servicio' => 'array',
         'coincide_medidor' => 'boolean',
         'hay_fuga_gas' => 'boolean',
         'excede_capacidad' => 'boolean',
@@ -48,6 +51,11 @@ class reportes extends Model
     public function ordenJob()
     {
         return $this->belongsTo(OrdenJob::class, 'orden_job_id');
+    }
+
+    public function personal()
+    {
+        return $this->belongsTo(personals::class, 'personals_id');
     }
 
     public function ubicacion()

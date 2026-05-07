@@ -17,7 +17,7 @@ class OrdenRechazada extends Mailable
 
     public function __construct(
         public OrdenJob $orden,
-        public personals $tecnico,
+        public ?personals $tecnico,
         public string $comentarios,
     ) {}
 

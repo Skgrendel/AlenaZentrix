@@ -128,17 +128,32 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->url(route('operaciones.ordenes-trabajo.crear')),
             ])
             ->actions([
+                Action::make('ver_reportes_vigilancia')
+                    ->label('Ver Reportes')
+                    ->icon('heroicon-o-document-magnifying-glass')
+                    ->color('primary')
+                    ->visible(fn (OrdenJob $record): bool => $record->tipo_servicio === TipoServicio::Vigilancia
+                        && $record->estado === EstadoOrden::EnProgreso
+                    )
+                    ->url(fn (OrdenJob $record): string => route('operaciones.ordenes-trabajo.reportes', $record)),
                 Action::make('revisar')
                     ->label('Revisar')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->color('warning')
                     ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::EnRevision)
-                    ->url(fn (OrdenJob $record): string => route('operaciones.ordenes-trabajo.revisar', $record)),
+                    ->url(fn (OrdenJob $record): string => $record->tipo_servicio === TipoServicio::Vigilancia
+                        ? route('operaciones.ordenes-trabajo.reportes', $record)
+                        : route('operaciones.ordenes-trabajo.revisar', $record)
+                    ),
                 Action::make('ver_auditoria')
                     ->label('Auditoría')
                     ->icon('heroicon-o-shield-check')
                     ->color('purple')
                     ->visible(function (OrdenJob $record): bool {
+                        if ($record->tipo_servicio !== TipoServicio::Fraudes) {
+                            return false;
+                        }
+
                         $auditoria = $record->reportes->first()?->auditoria;
 
                         return $auditoria !== null &&
@@ -153,7 +168,10 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->icon('heroicon-o-document-text')
                     ->color('success')
                     ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Completada)
-                    ->url(fn (OrdenJob $record): string => route('operaciones.ordenes-trabajo.revisar', $record)),
+                    ->url(fn (OrdenJob $record): string => $record->tipo_servicio === TipoServicio::Vigilancia
+                        ? route('operaciones.ordenes-trabajo.reportes', $record)
+                        : route('operaciones.ordenes-trabajo.revisar', $record)
+                    ),
                 Action::make('view')
                     ->label('Ver')
                     ->icon('heroicon-o-eye')
@@ -237,6 +255,14 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                 ->columns(2)
                 ->visible($tipoServicio === TipoServicio::Investigacion)
                 ->schema([
+                    Forms\Components\Select::make('tipo_investigacion')
+                        ->label('Tipo de Investigación')
+                        ->options([
+                            'interna' => 'Interna',
+                            'contratista' => 'Contratista',
+                        ])
+                        ->placeholder('Seleccionar')
+                        ->columnSpanFull(),
                     Forms\Components\TextInput::make('contrato')->label('N° Contrato')->maxLength(255),
                     Forms\Components\TextInput::make('cliente')->label('Nombre del Investigado / Comercio')->maxLength(255),
                     Forms\Components\TextInput::make('direccion')->label('Dirección')->maxLength(255),
@@ -304,12 +330,11 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         ->default(EstadoOrden::Pendiente->value),
                     Forms\Components\DateTimePicker::make('fecha_limite')->label('Fecha Límite')->nullable(),
                     Forms\Components\Select::make('personals_id')
-                        ->label('Técnico Asignado')
+                        ->label($tipoServicio === TipoServicio::Vigilancia ? 'Investigador Asignado' : 'Técnico Asignado')
                         ->options($tecnicos)
                         ->searchable()
                         ->nullable()
                         ->placeholder('Sin asignar')
-                        ->visible($tipoServicio !== TipoServicio::Vigilancia)
                         ->columnSpanFull(),
                     Forms\Components\Toggle::make('estado_servicio')->label('Servicio Activo')->default(true)->columnSpanFull(),
                 ]),

@@ -35,6 +35,18 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
 
+                <flux:navlist.group heading="Catálogos Legales">
+                    <flux:navlist.item href="#" x-on:click.prevent="active = 'convenciones'" x-bind:data-current="active === 'convenciones'">
+                        Convenciones
+                    </flux:navlist.item>
+                    <flux:navlist.item href="#" x-on:click.prevent="active = 'tipologias-orden'" x-bind:data-current="active === 'tipologias-orden'">
+                        Tipologías de Orden
+                    </flux:navlist.item>
+                    <flux:navlist.item href="#" x-on:click.prevent="active = 'resultados-reporte'" x-bind:data-current="active === 'resultados-reporte'">
+                        Resultados del Reporte
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
                 <flux:navlist.group heading="Alertas">
                     <flux:navlist.item href="#" x-on:click.prevent="active = 'notificacion-alerta'" x-bind:data-current="active === 'notificacion-alerta'">
                         Notificación Alerta
@@ -83,6 +95,24 @@
                     :model="\App\Models\MarcaRegulador::class"
                     label="Marca de Regulador"
                     wire:key="catalog-marca-regulador" />
+            </div>
+            <div x-show="active === 'convenciones'" x-cloak>
+                <livewire:admin.catalogos.manage-catalog
+                    :model="\App\Models\Convencion::class"
+                    label="Convención"
+                    wire:key="catalog-convencion" />
+            </div>
+            <div x-show="active === 'tipologias-orden'" x-cloak>
+                <livewire:admin.catalogos.manage-catalog
+                    :model="\App\Models\TipologiaOrden::class"
+                    label="Tipología de Orden"
+                    wire:key="catalog-tipologia-orden" />
+            </div>
+            <div x-show="active === 'resultados-reporte'" x-cloak>
+                <livewire:admin.catalogos.manage-catalog
+                    :model="\App\Models\ResultadoReporte::class"
+                    label="Resultado del Reporte"
+                    wire:key="catalog-resultado-reporte" />
             </div>
             <div x-show="active === 'notificacion-alerta'" x-cloak>
                 <livewire:admin.manage-tipo-notificacion-alerta

@@ -3,17 +3,21 @@
 namespace App\Livewire\Tecnico;
 
 use App\Enums\EstadoOrden;
+use App\Enums\TipoServicio;
 use App\Mail\IncidenciaDetectada;
 use App\Mail\ReporteEnRevision;
 use App\Models\comercio;
+use App\Models\Convencion;
 use App\Models\CorreoAlerta;
 use App\Models\MarcaMedidor;
 use App\Models\MarcaRegulador;
 use App\Models\OrdenJob;
 use App\Models\reportes;
+use App\Models\ResultadoReporte;
 use App\Models\TipoAnomalia;
 use App\Models\TipoComercio;
 use App\Models\TipoImposibilidad;
+use App\Models\TipologiaOrden;
 use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
 use App\Models\ubicacion;
@@ -58,171 +62,487 @@ class ReporteCreate extends Component implements HasForms
 
     public function form(Schema $form): Schema
     {
-        return $form
-            ->schema([
-                Section::make('1. Datos de la Orden')
-                    ->icon('heroicon-o-document-text')
-                    ->columns(2)
-                    ->schema([
-                        Forms\Components\TextInput::make('nombre_comercio')
-                            ->label('Nombre del Comercio')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Select::make('tipo_comercio_id')
-                            ->label('Tipo de Comercio Encontrado')
-                            ->options(
-                                TipoComercio::query()
-                                    ->where('activo', true)
-                                    ->orderBy('nombre')
-                                    ->pluck('nombre', 'id')
-                            )
-                            ->searchable()
-                            ->required(),
-                    ]),
+        $schema = match ($this->orden->tipo_servicio) {
+            TipoServicio::Fraudes => $this->fraudesSchema(),
+            TipoServicio::Investigacion => $this->investigacionSchema(),
+            TipoServicio::Capturas, TipoServicio::Bandas => $this->capturasSchema(),
+            TipoServicio::Vigilancia => $this->vigilanciaSchema(),
+        };
 
-                Section::make('2. Información del Medidor')
-                    ->icon('heroicon-o-eye')
-                    ->columns(2)
-                    ->schema([
-                        Forms\Components\TextInput::make('numero_medidor')
-                            ->label('Número de Medidor Encontrado')
-                            ->helperText('Ingresa el número del medidor que encontraste en el sitio')
-                            ->maxLength(255),
-                        Forms\Components\Toggle::make('coincide_medidor')
-                            ->label('¿Coincide con el medidor asignado?')
-                            ->helperText('Activo = Sí coincide · Inactivo = No coincide'),
-                        Forms\Components\TextInput::make('lectura')
-                            ->label('Lectura del Medidor')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Select::make('marca_regulador_id')
-                            ->label('Descripción del Medidor')
-                            ->options(
-                                MarcaRegulador::query()
-                                    ->where('activo', true)
-                                    ->orderBy('nombre')
-                                    ->pluck('nombre', 'id')
-                            )
-                            ->searchable()
-                            ->placeholder('Seleccionar'),
-                    ]),
+        return $form->schema($schema)->statePath('data');
+    }
 
-                Section::make('3. Configuración Técnica')
-                    ->icon('heroicon-o-wrench-screwdriver')
-                    ->columns(2)
-                    ->schema([
-                        Forms\Components\Select::make('tipo_regulador_id')
-                            ->label('Tipo de Presión')
-                            ->options(
-                                TipoRegulador::query()
-                                    ->where('activo', true)
-                                    ->orderBy('nombre')
-                                    ->pluck('nombre', 'id')
-                            )
-                            ->searchable()
-                            ->placeholder('Seleccionar'),
-                        Forms\Components\Select::make('marca_medidor_id')
-                            ->label('Marca del Medidor')
-                            ->options(
-                                MarcaMedidor::query()
-                                    ->where('activo', true)
-                                    ->orderBy('nombre')
-                                    ->pluck('nombre', 'id')
-                            )
-                            ->searchable()
-                            ->placeholder('Seleccionar'),
-                        Forms\Components\Select::make('tipo_notificacion_alerta_id')
-                            ->label('Notificación de Alertas')
-                            ->options(
-                                TipoNotificacionAlerta::query()
-                                    ->where('activo', true)
-                                    ->orderBy('nombre')
-                                    ->pluck('nombre', 'id')
-                            )
-                            ->searchable()
-                            ->placeholder('Sin Alertas')
-                            ->columnSpanFull(),
-                    ]),
+    /** @return array<int, Section> */
+    private function fraudesSchema(): array
+    {
+        return [
+            Section::make('1. Datos de la Orden')
+                ->icon('heroicon-o-document-text')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\TextInput::make('nombre_comercio')
+                        ->label('Nombre del Comercio')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\Select::make('tipo_comercio_id')
+                        ->label('Tipo de Comercio Encontrado')
+                        ->options(
+                            TipoComercio::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->required(),
+                ]),
 
-                Section::make('4. Detección de Anomalías')
-                    ->icon('heroicon-o-magnifying-glass')
-                    ->columns(2)
-                    ->schema([
-                        Forms\Components\Select::make('anomalia')
-                            ->label('Anomalías Detectadas')
-                            ->options(
-                                TipoAnomalia::query()
-                                    ->where('activo', true)
-                                    ->orderBy('nombre')
-                                    ->pluck('nombre', 'id')
-                            )
-                            ->multiple()
-                            ->searchable()
-                            ->placeholder('Seleccione las anomalías'),
-                        Forms\Components\Select::make('tipo_imposibilidad_id')
-                            ->label('¿Hubo Imposibilidad?')
-                            ->options(
-                                TipoImposibilidad::query()
-                                    ->where('activo', true)
-                                    ->orderBy('nombre')
-                                    ->pluck('nombre', 'id')
-                            )
-                            ->searchable()
-                            ->placeholder('Ninguna'),
-                    ]),
+            Section::make('2. Información del Medidor')
+                ->icon('heroicon-o-eye')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\TextInput::make('numero_medidor')
+                        ->label('Número de Medidor Encontrado')
+                        ->helperText('Ingresa el número del medidor que encontraste en el sitio')
+                        ->maxLength(255),
+                    Forms\Components\Toggle::make('coincide_medidor')
+                        ->label('¿Coincide con el medidor asignado?')
+                        ->helperText('Activo = Sí coincide · Inactivo = No coincide'),
+                    Forms\Components\TextInput::make('lectura')
+                        ->label('Lectura del Medidor')
+                        ->maxLength(255),
+                    Forms\Components\Select::make('marca_regulador_id')
+                        ->label('Descripción del Medidor')
+                        ->options(
+                            MarcaRegulador::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->placeholder('Seleccionar'),
+                ]),
 
-                Section::make('5. Incidencias Detectadas')
-                    ->icon('heroicon-o-exclamation-triangle')
-                    ->schema([
-                        Forms\Components\Toggle::make('hay_fuga_gas')
-                            ->label('Hay Fuga de Gas')
-                            ->helperText('Detecta fugas o escapes de gas')
-                            ->default(false),
-                        Forms\Components\Toggle::make('excede_capacidad')
-                            ->label('Excede Capacidad')
-                            ->helperText('La instalación supera capacidad permitida')
-                            ->default(false),
-                    ]),
+            Section::make('3. Configuración Técnica')
+                ->icon('heroicon-o-wrench-screwdriver')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Select::make('tipo_regulador_id')
+                        ->label('Tipo de Presión')
+                        ->options(
+                            TipoRegulador::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->placeholder('Seleccionar'),
+                    Forms\Components\Select::make('marca_medidor_id')
+                        ->label('Marca del Medidor')
+                        ->options(
+                            MarcaMedidor::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->placeholder('Seleccionar'),
+                    Forms\Components\Select::make('tipo_notificacion_alerta_id')
+                        ->label('Notificación de Alertas')
+                        ->options(
+                            TipoNotificacionAlerta::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->placeholder('Sin Alertas')
+                        ->columnSpanFull(),
+                ]),
 
-                Section::make('6. Observaciones')
-                    ->icon('heroicon-o-pencil-square')
-                    ->schema([
-                        Forms\Components\Textarea::make('observaciones')
-                            ->label('Comentarios Adicionales')
-                            ->placeholder('Agrega aquí cualquier observación importante sobre la inspección...')
-                            ->rows(4)
-                            ->columnSpanFull(),
-                    ]),
+            Section::make('4. Detección de Anomalías')
+                ->icon('heroicon-o-magnifying-glass')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Select::make('anomalia')
+                        ->label('Anomalías Detectadas')
+                        ->options(
+                            TipoAnomalia::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->multiple()
+                        ->searchable()
+                        ->placeholder('Seleccione las anomalías'),
+                    Forms\Components\Select::make('tipo_imposibilidad_id')
+                        ->label('¿Hubo Imposibilidad?')
+                        ->options(
+                            TipoImposibilidad::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->placeholder('Ninguna'),
+                ]),
 
-                Section::make('7. Fotos Evidencias')
-                    ->icon('heroicon-o-camera')
-                    ->schema([
-                        Forms\Components\FileUpload::make('imagenes')
-                            ->label('Imágenes')
-                            ->disk('s3')
-                            ->directory('reportes/'.$this->orden->numero_orden)
-                            ->multiple()
-                            ->image()
-                            ->imagePreviewHeight('100')
-                            ->maxFiles(10)
-                            ->maxSize(5120)
-                            ->reorderable()
-                            ->panelLayout('grid')
-                            ->extraInputAttributes(['capture' => 'environment'])
-                            ->columnSpanFull(),
-                        Forms\Components\TextInput::make('video')
-                            ->label('URL del Video')
-                            ->url()
-                            ->maxLength(500),
-                    ]),
-            ])
-            ->statePath('data');
+            Section::make('5. Incidencias Detectadas')
+                ->icon('heroicon-o-exclamation-triangle')
+                ->schema([
+                    Forms\Components\Toggle::make('hay_fuga_gas')
+                        ->label('Hay Fuga de Gas')
+                        ->helperText('Detecta fugas o escapes de gas')
+                        ->default(false),
+                    Forms\Components\Toggle::make('excede_capacidad')
+                        ->label('Excede Capacidad')
+                        ->helperText('La instalación supera capacidad permitida')
+                        ->default(false),
+                ]),
+
+            Section::make('6. Observaciones')
+                ->icon('heroicon-o-pencil-square')
+                ->schema([
+                    Forms\Components\Textarea::make('observaciones')
+                        ->label('Comentarios Adicionales')
+                        ->placeholder('Agrega aquí cualquier observación importante sobre la inspección...')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('7. Fotos Evidencias')
+                ->icon('heroicon-o-camera')
+                ->schema([
+                    Forms\Components\FileUpload::make('imagenes')
+                        ->label('Imágenes')
+                        ->disk('s3')
+                        ->directory('reportes/'.$this->orden->numero_orden)
+                        ->multiple()
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->maxFiles(10)
+                        ->maxSize(5120)
+                        ->reorderable()
+                        ->panelLayout('grid')
+                        ->extraInputAttributes(['capture' => 'environment'])
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('video')
+                        ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                ]),
+        ];
+    }
+
+    /** @return array<int, Section> */
+    private function investigacionSchema(): array
+    {
+        return [
+            Section::make('1. Datos del Reporte')
+                ->icon('heroicon-o-document-magnifying-glass')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Select::make('convencion_id')
+                        ->label('Convención')
+                        ->options(
+                            Convencion::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->required()
+                        ->placeholder('Seleccionar'),
+                    Forms\Components\Toggle::make('acompanamiento_tecnico')
+                        ->label('¿Hubo acompañamiento técnico?')
+                        ->default(false)
+                        ->live(),
+                ]),
+
+            Section::make('1b. Datos del Acompañante Técnico')
+                ->icon('heroicon-o-user-group')
+                ->columns(2)
+                ->visible(fn ($get) => (bool) $get('acompanamiento_tecnico'))
+                ->schema([
+                    Forms\Components\TextInput::make('acompanante_nombre')
+                        ->label('Nombre completo')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('acompanante_identificacion')
+                        ->label('Identificación')
+                        ->required()
+                        ->maxLength(50),
+                    Forms\Components\TextInput::make('acompanante_cargo')
+                        ->label('Cargo / Empresa')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('acompanante_cuadrilla')
+                        ->label('Código de Cuadrilla')
+                        ->nullable()
+                        ->maxLength(100),
+                ]),
+
+            Section::make('2. Persona o Comercio Investigado')
+                ->icon('heroicon-o-user-circle')
+                ->schema([
+                    Forms\Components\Select::make('tipo_investigado')
+                        ->label('Tipo de Investigado')
+                        ->options(['persona' => 'Persona', 'comercio' => 'Comercio / Establecimiento'])
+                        ->required()
+                        ->live()
+                        ->placeholder('Seleccionar'),
+                    Forms\Components\TextInput::make('nombre_investigado')
+                        ->label('Nombre completo')
+                        ->maxLength(255)
+                        ->visible(fn ($get) => $get('tipo_investigado') === 'persona'),
+                    Forms\Components\TextInput::make('identificacion')
+                        ->label('Identificación (CC / Pasaporte)')
+                        ->maxLength(50)
+                        ->visible(fn ($get) => $get('tipo_investigado') === 'persona'),
+                    Forms\Components\Textarea::make('descripcion_fisica')
+                        ->label('Descripción Física')
+                        ->rows(3)
+                        ->visible(fn ($get) => $get('tipo_investigado') === 'persona'),
+                    Forms\Components\TextInput::make('nombre_comercio_inv')
+                        ->label('Nombre del Comercio / Establecimiento')
+                        ->maxLength(255)
+                        ->visible(fn ($get) => $get('tipo_investigado') === 'comercio'),
+                    Forms\Components\Select::make('tipo_comercio_inv_id')
+                        ->label('Tipo de Comercio')
+                        ->options(
+                            TipoComercio::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->placeholder('Seleccionar')
+                        ->visible(fn ($get) => $get('tipo_investigado') === 'comercio'),
+                ]),
+
+            Section::make('3. Resultado')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Forms\Components\Select::make('resultado_reporte_id')
+                        ->label('Resultado de la Investigación')
+                        ->options(
+                            ResultadoReporte::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->placeholder('Seleccionar'),
+                ]),
+
+            Section::make('4. Observaciones')
+                ->icon('heroicon-o-pencil-square')
+                ->schema([
+                    Forms\Components\Textarea::make('observaciones')
+                        ->label('Novedades / Observaciones')
+                        ->placeholder('Describe los hallazgos y novedades de la investigación...')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('5. Evidencias')
+                ->icon('heroicon-o-camera')
+                ->schema([
+                    Forms\Components\FileUpload::make('imagenes')
+                        ->label('Imágenes')
+                        ->disk('s3')
+                        ->directory('reportes/'.$this->orden->numero_orden)
+                        ->multiple()
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->maxFiles(10)
+                        ->maxSize(5120)
+                        ->reorderable()
+                        ->panelLayout('grid')
+                        ->extraInputAttributes(['capture' => 'environment'])
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('video')
+                        ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                ]),
+        ];
+    }
+
+    /** @return array<int, Section> */
+    private function capturasSchema(): array
+    {
+        return [
+            Section::make('1. Datos de la Actividad')
+                ->icon('heroicon-o-clipboard-document-list')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Select::make('tipologia_orden_id')
+                        ->label('Tipología de Orden')
+                        ->options(
+                            TipologiaOrden::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->required()
+                        ->placeholder('Seleccionar'),
+                    Forms\Components\DatePicker::make('fecha_ejecucion')
+                        ->label('Fecha de Ejecución')
+                        ->required()
+                        ->displayFormat('d/m/Y'),
+                    Forms\Components\TextInput::make('departamento')
+                        ->label('Departamento')
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('municipio')
+                        ->label('Municipio')
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('radio_objetivo')
+                        ->label('Radio del Objetivo')
+                        ->maxLength(255)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('2. Observaciones')
+                ->icon('heroicon-o-pencil-square')
+                ->schema([
+                    Forms\Components\Textarea::make('observaciones')
+                        ->label('Novedades / Observaciones')
+                        ->placeholder('Describe el desarrollo de la actividad...')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('3. Evidencias')
+                ->icon('heroicon-o-camera')
+                ->schema([
+                    Forms\Components\FileUpload::make('imagenes')
+                        ->label('Imágenes')
+                        ->disk('s3')
+                        ->directory('reportes/'.$this->orden->numero_orden)
+                        ->multiple()
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->maxFiles(10)
+                        ->maxSize(5120)
+                        ->reorderable()
+                        ->panelLayout('grid')
+                        ->extraInputAttributes(['capture' => 'environment'])
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('video')
+                        ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                ]),
+        ];
+    }
+
+    /** @return array<int, Section> */
+    private function vigilanciaSchema(): array
+    {
+        return [
+            Section::make('1. Turno')
+                ->icon('heroicon-o-clock')
+                ->columns(3)
+                ->schema([
+                    Forms\Components\DatePicker::make('fecha_turno')
+                        ->label('Fecha del Turno')
+                        ->required()
+                        ->displayFormat('d/m/Y'),
+                    Forms\Components\TimePicker::make('hora_inicio')
+                        ->label('Hora de Inicio')
+                        ->required(),
+                    Forms\Components\TimePicker::make('hora_fin')
+                        ->label('Hora de Fin')
+                        ->required(),
+                ]),
+
+            Section::make('2. Novedades')
+                ->icon('heroicon-o-bell-alert')
+                ->schema([
+                    Forms\Components\Toggle::make('hay_novedad')
+                        ->label('¿Hay novedades?')
+                        ->helperText('Activa si hubo novedades durante el turno')
+                        ->default(false)
+                        ->live(),
+                    Forms\Components\Textarea::make('descripcion_novedad')
+                        ->label('Descripción de las Novedades')
+                        ->placeholder('Detalla las novedades observadas durante el turno...')
+                        ->rows(4)
+                        ->required(fn ($get) => (bool) $get('hay_novedad'))
+                        ->visible(fn ($get) => (bool) $get('hay_novedad'))
+                        ->columnSpanFull(),
+                    Forms\Components\Toggle::make('hay_reincidencia')
+                        ->label('¿Hay reincidencia detectada?')
+                        ->default(false)
+                        ->visible(fn ($get) => (bool) $get('hay_novedad')),
+                ]),
+
+            Section::make('3. Resultado')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Forms\Components\Select::make('resultado_reporte_id')
+                        ->label('Resultado del Turno')
+                        ->options(
+                            ResultadoReporte::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->searchable()
+                        ->placeholder('Seleccionar'),
+                ]),
+
+            Section::make('4. Observaciones')
+                ->icon('heroicon-o-pencil-square')
+                ->schema([
+                    Forms\Components\Textarea::make('observaciones')
+                        ->label('Observaciones Generales')
+                        ->placeholder('Observaciones generales del turno...')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('5. Evidencias')
+                ->icon('heroicon-o-camera')
+                ->schema([
+                    Forms\Components\FileUpload::make('imagenes')
+                        ->label('Imágenes')
+                        ->disk('s3')
+                        ->directory('reportes/'.$this->orden->numero_orden)
+                        ->multiple()
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->maxFiles(10)
+                        ->maxSize(5120)
+                        ->reorderable()
+                        ->panelLayout('grid')
+                        ->extraInputAttributes(['capture' => 'environment'])
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('video')
+                        ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                ]),
+        ];
     }
 
     public function submit(): void
     {
         $data = $this->form->getState();
 
+        match ($this->orden->tipo_servicio) {
+            TipoServicio::Fraudes => $this->submitFraudes($data),
+            TipoServicio::Investigacion => $this->submitServicioGenerico($data),
+            TipoServicio::Capturas => $this->submitServicioGenerico($data),
+            TipoServicio::Bandas => $this->submitServicioGenerico($data),
+            TipoServicio::Vigilancia => $this->submitVigilancia($data),
+        };
+    }
+
+    /** @param array<string, mixed> $data */
+    private function submitFraudes(array $data): void
+    {
         $comercioRecord = comercio::create([
             'nombre_comercio' => $data['nombre_comercio'],
             'tipo_comercio_id' => $data['tipo_comercio_id'],
@@ -239,6 +559,7 @@ class ReporteCreate extends Component implements HasForms
         $reporte = reportes::create([
             ...$data,
             'orden_job_id' => $this->orden->id,
+            'personals_id' => auth()->user()->personals_id,
             'numero_orden' => $this->orden->numero_orden,
             'ubicacions_id' => $ubicacionRecord->id,
             'comercios_id' => $comercioRecord->id,
@@ -252,6 +573,49 @@ class ReporteCreate extends Component implements HasForms
             $this->notificarIncidencias($reporte, $data);
         }
 
+        $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function submitServicioGenerico(array $data): void
+    {
+        $datosServicio = $data;
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video']);
+
+        reportes::create([
+            'orden_job_id' => $this->orden->id,
+            'personals_id' => auth()->user()->personals_id,
+            'numero_orden' => $this->orden->numero_orden,
+            'observaciones' => $data['observaciones'] ?? null,
+            'imagenes' => $data['imagenes'] ?? null,
+            'video' => $data['video'] ?? null,
+            'datos_servicio' => $datosServicio,
+        ]);
+
+        $this->orden->update(['estado' => EstadoOrden::EnRevision]);
+
+        $this->notificarCoordinador();
+
+        $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function submitVigilancia(array $data): void
+    {
+        $datosServicio = $data;
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video']);
+
+        reportes::create([
+            'orden_job_id' => $this->orden->id,
+            'personals_id' => auth()->user()->personals_id,
+            'numero_orden' => $this->orden->numero_orden,
+            'observaciones' => $data['observaciones'] ?? null,
+            'imagenes' => $data['imagenes'] ?? null,
+            'video' => $data['video'] ?? null,
+            'datos_servicio' => $datosServicio,
+        ]);
+
+        // Vigilancia stays EnProgreso — the investigator closes the order manually
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
 

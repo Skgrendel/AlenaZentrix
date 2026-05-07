@@ -4,6 +4,7 @@ namespace App\Livewire\Tecnico;
 
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
+use App\Enums\TipoServicio;
 use App\Mail\OrdenIniciada;
 use App\Models\OrdenJob;
 use Filament\Actions\Action;
@@ -44,7 +45,12 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                     ]);
 
                 if (! auth()->user()->can('ordenes.ver')) {
-                    $query->where('personals_id', auth()->user()->personals_id);
+                    $query->where(function ($q) {
+                        // Órdenes asignadas al técnico
+                        $q->where('personals_id', auth()->user()->personals_id)
+                            // O vigilancias abiertas (sin asignado)
+                            ->orWhere('tipo_servicio', TipoServicio::Vigilancia->value);
+                    });
                 }
 
                 return $query;
@@ -56,14 +62,19 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                     ->color('primary')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('tipo_servicio')
+                    ->label('Servicio')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state instanceof TipoServicio ? $state->label() : $state)
+                    ->color(fn ($state) => $state instanceof TipoServicio ? $state->color() : 'gray'),
                 Tables\Columns\TextColumn::make('cliente')
-                    ->label('Cliente')
-                    ->searchable(),
+                    ->label('Cliente / Referencia')
+                    ->searchable()
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('direccion')
                     ->label('Dirección')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('barrio')
-                    ->label('Barrio'),
+                    ->searchable()
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
                     ->badge()
@@ -90,26 +101,46 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                     ->modalHeading('Iniciar orden')
                     ->modalDescription(fn (OrdenJob $record): string => "¿Confirmas que vas a iniciar la atención de la orden {$record->numero_orden}?")
                     ->modalSubmitActionLabel('Sí, iniciar')
-                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Asignada)
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Asignada &&
+                        $record->tipo_servicio !== TipoServicio::Vigilancia
+                    )
                     ->action(function (OrdenJob $record): void {
                         $record->update(['estado' => EstadoOrden::EnProgreso]);
                         $this->notificarCreador($record);
                     }),
 
                 Action::make('reportar')
-                    ->label('Crear Reporte')
+                    ->label('Agregar Reporte')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->color('primary')
                     ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::EnProgreso &&
-                        $record->reportes()->doesntExist()
+                        (
+                            $record->tipo_servicio === TipoServicio::Vigilancia ||
+                            $record->reportes()->doesntExist()
+                        )
                     )
                     ->url(fn (OrdenJob $record): string => route('tecnico.ordenes.reportar', $record)),
+
+                Action::make('cerrar_vigilancia')
+                    ->label('Cerrar Vigilancia')
+                    ->icon('heroicon-o-lock-closed')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Cerrar orden de vigilancia')
+                    ->modalDescription(fn (OrdenJob $record): string => "¿Confirmas que deseas cerrar la vigilancia de la orden {$record->numero_orden}? No podrás agregar más reportes.")
+                    ->modalSubmitActionLabel('Sí, cerrar vigilancia')
+                    ->visible(fn (OrdenJob $record): bool => $record->tipo_servicio === TipoServicio::Vigilancia &&
+                        $record->estado === EstadoOrden::EnProgreso
+                    )
+                    ->action(fn (OrdenJob $record) => $record->update(['estado' => EstadoOrden::EnRevision])),
 
                 Action::make('editar_reporte')
                     ->label('Editar Reporte')
                     ->icon('heroicon-o-pencil-square')
                     ->color('danger')
-                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Rechazada)
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Rechazada &&
+                        $record->tipo_servicio !== TipoServicio::Vigilancia
+                    )
                     ->url(fn (OrdenJob $record): string => route('tecnico.ordenes.reporte.editar', $record)),
             ])
             ->emptyStateHeading('Sin órdenes asignadas')

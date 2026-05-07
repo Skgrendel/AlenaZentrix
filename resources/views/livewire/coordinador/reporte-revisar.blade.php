@@ -4,16 +4,22 @@
     <div class="flex items-center justify-between">
         <div>
             <flux:heading size="xl">Revisar Reporte</flux:heading>
-            <flux:text class="mt-1 text-sm">
-                Orden: <span class="font-semibold">{{ $orden->numero_orden }}</span> — {{ $orden->cliente }}
+            <flux:text class="mt-1 text-sm flex items-center gap-2 flex-wrap">
+                <span>Orden: <span class="font-semibold">{{ $orden->numero_orden }}</span></span>
+                <flux:badge color="{{ $orden->tipo_servicio->color() }}" size="sm">{{ $orden->tipo_servicio->label() }}</flux:badge>
                 @if($orden->estado === \App\Enums\EstadoOrden::Completada)
-                    <flux:badge color="green" class="ml-2">Completada</flux:badge>
+                    <flux:badge color="green" class="ml-1">Completada</flux:badge>
                 @else
-                    <flux:badge color="purple" class="ml-2">En Revisión</flux:badge>
+                    <flux:badge color="purple" class="ml-1">En Revisión</flux:badge>
                 @endif
             </flux:text>
         </div>
-        <flux:button href="{{ route('operaciones.ordenes-trabajo') }}" icon="arrow-left" variant="ghost" wire:navigate>
+        <flux:button
+            href="{{ $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia ? route('operaciones.ordenes-trabajo.reportes', $orden) : route('operaciones.ordenes-trabajo') }}"
+            icon="arrow-left"
+            variant="ghost"
+            wire:navigate
+        >
             Volver
         </flux:button>
     </div>
@@ -23,99 +29,322 @@
         {{-- Columna principal --}}
         <div class="space-y-6 lg:col-span-2">
 
-            {{-- Datos del Comercio --}}
-            <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Comercio Visitado</h3>
-                <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Nombre del Comercio</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                            {{ $reporte->comercio?->nombre_comercio ?? '—' }}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Comercio</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                            {{ $reporte->comercio?->tipoComercio?->nombre ?? '—' }}
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Contrato</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->contrato }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Dirección</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->direccion }}, {{ $orden->barrio }}</dd>
-                    </div>
-                </dl>
-            </div>
+            {{-- ═══ FRAUDES ═══ --}}
+            @if($orden->tipo_servicio === \App\Enums\TipoServicio::Fraudes)
 
-            {{-- Datos del Medidor --}}
-            <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Datos de la Visita</h3>
-                <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Lectura del Medidor</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->lectura }}</dd>
-                    </div>
-                    @if($reporte->numero_medidor)
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Número de Medidor</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->numero_medidor }}</dd>
-                    </div>
-                    @endif
-                    @if($reporte->cau)
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">CAU</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->cau }}</dd>
-                    </div>
-                    @endif
-                    @if(!empty($reporte->anomalia))
-                    <div class="sm:col-span-2">
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Anomalías</dt>
-                        <dd class="mt-1 flex flex-wrap gap-1">
-                            @foreach($reporte->anomalia as $anomaliaId)
-                                @php $tipo = \App\Models\TipoAnomalia::find($anomaliaId) @endphp
-                                @if($tipo)
-                                    <flux:badge color="yellow" size="sm">{{ $tipo->nombre }}</flux:badge>
+                {{-- Comercio Visitado --}}
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Comercio Visitado</h3>
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Nombre del Comercio</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->comercio?->nombre_comercio ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Comercio</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->comercio?->tipoComercio?->nombre ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Contrato</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->contrato ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Dirección</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->direccion }}{{ $orden->barrio ? ', '.$orden->barrio : '' }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                {{-- Datos de la Visita --}}
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Datos de la Visita</h3>
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Lectura del Medidor</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->lectura ?? '—' }}</dd>
+                        </div>
+                        @if($reporte->numero_medidor)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Número de Medidor</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->numero_medidor }}</dd>
+                        </div>
+                        @endif
+                        @if($reporte->tipoNotificacionAlerta)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Notificación de Alerta</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->tipoNotificacionAlerta->nombre }}</dd>
+                        </div>
+                        @endif
+                        @if($reporte->hay_fuga_gas || $reporte->excede_capacidad)
+                        <div class="sm:col-span-2">
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Incidencias</dt>
+                            <dd class="mt-1 flex flex-wrap gap-1">
+                                @if($reporte->hay_fuga_gas)
+                                    <flux:badge color="red" size="sm">Fuga de Gas</flux:badge>
                                 @endif
-                            @endforeach
-                        </dd>
-                    </div>
-                    @endif
-                </dl>
-            </div>
+                                @if($reporte->excede_capacidad)
+                                    <flux:badge color="orange" size="sm">Excede Capacidad</flux:badge>
+                                @endif
+                            </dd>
+                        </div>
+                        @endif
+                        @if(!empty($reporte->anomalia))
+                        <div class="sm:col-span-2">
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Anomalías</dt>
+                            <dd class="mt-1 flex flex-wrap gap-1">
+                                @foreach($reporte->anomalia as $anomaliaId)
+                                    @php $tipo = \App\Models\TipoAnomalia::find($anomaliaId) @endphp
+                                    @if($tipo)
+                                        <flux:badge color="yellow" size="sm">{{ $tipo->nombre }}</flux:badge>
+                                    @endif
+                                @endforeach
+                            </dd>
+                        </div>
+                        @endif
+                    </dl>
+                </div>
 
-            {{-- Clasificación --}}
-            @if($reporte->tipoImposibilidad || $reporte->tipoRegulador || $reporte->marcaMedidor || $reporte->marcaRegulador)
+                {{-- Clasificación Técnica --}}
+                @if($reporte->tipoImposibilidad || $reporte->tipoRegulador || $reporte->marcaMedidor || $reporte->marcaRegulador)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Clasificación Técnica</h3>
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                        @if($reporte->tipoImposibilidad)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Imposibilidad</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->tipoImposibilidad->nombre }}</dd>
+                        </div>
+                        @endif
+                        @if($reporte->tipoRegulador)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Presión</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->tipoRegulador->nombre }}</dd>
+                        </div>
+                        @endif
+                        @if($reporte->marcaMedidor)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Marca del Medidor</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->marcaMedidor->nombre }}</dd>
+                        </div>
+                        @endif
+                        @if($reporte->marcaRegulador)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Descripción del Medidor</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->marcaRegulador->nombre }}</dd>
+                        </div>
+                        @endif
+                    </dl>
+                </div>
+                @endif
+
+            {{-- ═══ INVESTIGACIÓN ═══ --}}
+            @elseif($orden->tipo_servicio === \App\Enums\TipoServicio::Investigacion)
+
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Datos de la Investigación</h3>
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                        @if($orden->tipo_investigacion)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Investigación</dt>
+                            <dd class="mt-0.5">
+                                <flux:badge color="{{ $orden->tipo_investigacion === 'interna' ? 'blue' : 'purple' }}" size="sm">
+                                    {{ $orden->tipo_investigacion === 'interna' ? 'Interna' : 'Contratista' }}
+                                </flux:badge>
+                            </dd>
+                        </div>
+                        @endif
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Convención</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['convencion'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Acompañamiento Técnico</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                {{ ($datosServicio['acompanamiento_tecnico'] ?? false) ? 'Sí' : 'No' }}
+                            </dd>
+                        </div>
+                        @if($datosServicio['resultado'] ?? null)
+                        <div class="sm:col-span-2">
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Resultado</dt>
+                            <dd class="mt-0.5"><flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] }}</flux:badge></dd>
+                        </div>
+                        @endif
+                    </dl>
+                </div>
+
+                @if($datosServicio['acompanamiento_tecnico'] ?? false)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Acompañante Técnico</h3>
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                        @if($datosServicio['acompanante_nombre'] ?? null)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Nombre</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['acompanante_nombre'] }}</dd>
+                        </div>
+                        @endif
+                        @if($datosServicio['acompanante_identificacion'] ?? null)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Identificación</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['acompanante_identificacion'] }}</dd>
+                        </div>
+                        @endif
+                        @if($datosServicio['acompanante_cargo'] ?? null)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Cargo / Empresa</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['acompanante_cargo'] }}</dd>
+                        </div>
+                        @endif
+                        @if($datosServicio['acompanante_cuadrilla'] ?? null)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Código de Cuadrilla</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['acompanante_cuadrilla'] }}</dd>
+                        </div>
+                        @endif
+                    </dl>
+                </div>
+                @endif
+
+                @if($datosServicio['tipo_investigado'] ?? null)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        {{ $datosServicio['tipo_investigado'] === 'persona' ? 'Persona Investigada' : 'Comercio Investigado' }}
+                    </h3>
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                        @if($datosServicio['tipo_investigado'] === 'persona')
+                            @if($datosServicio['nombre_investigado'] ?? null)
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Nombre</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['nombre_investigado'] }}</dd>
+                            </div>
+                            @endif
+                            @if($datosServicio['identificacion'] ?? null)
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Identificación</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['identificacion'] }}</dd>
+                            </div>
+                            @endif
+                            @if($datosServicio['descripcion_fisica'] ?? null)
+                            <div class="sm:col-span-2">
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Descripción Física</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line">{{ $datosServicio['descripcion_fisica'] }}</dd>
+                            </div>
+                            @endif
+                        @else
+                            @if($datosServicio['nombre_comercio_inv'] ?? null)
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Nombre del Comercio</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['nombre_comercio_inv'] }}</dd>
+                            </div>
+                            @endif
+                            @if($datosServicio['tipo_comercio_inv'] ?? null)
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Comercio</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['tipo_comercio_inv'] }}</dd>
+                            </div>
+                            @endif
+                        @endif
+                    </dl>
+                </div>
+                @endif
+
+            {{-- ═══ CAPTURAS / BANDAS ═══ --}}
+            @elseif(in_array($orden->tipo_servicio, [\App\Enums\TipoServicio::Capturas, \App\Enums\TipoServicio::Bandas]))
+
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Datos de la Actividad</h3>
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                        @if($datosServicio['tipologia'] ?? null)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipología de Orden</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['tipologia'] }}</dd>
+                        </div>
+                        @endif
+                        @if($datosServicio['fecha_ejecucion'] ?? null)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha de Ejecución</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                {{ \Illuminate\Support\Carbon::parse($datosServicio['fecha_ejecucion'])->format('d/m/Y') }}
+                            </dd>
+                        </div>
+                        @endif
+                        @if($datosServicio['departamento'] ?? null)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Departamento</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['departamento'] }}</dd>
+                        </div>
+                        @endif
+                        @if($datosServicio['municipio'] ?? null)
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Municipio</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['municipio'] }}</dd>
+                        </div>
+                        @endif
+                        @if($datosServicio['radio_objetivo'] ?? null)
+                        <div class="sm:col-span-2">
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Radio del Objetivo</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['radio_objetivo'] }}</dd>
+                        </div>
+                        @endif
+                    </dl>
+                </div>
+
+            {{-- ═══ VIGILANCIA ═══ --}}
+            @elseif($orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia)
+
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Turno</h3>
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-3">
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                {{ $datosServicio['fecha_turno'] ? \Illuminate\Support\Carbon::parse($datosServicio['fecha_turno'])->format('d/m/Y') : '—' }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Hora Inicio</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['hora_inicio'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Hora Fin</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['hora_fin'] ?? '—' }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Novedades</h3>
+                    @if($datosServicio['hay_novedad'] ?? false)
+                        <div class="space-y-3">
+                            <div class="flex gap-2">
+                                <flux:badge color="yellow" size="sm">Con Novedades</flux:badge>
+                                @if($datosServicio['hay_reincidencia'] ?? false)
+                                    <flux:badge color="red" size="sm">Reincidencia Detectada</flux:badge>
+                                @endif
+                            </div>
+                            @if($datosServicio['descripcion_novedad'] ?? null)
+                            <p class="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line">{{ $datosServicio['descripcion_novedad'] }}</p>
+                            @endif
+                        </div>
+                    @else
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400">Sin novedades durante el turno.</p>
+                    @endif
+                </div>
+
+                @if($datosServicio['resultado'] ?? null)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Resultado del Turno</h3>
+                    <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] }}</flux:badge>
+                </div>
+                @endif
+
+            @endif
+            {{-- ═══ FIN secciones por servicio ═══ --}}
+
+            {{-- Observaciones (todos los servicios) --}}
+            @if($reporte->observaciones)
             <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Clasificación</h3>
-                <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                    @if($reporte->tipoImposibilidad)
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Imposibilidad</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->tipoImposibilidad->nombre }}</dd>
-                    </div>
-                    @endif
-                    @if($reporte->tipoRegulador)
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Regulador</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->tipoRegulador->nombre }}</dd>
-                    </div>
-                    @endif
-                    @if($reporte->marcaMedidor)
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Marca del Medidor</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->marcaMedidor->nombre }}</dd>
-                    </div>
-                    @endif
-                    @if($reporte->marcaRegulador)
-                    <div>
-                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Marca del Regulador</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $reporte->marcaRegulador->nombre }}</dd>
-                    </div>
-                    @endif
-                </dl>
+                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Observaciones</h3>
+                <p class="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line">{{ $reporte->observaciones }}</p>
             </div>
             @endif
 
@@ -172,32 +401,57 @@
             </div>
             @endif
 
-            @if($reporte->observaciones)
-            <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Observaciones del Técnico</h3>
-                <p class="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line">{{ $reporte->observaciones }}</p>
-            </div>
-            @endif
-
         </div>
 
         {{-- Columna lateral --}}
         <div class="space-y-6">
 
-            {{-- Técnico --}}
+            {{-- Información de la Orden --}}
             <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Técnico</h3>
+                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Orden</h3>
+                <dl class="space-y-2">
+                    @if($orden->cliente)
+                    <div>
+                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Cliente / Referencia</dt>
+                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->cliente }}</dd>
+                    </div>
+                    @endif
+                    @if($orden->direccion)
+                    <div>
+                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Dirección</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">{{ $orden->direccion }}</dd>
+                    </div>
+                    @endif
+                    @if($orden->numero_noticia_criminal)
+                    <div>
+                        <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">N° Noticia Criminal</dt>
+                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->numero_noticia_criminal }}</dd>
+                    </div>
+                    @endif
+                </dl>
+            </div>
+
+            {{-- Técnico / Investigador --}}
+            @php
+                $responsable = $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia
+                    ? $reporte->personal
+                    : $orden->personal;
+            @endphp
+            <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    {{ $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia ? 'Investigador' : 'Técnico' }}
+                </h3>
                 <dl class="space-y-2">
                     <div>
                         <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Nombre</dt>
                         <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                            {{ $orden->personal ? "{$orden->personal->nombres} {$orden->personal->apellidos}" : '—' }}
+                            {{ $responsable ? "{$responsable->nombres} {$responsable->apellidos}" : '—' }}
                         </dd>
                     </div>
-                    @if($orden->personal?->celular)
+                    @if($responsable?->celular)
                     <div>
                         <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Teléfono</dt>
-                        <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">{{ $orden->personal->celular }}</dd>
+                        <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">{{ $responsable->celular }}</dd>
                     </div>
                     @endif
                 </dl>
@@ -226,13 +480,12 @@
             </div>
             @endif
 
-            {{-- Decisión (solo cuando está en revisión) --}}
-            @if($orden->estado === \App\Enums\EstadoOrden::EnRevision)
+            {{-- Decisión (solo cuando está en revisión y no es Vigilancia — Vigilancia decide en el índice de reportes) --}}
+            @if($orden->estado === \App\Enums\EstadoOrden::EnRevision && $orden->tipo_servicio !== \App\Enums\TipoServicio::Vigilancia)
             <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900"
                  x-data="{ rechazo: @entangle('mostrarFormRechazo') }">
                 <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Decisión</h3>
 
-                {{-- Botones de acción --}}
                 <div x-show="!rechazo" class="flex flex-col items-stretch gap-3">
                     <div class="[&>button]:w-full [&>button]:justify-center">
                         {{ $this->completarAction }}
@@ -247,7 +500,6 @@
                     </flux:button>
                 </div>
 
-                {{-- Formulario de rechazo --}}
                 <div x-show="rechazo" x-cloak>
                     <p class="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
                         Indica el motivo del rechazo. El técnico lo verá al editar el reporte.
