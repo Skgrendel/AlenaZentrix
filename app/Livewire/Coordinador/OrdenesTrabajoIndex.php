@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Coordinador;
 
+use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
 use App\Mail\OrdenAsignada;
@@ -41,7 +42,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
     public function table(Table $table): Table
     {
         return $table
-            ->query(OrdenJob::query()->with('personal'))
+            ->query(OrdenJob::query()->with(['personal', 'reportes.auditoria']))
             ->columns([
                 Tables\Columns\TextColumn::make('numero_orden')
                     ->label('N° Orden')
@@ -145,6 +146,20 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->color('warning')
                     ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::EnRevision)
                     ->url(fn (OrdenJob $record): string => route('operaciones.ordenes-trabajo.revisar', $record)),
+                Action::make('ver_auditoria')
+                    ->label('Auditoría')
+                    ->icon('heroicon-o-shield-check')
+                    ->color('purple')
+                    ->visible(function (OrdenJob $record): bool {
+                        $auditoria = $record->reportes->first()?->auditoria;
+
+                        return $auditoria !== null &&
+                            $auditoria->estado !== EstadoAuditoria::PendienteAuditoria;
+                    })
+                    ->url(fn (OrdenJob $record): string => route(
+                        'auditor.auditorias.revisar',
+                        $record->reportes->first()?->auditoria
+                    ).'?from=ordenes'),
                 Action::make('resultado')
                     ->label('Resultado')
                     ->icon('heroicon-o-document-text')

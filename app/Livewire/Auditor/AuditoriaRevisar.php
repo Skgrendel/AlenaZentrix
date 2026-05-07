@@ -22,11 +22,15 @@ class AuditoriaRevisar extends Component implements HasForms
 
     public auditoria $auditoria;
 
+    public string $from = 'auditorias';
+
     /** @var array<string, mixed> */
     public array $data = [];
 
     public function mount(auditoria $auditoria): void
     {
+        $from = request()->query('from', 'auditorias');
+        $this->from = in_array($from, ['auditorias', 'ordenes']) ? $from : 'auditorias';
         abort_unless(in_array($auditoria->estado, [
             EstadoAuditoria::PendienteAuditoria,
             EstadoAuditoria::Confirmado,
@@ -90,7 +94,15 @@ class AuditoriaRevisar extends Component implements HasForms
 
         session()->flash('success', "Auditoría de la orden {$this->auditoria->reporte?->ordenJob?->numero_orden} registrada correctamente.");
 
-        $this->redirect(route('auditor.auditorias'), navigate: true);
+        $this->redirect($this->volverUrl(), navigate: true);
+    }
+
+    public function volverUrl(): string
+    {
+        return match ($this->from) {
+            'ordenes' => route('operaciones.ordenes-trabajo'),
+            default => route('auditor.auditorias'),
+        };
     }
 
     public function imagenUrls(): array

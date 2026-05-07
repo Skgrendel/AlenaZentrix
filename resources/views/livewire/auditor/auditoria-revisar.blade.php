@@ -15,7 +15,7 @@
                 @endif
             </flux:text>
         </div>
-        <flux:button href="{{ route('auditor.auditorias') }}" icon="arrow-left" variant="ghost" wire:navigate>
+        <flux:button href="{{ $this->volverUrl() }}" icon="arrow-left" variant="ghost" wire:navigate>
             Volver
         </flux:button>
     </div>
