@@ -21,7 +21,7 @@
                 </flux:sidebar.item>
             </flux:sidebar.group>
 
-            @hasanyrole('Administrador|Coordinador')
+            @can('ordenes.ver')
             <flux:sidebar.group :heading="__('Operaciones')" class="grid">
                 <flux:sidebar.item icon="clipboard-document-list"
                     :href="route('operaciones.ordenes-trabajo')"
@@ -30,9 +30,9 @@
                     {{ __('Órdenes de Trabajo') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
-            @endhasanyrole
+            @endcan
 
-            @hasanyrole('Administrador|Auditor')
+            @can('auditorias.ver')
             <flux:sidebar.group :heading="__('Auditorías')" class="grid">
                 <flux:sidebar.item icon="clipboard-document-check"
                     :href="route('auditor.auditorias')"
@@ -41,9 +41,9 @@
                     {{ __('Auditorías') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
-            @endhasanyrole
+            @endcan
 
-            @hasanyrole('Administrador|Lector')
+            @can('mis-ordenes.ver')
             <flux:sidebar.group :heading="__('Mis Tareas')" class="grid">
                 <flux:sidebar.item icon="clipboard-document-check"
                     :href="route('tecnico.mis-ordenes')"
@@ -52,8 +52,9 @@
                     {{ __('Mis Órdenes') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
-            @endhasanyrole
+            @endcan
 
+            @canany(['informes.ordenes', 'informes.tecnico', 'informes.auditorias'])
             <flux:sidebar.group :heading="__('Informes')" class="grid">
                 <flux:sidebar.item icon="document-chart-bar"
                     :href="route('informes.index')"
@@ -62,23 +63,34 @@
                     {{ __('Informes') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
+            @endcanany
         </flux:sidebar.nav>
 
         <flux:spacer />
 
         <flux:sidebar.nav>
-            @role('Administrador')
+            @canany(['usuarios.ver', 'roles.ver', 'admin.configuracion'])
             <flux:sidebar.group :heading="__('Administración')" class="grid">
+                @can('usuarios.ver')
                 <flux:sidebar.item icon="users" :href="route('admin.users')"
                     :current="request()->routeIs('admin.users')" wire:navigate>
                     {{ __('Usuarios') }}
                 </flux:sidebar.item>
+                @endcan
+                @can('roles.ver')
+                <flux:sidebar.item icon="shield-check" :href="route('admin.roles')"
+                    :current="request()->routeIs('admin.roles')" wire:navigate>
+                    {{ __('Roles y Permisos') }}
+                </flux:sidebar.item>
+                @endcan
+                @can('admin.configuracion')
                 <flux:sidebar.item icon="cog-6-tooth" :href="route('admin.configuracion')"
                     :current="request()->routeIs('admin.configuracion')" wire:navigate>
                     {{ __('Configuración') }}
                 </flux:sidebar.item>
+                @endcan
             </flux:sidebar.group>
-            @endrole
+            @endcanany
         </flux:sidebar.nav>
 
         <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />

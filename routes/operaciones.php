@@ -1,11 +1,11 @@
 <?php
 
-use App\Livewire\Coordinador\OrdenesTrabajoIndex;
 use App\Livewire\Coordinador\OrdenJobShow;
+use App\Livewire\Coordinador\OrdenesTrabajoIndex;
 use App\Livewire\Coordinador\ReporteRevisar;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'role:Administrador|Coordinador'])
+Route::middleware(['auth', 'verified', 'permission:ordenes.ver'])
     ->prefix('operaciones')
     ->name('operaciones.')
     ->group(function () {

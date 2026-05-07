@@ -13,7 +13,7 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 
-    Route::middleware('role:Administrador|Coordinador|Lector|Auditor')
+    Route::middleware('permission:evidencias.ver')
         ->get('operaciones/foto', function (Request $request) {
             $path = $request->query('path', '');
 

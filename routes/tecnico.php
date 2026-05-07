@@ -5,7 +5,7 @@ use App\Livewire\Tecnico\ReporteCreate;
 use App\Livewire\Tecnico\ReporteEdit;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'role:Administrador|Lector'])
+Route::middleware(['auth', 'verified', 'permission:mis-ordenes.ver'])
     ->prefix('tecnico')
     ->name('tecnico.')
     ->group(function () {

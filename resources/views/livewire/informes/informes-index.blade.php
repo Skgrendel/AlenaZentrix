@@ -8,14 +8,14 @@
     <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
         <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
 
-            @if($esAdmin)
+            @if($puedeSeleccionarTipo)
             <div class="sm:col-span-2 lg:col-span-4">
                 <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Tipo de Informe</label>
                 <select wire:model.live="tipoInforme"
                     class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
-                    <option value="ordenes">Órdenes Asignadas</option>
-                    <option value="reportes">Respuestas del Técnico</option>
-                    <option value="auditorias">Respuestas del Auditor</option>
+                    @foreach($tiposDisponibles as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
                 </select>
             </div>
             @endif

@@ -33,32 +33,46 @@ class InformesIndex extends Component
 
     public function mount(): void
     {
-        $user = auth()->user();
+        $this->tipoInforme = $this->defaultTipo();
+    }
 
-        if (! $user->hasRole('Administrador')) {
-            if ($user->hasRole('Lector')) {
-                $this->tipoInforme = 'reportes';
-            } elseif ($user->hasRole('Auditor')) {
-                $this->tipoInforme = 'auditorias';
-            }
+    public function tiposDisponibles(): array
+    {
+        $user = auth()->user();
+        $tipos = [];
+
+        if ($user->can('informes.ordenes')) {
+            $tipos['ordenes'] = 'Órdenes Asignadas';
         }
+        if ($user->can('informes.tecnico')) {
+            $tipos['reportes'] = 'Respuestas del Técnico';
+        }
+        if ($user->can('informes.auditorias')) {
+            $tipos['auditorias'] = 'Respuestas del Auditor';
+        }
+
+        return $tipos;
+    }
+
+    public function puedeSeleccionarTipo(): bool
+    {
+        return count($this->tiposDisponibles()) > 1;
+    }
+
+    private function defaultTipo(): string
+    {
+        return array_key_first($this->tiposDisponibles()) ?? 'ordenes';
     }
 
     public function tipoEfectivo(): string
     {
-        $user = auth()->user();
+        $disponibles = $this->tiposDisponibles();
 
-        if ($user->hasRole('Administrador')) {
+        if (isset($disponibles[$this->tipoInforme])) {
             return $this->tipoInforme;
         }
-        if ($user->hasRole('Lector')) {
-            return 'reportes';
-        }
-        if ($user->hasRole('Auditor')) {
-            return 'auditorias';
-        }
 
-        return 'ordenes';
+        return array_key_first($disponibles) ?? 'ordenes';
     }
 
     public function estadoOptions(): array
@@ -147,7 +161,7 @@ class InformesIndex extends Component
     {
         $rows = Reporte::query()
             ->with(['ordenJob.personal', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador'])
-            ->when(! $user->hasRole('Administrador'), fn ($q) => $q->whereHas(
+            ->when(! $user->can('ordenes.ver'), fn ($q) => $q->whereHas(
                 'ordenJob', fn ($q2) => $q2->where('personals_id', $user->personals_id)
             ))
             ->when($this->fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaInicio))
@@ -249,7 +263,7 @@ class InformesIndex extends Component
         if ($tipo === 'reportes') {
             return Reporte::query()
                 ->with(['ordenJob.personal', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador'])
-                ->when(! $user->hasRole('Administrador'), fn ($q) => $q->whereHas(
+                ->when(! $user->can('ordenes.ver'), fn ($q) => $q->whereHas(
                     'ordenJob', fn ($q2) => $q2->where('personals_id', $user->personals_id)
                 ))
                 ->when($this->fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaInicio))
@@ -311,7 +325,8 @@ class InformesIndex extends Component
     public function render(): View
     {
         return view('livewire.informes.informes-index', [
-            'esAdmin' => auth()->user()->hasRole('Administrador'),
+            'puedeSeleccionarTipo' => $this->puedeSeleccionarTipo(),
+            'tiposDisponibles' => $this->tiposDisponibles(),
             'estadoOptions' => $this->estadoOptions(),
             'tipoEfectivo' => $this->tipoEfectivo(),
         ]);

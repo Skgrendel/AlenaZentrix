@@ -40,7 +40,7 @@ class ReporteEdit extends Component implements HasForms
     public function mount(OrdenJob $orden): void
     {
         abort_unless(
-            auth()->user()->hasRole('Administrador') ||
+            auth()->user()->can('ordenes.ver') ||
             $orden->personals_id === auth()->user()->personals_id,
             403
         );

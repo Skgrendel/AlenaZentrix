@@ -4,7 +4,7 @@ use App\Http\Controllers\InformeController;
 use App\Livewire\Informes\InformesIndex;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified'])
+Route::middleware(['auth', 'verified', 'permission:informes.ordenes|informes.tecnico|informes.auditorias'])
     ->prefix('informes')
     ->name('informes.')
     ->group(function () {

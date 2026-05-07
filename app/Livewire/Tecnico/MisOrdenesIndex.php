@@ -43,7 +43,7 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                         EstadoOrden::Rechazada->value,
                     ]);
 
-                if (! auth()->user()->hasRole('Administrador')) {
+                if (! auth()->user()->can('ordenes.ver')) {
                     $query->where('personals_id', auth()->user()->personals_id);
                 }
 
