@@ -119,25 +119,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                 Action::make('create')
                     ->label('Nueva Orden')
                     ->icon('heroicon-o-plus')
-                    ->modalHeading('Crear Orden de Trabajo')
-                    ->form($this->ordenFormSchema())
-                    ->action(function (array $data): void {
-                        // Extract fotos before create; they're in temp dir on S3
-                        $fotosTemp = $data['fotos'] ?? [];
-                        unset($data['fotos']);
-
-                        $orden = OrdenJob::create($data);
-
-                        if (! empty($fotosTemp)) {
-                            $orden->update([
-                                'fotos' => $this->moverFotos($fotosTemp, $orden->numero_orden),
-                            ]);
-                        }
-
-                        if (! empty($data['personals_id'])) {
-                            $this->notificarTecnico($orden);
-                        }
-                    }),
+                    ->url(route('operaciones.ordenes-trabajo.crear')),
             ])
             ->actions([
                 Action::make('revisar')
