@@ -29,12 +29,6 @@
                     wire:navigate>
                     {{ __('Órdenes de Trabajo') }}
                 </flux:sidebar.item>
-                <flux:sidebar.item icon="check-circle"
-                    :href="route('operaciones.ordenes-completadas')"
-                    :current="request()->routeIs('operaciones.ordenes-completadas')"
-                    wire:navigate>
-                    {{ __('Órdenes Completadas') }}
-                </flux:sidebar.item>
             </flux:sidebar.group>
             @endhasanyrole
 
@@ -59,6 +53,15 @@
                 </flux:sidebar.item>
             </flux:sidebar.group>
             @endhasanyrole
+
+            <flux:sidebar.group :heading="__('Informes')" class="grid">
+                <flux:sidebar.item icon="document-chart-bar"
+                    :href="route('informes.index')"
+                    :current="request()->routeIs('informes.*')"
+                    wire:navigate>
+                    {{ __('Informes') }}
+                </flux:sidebar.item>
+            </flux:sidebar.group>
         </flux:sidebar.nav>
 
         <flux:spacer />

@@ -115,12 +115,6 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->label('Servicio Activo'),
             ])
             ->headerActions([
-                Action::make('exportar')
-                    ->label('Exportar CSV')
-                    ->icon('heroicon-o-arrow-down-tray')
-                    ->color('gray')
-                    ->url(route('operaciones.exportar-ordenes'))
-                    ->openUrlInNewTab(),
                 Action::make('create')
                     ->label('Nueva Orden')
                     ->icon('heroicon-o-plus')
@@ -151,10 +145,17 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->color('warning')
                     ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::EnRevision)
                     ->url(fn (OrdenJob $record): string => route('operaciones.ordenes-trabajo.revisar', $record)),
+                Action::make('resultado')
+                    ->label('Resultado')
+                    ->icon('heroicon-o-document-text')
+                    ->color('success')
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Completada)
+                    ->url(fn (OrdenJob $record): string => route('operaciones.ordenes-trabajo.revisar', $record)),
                 Action::make('view')
                     ->label('Ver')
                     ->icon('heroicon-o-eye')
                     ->color('gray')
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Pendiente)
                     ->url(fn (OrdenJob $record): string => route('operaciones.ordenes-trabajo.show', $record)),
                 EditAction::make()
                     ->modalHeading(fn (OrdenJob $record): string => "Editar Orden: {$record->numero_orden}")

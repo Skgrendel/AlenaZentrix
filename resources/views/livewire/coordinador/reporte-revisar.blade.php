@@ -6,7 +6,11 @@
             <flux:heading size="xl">Revisar Reporte</flux:heading>
             <flux:text class="mt-1 text-sm">
                 Orden: <span class="font-semibold">{{ $orden->numero_orden }}</span> — {{ $orden->cliente }}
-                <flux:badge color="purple" class="ml-2">En Revisión</flux:badge>
+                @if($orden->estado === \App\Enums\EstadoOrden::Completada)
+                    <flux:badge color="green" class="ml-2">Completada</flux:badge>
+                @else
+                    <flux:badge color="purple" class="ml-2">En Revisión</flux:badge>
+                @endif
             </flux:text>
         </div>
         <flux:button href="{{ route('operaciones.ordenes-trabajo') }}" icon="arrow-left" variant="ghost" wire:navigate>
@@ -222,7 +226,8 @@
             </div>
             @endif
 
-            {{-- Decisión --}}
+            {{-- Decisión (solo cuando está en revisión) --}}
+            @if($orden->estado === \App\Enums\EstadoOrden::EnRevision)
             <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900"
                  x-data="{ rechazo: @entangle('mostrarFormRechazo') }">
                 <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Decisión</h3>
@@ -275,6 +280,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
         </div>
     </div>

@@ -37,7 +37,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
 
     public function mount(OrdenJob $orden): void
     {
-        abort_unless($orden->estado === EstadoOrden::EnRevision, 403);
+        abort_unless(in_array($orden->estado, [EstadoOrden::EnRevision, EstadoOrden::Completada]), 403);
 
         $this->orden = $orden->load('personal');
         $this->reporte = $orden->reportes()
