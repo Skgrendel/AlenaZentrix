@@ -3,7 +3,9 @@
 namespace App\Livewire\Tecnico;
 
 use App\Enums\EstadoOrden;
+use App\Mail\IncidenciaDetectada;
 use App\Mail\ReporteEnRevision;
+use App\Models\CorreoAlerta;
 use App\Models\MarcaMedidor;
 use App\Models\MarcaRegulador;
 use App\Models\OrdenJob;
@@ -11,6 +13,7 @@ use App\Models\reportes;
 use App\Models\TipoAnomalia;
 use App\Models\TipoComercio;
 use App\Models\TipoImposibilidad;
+use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -61,23 +64,16 @@ class ReporteEdit extends Component implements HasForms
     {
         return $form
             ->schema([
-                Section::make('Datos de la Visita')
+                Section::make('1. Datos de la Orden')
+                    ->icon('heroicon-o-document-text')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('lectura')
-                            ->label('Lectura del Medidor')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('numero_medidor')
-                            ->label('Número de Medidor')
-                            ->maxLength(255),
                         Forms\Components\TextInput::make('nombre_comercio')
                             ->label('Nombre del Comercio')
                             ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
+                            ->maxLength(255),
                         Forms\Components\Select::make('tipo_comercio_id')
-                            ->label('Tipo de Comercio')
+                            ->label('Tipo de Comercio Encontrado')
                             ->options(
                                 TipoComercio::query()
                                     ->where('activo', true)
@@ -85,36 +81,42 @@ class ReporteEdit extends Component implements HasForms
                                     ->pluck('nombre', 'id')
                             )
                             ->searchable()
-                            ->required()
-                            ->columnSpanFull(),
-                        Forms\Components\Select::make('anomalia')
-                            ->label('Anomalías')
-                            ->options(
-                                TipoAnomalia::query()
-                                    ->where('activo', true)
-                                    ->orderBy('nombre')
-                                    ->pluck('nombre', 'id')
-                            )
-                            ->multiple()
-                            ->searchable()
-                            ->columnSpanFull(),
+                            ->required(),
                     ]),
 
-                Section::make('Clasificación')
+                Section::make('2. Información del Medidor')
+                    ->icon('heroicon-o-eye')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\Select::make('tipo_imposibilidad_id')
-                            ->label('Tipo de Imposibilidad')
+                        Forms\Components\TextInput::make('numero_medidor')
+                            ->label('Número de Medidor Encontrado')
+                            ->helperText('Ingresa el número del medidor que encontraste en el sitio')
+                            ->maxLength(255),
+                        Forms\Components\Toggle::make('coincide_medidor')
+                            ->label('¿Coincide con el medidor asignado?')
+                            ->helperText('Activo = Sí coincide · Inactivo = No coincide'),
+                        Forms\Components\TextInput::make('lectura')
+                            ->label('Lectura del Medidor')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\Select::make('marca_regulador_id')
+                            ->label('Descripción del Medidor')
                             ->options(
-                                TipoImposibilidad::query()
+                                MarcaRegulador::query()
                                     ->where('activo', true)
                                     ->orderBy('nombre')
                                     ->pluck('nombre', 'id')
                             )
                             ->searchable()
-                            ->placeholder('Ninguna'),
+                            ->placeholder('Seleccionar'),
+                    ]),
+
+                Section::make('3. Configuración Técnica')
+                    ->icon('heroicon-o-wrench-screwdriver')
+                    ->columns(2)
+                    ->schema([
                         Forms\Components\Select::make('tipo_regulador_id')
-                            ->label('Tipo de Regulador')
+                            ->label('Tipo de Presión')
                             ->options(
                                 TipoRegulador::query()
                                     ->where('activo', true)
@@ -122,7 +124,7 @@ class ReporteEdit extends Component implements HasForms
                                     ->pluck('nombre', 'id')
                             )
                             ->searchable()
-                            ->placeholder('Ninguno'),
+                            ->placeholder('Seleccionar'),
                         Forms\Components\Select::make('marca_medidor_id')
                             ->label('Marca del Medidor')
                             ->options(
@@ -132,23 +134,72 @@ class ReporteEdit extends Component implements HasForms
                                     ->pluck('nombre', 'id')
                             )
                             ->searchable()
-                            ->placeholder('Ninguna'),
-                        Forms\Components\Select::make('marca_regulador_id')
-                            ->label('Marca del Regulador')
+                            ->placeholder('Seleccionar'),
+                        Forms\Components\Select::make('tipo_notificacion_alerta_id')
+                            ->label('Notificación de Alertas')
                             ->options(
-                                MarcaRegulador::query()
+                                TipoNotificacionAlerta::query()
+                                    ->where('activo', true)
+                                    ->orderBy('nombre')
+                                    ->pluck('nombre', 'id')
+                            )
+                            ->searchable()
+                            ->placeholder('Sin Alertas')
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('4. Detección de Anomalías')
+                    ->icon('heroicon-o-magnifying-glass')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\Select::make('anomalia')
+                            ->label('Anomalías Detectadas')
+                            ->options(
+                                TipoAnomalia::query()
+                                    ->where('activo', true)
+                                    ->orderBy('nombre')
+                                    ->pluck('nombre', 'id')
+                            )
+                            ->multiple()
+                            ->searchable()
+                            ->placeholder('Seleccione las anomalías'),
+                        Forms\Components\Select::make('tipo_imposibilidad_id')
+                            ->label('¿Hubo Imposibilidad?')
+                            ->options(
+                                TipoImposibilidad::query()
                                     ->where('activo', true)
                                     ->orderBy('nombre')
                                     ->pluck('nombre', 'id')
                             )
                             ->searchable()
                             ->placeholder('Ninguna'),
-                        Forms\Components\TextInput::make('cau')
-                            ->label('CAU')
-                            ->maxLength(255),
                     ]),
 
-                Section::make('Evidencias')
+                Section::make('5. Incidencias Detectadas')
+                    ->icon('heroicon-o-exclamation-triangle')
+                    ->schema([
+                        Forms\Components\Toggle::make('hay_fuga_gas')
+                            ->label('Hay Fuga de Gas')
+                            ->helperText('Detecta fugas o escapes de gas')
+                            ->default(false),
+                        Forms\Components\Toggle::make('excede_capacidad')
+                            ->label('Excede Capacidad')
+                            ->helperText('La instalación supera capacidad permitida')
+                            ->default(false),
+                    ]),
+
+                Section::make('6. Observaciones')
+                    ->icon('heroicon-o-pencil-square')
+                    ->schema([
+                        Forms\Components\Textarea::make('observaciones')
+                            ->label('Comentarios Adicionales')
+                            ->placeholder('Agrega aquí cualquier observación importante sobre la inspección...')
+                            ->rows(4)
+                            ->columnSpanFull(),
+                    ]),
+
+                Section::make('7. Fotos Evidencias')
+                    ->icon('heroicon-o-camera')
                     ->schema([
                         Forms\Components\FileUpload::make('imagenes')
                             ->label('Imágenes')
@@ -167,14 +218,6 @@ class ReporteEdit extends Component implements HasForms
                             ->label('URL del Video')
                             ->url()
                             ->maxLength(500),
-                    ]),
-
-                Section::make('Observaciones')
-                    ->schema([
-                        Forms\Components\Textarea::make('observaciones')
-                            ->label('Observaciones')
-                            ->rows(3)
-                            ->columnSpanFull(),
                     ]),
             ])
             ->statePath('data');
@@ -197,6 +240,10 @@ class ReporteEdit extends Component implements HasForms
 
         $this->notificarCoordinador();
 
+        if (($data['hay_fuga_gas'] ?? false) || ($data['excede_capacidad'] ?? false)) {
+            $this->notificarIncidencias($data);
+        }
+
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
 
@@ -217,6 +264,38 @@ class ReporteEdit extends Component implements HasForms
                 'email' => $email,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    /** @param array<string, mixed> $data */
+    protected function notificarIncidencias(array $data): void
+    {
+        $correos = CorreoAlerta::where('activo', true)->pluck('email');
+
+        if ($correos->isEmpty()) {
+            return;
+        }
+
+        $incidencias = [];
+
+        if ($data['hay_fuga_gas'] ?? false) {
+            $incidencias[] = 'Hay Fuga de Gas';
+        }
+
+        if ($data['excede_capacidad'] ?? false) {
+            $incidencias[] = 'Excede Capacidad';
+        }
+
+        foreach ($correos as $email) {
+            try {
+                Mail::to($email)->send(new IncidenciaDetectada($this->orden, $incidencias));
+            } catch (\Exception $e) {
+                Log::error('No se pudo enviar alerta de incidencia.', [
+                    'orden' => $this->orden->numero_orden,
+                    'email' => $email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 

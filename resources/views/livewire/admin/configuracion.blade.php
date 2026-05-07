@@ -34,6 +34,15 @@
                         Regulador
                     </flux:navlist.item>
                 </flux:navlist.group>
+
+                <flux:navlist.group heading="Alertas">
+                    <flux:navlist.item href="#" x-on:click.prevent="active = 'notificacion-alerta'" x-bind:data-current="active === 'notificacion-alerta'">
+                        Notificación Alerta
+                    </flux:navlist.item>
+                    <flux:navlist.item href="#" x-on:click.prevent="active = 'correos-alerta'" x-bind:data-current="active === 'correos-alerta'">
+                        Correos de Alerta
+                    </flux:navlist.item>
+                </flux:navlist.group>
             </flux:navlist>
         </div>
 
@@ -74,6 +83,14 @@
                     :model="\App\Models\MarcaRegulador::class"
                     label="Marca de Regulador"
                     wire:key="catalog-marca-regulador" />
+            </div>
+            <div x-show="active === 'notificacion-alerta'" x-cloak>
+                <livewire:admin.manage-tipo-notificacion-alerta
+                    wire:key="catalog-notificacion-alerta" />
+            </div>
+            <div x-show="active === 'correos-alerta'" x-cloak>
+                <livewire:admin.manage-correos-alerta
+                    wire:key="catalog-correos-alerta" />
             </div>
         </div>
     </div>

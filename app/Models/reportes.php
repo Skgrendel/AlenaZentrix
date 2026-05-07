@@ -16,17 +16,20 @@ class reportes extends Model
         'orden_job_id',
         'numero_orden',
         'numero_medidor',
+        'coincide_medidor',
         'lectura',
         'anomalia',
         'tipo_imposibilidad_id',
         'tipo_regulador_id',
         'marca_medidor_id',
         'marca_regulador_id',
+        'tipo_notificacion_alerta_id',
+        'hay_fuga_gas',
+        'excede_capacidad',
         'imagenes',
         'video',
         'observaciones',
         'comentarios',
-        'cau',
         'revisado',
         'confirmado',
         'estado',
@@ -35,6 +38,9 @@ class reportes extends Model
     protected $casts = [
         'anomalia' => 'array',
         'imagenes' => 'array',
+        'coincide_medidor' => 'boolean',
+        'hay_fuga_gas' => 'boolean',
+        'excede_capacidad' => 'boolean',
         'revisado' => 'boolean',
         'confirmado' => 'boolean',
     ];
@@ -72,6 +78,11 @@ class reportes extends Model
     public function marcaRegulador()
     {
         return $this->belongsTo(MarcaRegulador::class, 'marca_regulador_id');
+    }
+
+    public function tipoNotificacionAlerta()
+    {
+        return $this->belongsTo(TipoNotificacionAlerta::class, 'tipo_notificacion_alerta_id');
     }
 
     public function auditoria()

@@ -23,9 +23,12 @@ return new class extends Migration
             $table->uuid('marca_regulador_id')->nullable();
             $table->json('imagenes')->nullable();
             $table->string('video')->nullable();
+            $table->uuid('tipo_notificacion_alerta_id')->nullable();
+            $table->boolean('coincide_medidor')->nullable();
+            $table->boolean('hay_fuga_gas')->default(false);
+            $table->boolean('excede_capacidad')->default(false);
             $table->text('observaciones')->nullable();
             $table->text('comentarios')->nullable();
-            $table->string('cau')->nullable();
             $table->boolean('revisado')->default(false);
             $table->boolean('confirmado')->default(false);
             $table->string('estado')->default('pendiente');
