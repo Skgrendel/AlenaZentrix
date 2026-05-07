@@ -2,13 +2,10 @@
 
 @section('title', 'Orden de Trabajo Asignada')
 @section('badge', $orden->numero_orden)
-@section('banner_type', 'info')
-@section('banner', 'Se te ha asignado una nueva orden de trabajo.')
-
 @section('content')
     <div class="greeting">¡Hola {{ $tecnico->nombres }} {{ $tecnico->apellidos }}!</div>
     <div class="intro">
-        A continuación encontrarás todos los detalles necesarios para atender la orden <strong>{{ $orden->numero_orden }}</strong>.
+        Se te ha asignado una nueva orden de trabajo. A continuación encontrarás todos los detalles necesarios para atenderla.
     </div>
 
     <div class="section">

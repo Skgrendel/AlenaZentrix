@@ -37,6 +37,17 @@ class User extends Authenticatable
         return $this->belongsTo(personals::class, 'personals_id');
     }
 
+    public function fullName(): string
+    {
+        $personal = $this->personal;
+
+        if (! $personal) {
+            return $this->email;
+        }
+
+        return $personal->nombres.' '.$personal->apellidos;
+    }
+
     public function initials(): string
     {
         $personal = $this->personal;
