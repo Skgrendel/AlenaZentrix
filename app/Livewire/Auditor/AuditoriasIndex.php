@@ -7,9 +7,6 @@ use App\Models\auditoria;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
-use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Tables;
@@ -76,45 +73,15 @@ class AuditoriasIndex extends Component implements HasActions, HasForms, HasTabl
                     ->label('Auditar')
                     ->icon('heroicon-o-clipboard-document-check')
                     ->color('primary')
-                    ->modalHeading('Registrar Auditoría')
-                    ->modalSubmitActionLabel('Guardar auditoría')
                     ->visible(fn (auditoria $record): bool => $record->estado === EstadoAuditoria::PendienteAuditoria)
-                    ->form([
-                        FileUpload::make('evidencias')
-                            ->label('Evidencias (PDFs / Imágenes)')
-                            ->required()
-                            ->multiple()
-                            ->disk('s3')
-                            ->directory('auditorias')
-                            ->acceptedFileTypes(['image/*', 'application/pdf'])
-                            ->maxFiles(10),
-                        Select::make('estado')
-                            ->label('Resultado')
-                            ->options([
-                                EstadoAuditoria::Confirmado->value => EstadoAuditoria::Confirmado->label(),
-                                EstadoAuditoria::Negativo->value => EstadoAuditoria::Negativo->label(),
-                            ])
-                            ->required(),
-                        Textarea::make('observaciones')
-                            ->label('Observaciones')
-                            ->rows(3),
-                    ])
-                    ->action(function (array $data, auditoria $record): void {
-                        $record->update([
-                            'evidencias' => $data['evidencias'],
-                            'estado' => $data['estado'],
-                            'observaciones' => $data['observaciones'] ?? null,
-                            'auditado_por_id' => auth()->id(),
-                            'fecha_auditoria' => now(),
-                        ]);
-                    }),
+                    ->url(fn (auditoria $record): string => route('auditor.auditorias.revisar', $record)),
 
                 Action::make('ver_evidencias')
-                    ->label('Ver')
+                    ->label('Ver resultado')
                     ->icon('heroicon-o-eye')
                     ->color('gray')
                     ->visible(fn (auditoria $record): bool => $record->estado !== EstadoAuditoria::PendienteAuditoria)
-                    ->url(fn (auditoria $record): string => route('operaciones.ordenes-trabajo.show', $record->reporte?->ordenJob)),
+                    ->url(fn (auditoria $record): string => route('auditor.auditorias.revisar', $record)),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('estado')

@@ -3,6 +3,7 @@
 use App\Http\Controllers\InformeController;
 use App\Livewire\Admin\Configuracion;
 use App\Livewire\Admin\ManageUsers;
+use App\Livewire\Auditor\AuditoriaRevisar;
 use App\Livewire\Auditor\AuditoriasIndex;
 use App\Livewire\Coordinador\OrdenesTrabajoIndex;
 use App\Livewire\Coordinador\OrdenJobShow;
@@ -24,7 +25,7 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 
-    Route::middleware('role:Administrador|Coordinador|Lector')
+    Route::middleware('role:Administrador|Coordinador|Lector|Auditor')
         ->get('operaciones/foto', function (Request $request) {
             $path = $request->query('path', '');
 
@@ -59,6 +60,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::middleware('role:Administrador|Auditor')->prefix('auditor')->name('auditor.')->group(function () {
         Route::get('auditorias', AuditoriasIndex::class)->name('auditorias');
+        Route::get('auditorias/{auditoria}/revisar', AuditoriaRevisar::class)->name('auditorias.revisar');
     });
 
     Route::prefix('informes')->name('informes.')->group(function () {
