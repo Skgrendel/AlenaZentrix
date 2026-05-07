@@ -159,6 +159,7 @@ class InformesIndex extends Component
             ->get()
             ->map(fn (Reporte $r) => [
                 $r->ordenJob?->numero_orden ?? '',
+                $r->ordenJob?->estado?->label() ?? '',
                 $r->ordenJob?->cliente ?? '',
                 $r->ordenJob?->contrato ?? '',
                 $r->ordenJob?->direccion ?? '',
@@ -177,7 +178,7 @@ class InformesIndex extends Component
             ->all();
 
         return [
-            ['N° Orden', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Técnico', 'Lectura', 'N° Medidor', 'Comercio', 'Tipo Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Observaciones', 'Fecha Reporte'],
+            ['N° Orden', 'Estado Orden', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Técnico', 'Lectura', 'N° Medidor', 'Comercio', 'Tipo Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Observaciones', 'Fecha Reporte'],
             $rows,
             'respuestas-tecnico-'.now()->format('Y-m-d'),
         ];
@@ -194,7 +195,10 @@ class InformesIndex extends Component
             ->get()
             ->map(fn (auditoria $a) => [
                 $a->reporte?->ordenJob?->numero_orden ?? '',
+                $a->reporte?->ordenJob?->estado?->label() ?? '',
                 $a->reporte?->ordenJob?->cliente ?? '',
+                $a->reporte?->ordenJob?->contrato ?? '',
+                $a->reporte?->ordenJob?->medidor ?? '',
                 $a->reporte?->ordenJob?->barrio ?? '',
                 $a->reporte?->ordenJob?->personal
                     ? "{$a->reporte->ordenJob->personal->nombres} {$a->reporte->ordenJob->personal->apellidos}"
@@ -207,7 +211,7 @@ class InformesIndex extends Component
             ->all();
 
         return [
-            ['N° Orden', 'Cliente', 'Barrio', 'Técnico', 'Estado Auditoría', 'Observaciones', 'Fecha Completado Orden', 'Fecha Auditoría'],
+            ['N° Orden', 'Estado Orden', 'Cliente', 'Contrato', 'Medidor', 'Barrio', 'Técnico', 'Estado Auditoría', 'Observaciones', 'Fecha Completado Orden', 'Fecha Auditoría'],
             $rows,
             'respuestas-auditor-'.now()->format('Y-m-d'),
         ];
@@ -231,6 +235,8 @@ class InformesIndex extends Component
                     'N° Orden' => $o->numero_orden,
                     'Estado' => $o->estado->label(),
                     'Cliente' => $o->cliente,
+                    'Contrato' => $o->contrato,
+                    'Medidor' => $o->medidor,
                     'Barrio' => $o->barrio,
                     'Prioridad' => $o->prioridad->label(),
                     'Técnico' => $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '—',
@@ -256,7 +262,10 @@ class InformesIndex extends Component
                 ->get()
                 ->map(fn (Reporte $r) => [
                     'N° Orden' => $r->ordenJob?->numero_orden ?? '—',
+                    'Estado Orden' => $r->ordenJob?->estado?->label() ?? '—',
                     'Cliente' => $r->ordenJob?->cliente ?? '—',
+                    'Contrato' => $r->ordenJob?->contrato ?? '—',
+                    'N° Medidor' => $r->numero_medidor ?? '—',
                     'Barrio' => $r->ordenJob?->barrio ?? '—',
                     'Técnico' => $r->ordenJob?->personal
                         ? "{$r->ordenJob->personal->nombres} {$r->ordenJob->personal->apellidos}"
@@ -281,12 +290,15 @@ class InformesIndex extends Component
                 ->get()
                 ->map(fn (auditoria $a) => [
                     'N° Orden' => $a->reporte?->ordenJob?->numero_orden ?? '—',
+                    'Estado Orden' => $a->reporte?->ordenJob?->estado?->label() ?? '—',
                     'Cliente' => $a->reporte?->ordenJob?->cliente ?? '—',
+                    'Contrato' => $a->reporte?->ordenJob?->contrato ?? '—',
+                    'Medidor' => $a->reporte?->ordenJob?->medidor ?? '—',
                     'Barrio' => $a->reporte?->ordenJob?->barrio ?? '—',
                     'Técnico' => $a->reporte?->ordenJob?->personal
                         ? "{$a->reporte->ordenJob->personal->nombres} {$a->reporte->ordenJob->personal->apellidos}"
                         : '—',
-                    'Estado' => $a->estado instanceof EstadoAuditoria ? $a->estado->label() : ($a->estado ?? '—'),
+                    'Estado Auditoría' => $a->estado instanceof EstadoAuditoria ? $a->estado->label() : ($a->estado ?? '—'),
                     'Observaciones' => $a->observaciones ?? '—',
                     'Fecha Auditoría' => $a->fecha_auditoria?->format('d/m/Y H:i') ?? '—',
                 ])
