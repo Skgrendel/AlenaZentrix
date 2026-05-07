@@ -2,9 +2,10 @@
 
 namespace App\Livewire\Settings;
 
-use App\Concerns\ProfileValidationRules;
+use App\Enums\TipoDocumento;
 use Flux\Flux;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -13,44 +14,62 @@ use Livewire\Component;
 #[Title('Profile settings')]
 class Profile extends Component
 {
-    use ProfileValidationRules;
-
-    public string $name = '';
-
     public string $email = '';
 
-    /**
-     * Mount the component.
-     */
+    public string $nombres = '';
+
+    public string $apellidos = '';
+
+    public string $tipo_documento = '';
+
+    public string $numero_documento = '';
+
+    public string $telefono = '';
+
     public function mount(): void
     {
-        $this->name = Auth::user()->name;
-        $this->email = Auth::user()->email;
+        $user = Auth::user();
+        $this->email = $user->email ?? '';
+
+        $personal = $user->personal;
+        if ($personal) {
+            $this->nombres = $personal->nombres ?? '';
+            $this->apellidos = $personal->apellidos ?? '';
+            $this->tipo_documento = $personal->tipo_documento instanceof TipoDocumento
+                ? $personal->tipo_documento->value
+                : ($personal->tipo_documento ?? '');
+            $this->numero_documento = $personal->numero_documento ?? '';
+            $this->telefono = $personal->telefono ?? '';
+        }
     }
 
-    /**
-     * Update the profile information for the currently authenticated user.
-     */
     public function updateProfileInformation(): void
     {
         $user = Auth::user();
 
-        $validated = $this->validate($this->profileRules($user->id));
+        $this->validate([
+            'nombres' => ['required', 'string', 'max:255'],
+            'apellidos' => ['required', 'string', 'max:255'],
+            'tipo_documento' => ['required', 'string'],
+            'numero_documento' => ['required', 'string', 'max:255'],
+            'telefono' => ['nullable', 'string', 'max:50'],
+        ]);
 
-        $user->fill($validated);
+        $personal = $user->personal;
 
-        if ($user->isDirty('email')) {
-            $user->email_verified_at = null;
+        if ($personal) {
+            $personal->update([
+                'nombres' => $this->nombres,
+                'apellidos' => $this->apellidos,
+                'tipo_documento' => $this->tipo_documento,
+                'numero_documento' => $this->numero_documento,
+                'telefono' => $this->telefono ?: null,
+            ]);
         }
-
-        $user->save();
 
         Flux::toast(variant: 'success', text: __('Profile updated.'));
     }
 
-    /**
-     * Send an email verification notification to the current user.
-     */
     public function resendVerificationNotification(): void
     {
         $user = Auth::user();
@@ -77,5 +96,18 @@ class Profile extends Component
     {
         return ! Auth::user() instanceof MustVerifyEmail
             || (Auth::user() instanceof MustVerifyEmail && Auth::user()->hasVerifiedEmail());
+    }
+
+    /** @return array<string, string> */
+    public function tiposDocumento(): array
+    {
+        return collect(TipoDocumento::cases())
+            ->mapWithKeys(fn (TipoDocumento $case) => [$case->value => $case->label()])
+            ->all();
+    }
+
+    public function render(): View
+    {
+        return view('livewire.settings.profile');
     }
 }
