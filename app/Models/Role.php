@@ -2,13 +2,18 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * Modelo de rol heredado/propio; la gestión real de roles y permisos se delega a Spatie Permission.
+ * Se mantiene por compatibilidad con relaciones antiguas de la aplicación.
+ */
 class Role extends Model
 {
-    static $rules = [
-		'name' => 'required',
+    public static $rules = [
+        'name' => 'required',
     ];
 
     protected $perPage = 20;
@@ -20,9 +25,8 @@ class Role extends Model
      */
     protected $fillable = ['name'];
 
-
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @return HasOne
      */
     public function modelHasRole()
     {
@@ -30,11 +34,10 @@ class Role extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     * @return HasMany
      */
     public function roleHasPermissions()
     {
         return $this->hasMany('App\Models\RoleHasPermission', 'role_id', 'id');
     }
-    
 }

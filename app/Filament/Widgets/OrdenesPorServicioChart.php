@@ -6,6 +6,10 @@ use App\Enums\TipoServicio;
 use App\Models\OrdenJob;
 use Filament\Widgets\ChartWidget;
 
+/**
+ * Gráfico de dona que muestra la distribución de órdenes por tipo de servicio.
+ * Solo incluye en el gráfico los servicios con al menos una orden registrada.
+ */
 class OrdenesPorServicioChart extends ChartWidget
 {
     protected ?string $heading = 'Por Tipo de Servicio';

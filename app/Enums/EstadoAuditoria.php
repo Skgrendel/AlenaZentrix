@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+/**
+ * Estado del proceso de auditoría de un reporte de Fraudes: pendiente → confirmado o negativo.
+ */
 enum EstadoAuditoria: string
 {
     case PendienteAuditoria = 'pendiente_auditoria';

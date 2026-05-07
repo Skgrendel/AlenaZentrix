@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Coordenadas geográficas capturadas en el dispositivo del técnico al momento de crear el reporte.
+ */
 class ubicacion extends Model
 {
     use HasFactory;

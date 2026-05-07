@@ -24,6 +24,9 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Correos de Alerta')]
+/**
+ * Gestión CRUD de destinatarios de alertas por correo ante incidencias graves detectadas en campo.
+ */
 class ManageCorreosAlerta extends Component implements HasActions, HasForms, HasTable
 {
     use InteractsWithActions;

@@ -34,6 +34,10 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Órdenes de Trabajo')]
+/**
+ * Listado de todas las órdenes de trabajo para el coordinador, con acciones contextuales
+ * según el estado y tipo de servicio de cada orden.
+ */
 class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, HasTable
 {
     use InteractsWithActions;
@@ -375,6 +379,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
         return $resultado;
     }
 
+    /** Envía el correo de asignación al técnico; falla silenciosamente si no tiene email registrado. */
     protected function notificarTecnico(OrdenJob $orden): void
     {
         $email = $orden->personal?->usuario?->email;

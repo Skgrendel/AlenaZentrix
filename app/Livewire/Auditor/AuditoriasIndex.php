@@ -20,6 +20,10 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Auditorías')]
+/**
+ * Listado de auditorías pendientes y completadas para el rol Auditor.
+ * Solo se generan auditorías para órdenes de tipo Fraudes al completarse.
+ */
 class AuditoriasIndex extends Component implements HasActions, HasForms, HasTable
 {
     use InteractsWithActions;

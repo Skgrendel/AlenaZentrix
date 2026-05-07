@@ -12,13 +12,17 @@ use Spatie\Permission\PermissionRegistrar;
 
 #[Layout('layouts.app')]
 #[Title('Editar Rol')]
+/**
+ * Editor de permisos de un rol. Agrupa los permisos por módulo del sistema para facilitar la gestión.
+ * El rol Administrador no puede renombrarse ni perder el permiso `roles.editar`.
+ */
 class EditRolePermisos extends Component
 {
     public Role $role;
 
     public string $name = '';
 
-    /** @var string[] */
+    /** @var string[] Nombres de los permisos actualmente asignados al rol. */
     public array $selectedPermissions = [];
 
     public function mount(Role $role): void
@@ -30,6 +34,7 @@ class EditRolePermisos extends Component
         $this->selectedPermissions = $role->permissions->pluck('name')->toArray();
     }
 
+    /** Guarda nombre y permisos del rol, luego invalida la caché de Spatie para aplicar cambios de inmediato. */
     public function guardar(): void
     {
         $this->validate([
@@ -65,6 +70,9 @@ class EditRolePermisos extends Component
             ->all();
     }
 
+    /**
+     * Infiere el módulo al que pertenece un permiso a partir de su prefijo (p.ej. 'ordenes.ver' → 'Órdenes de Trabajo').
+     */
     private function moduloDelPermiso(string $permiso): string
     {
         return match (true) {

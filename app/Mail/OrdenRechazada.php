@@ -11,10 +11,17 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Notificación enviada al técnico cuando el coordinador rechaza su reporte, incluyendo el motivo.
+ */
 class OrdenRechazada extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /**
+     * @param  personals|null  $tecnico  Nullable por coherencia con el flujo de Vigilancia.
+     * @param  string  $comentarios  Motivo del rechazo ingresado por el coordinador.
+     */
     public function __construct(
         public OrdenJob $orden,
         public ?personals $tecnico,

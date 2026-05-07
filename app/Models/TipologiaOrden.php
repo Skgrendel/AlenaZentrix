@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Catálogo de tipologías aplicables a las órdenes de Capturas y Desarticulación de Bandas.
+ */
 class TipologiaOrden extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;

@@ -17,6 +17,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 #[Layout('layouts.app')]
 #[Title('Informes')]
+/**
+ * Módulo de generación y descarga de informes en Excel.
+ * Los tipos disponibles (órdenes, reportes, auditorías) se filtran por los permisos del usuario.
+ */
 class InformesIndex extends Component
 {
     public string $tipoInforme = 'ordenes';
@@ -36,6 +40,11 @@ class InformesIndex extends Component
         $this->tipoInforme = $this->defaultTipo();
     }
 
+    /**
+     * Retorna solo los tipos de informe que el usuario autenticado tiene permiso de ver.
+     *
+     * @return array<string, string>
+     */
     public function tiposDisponibles(): array
     {
         $user = auth()->user();
@@ -64,6 +73,10 @@ class InformesIndex extends Component
         return array_key_first($this->tiposDisponibles()) ?? 'ordenes';
     }
 
+    /**
+     * Valida que el tipo seleccionado sea uno disponible para el usuario.
+     * Si no lo es, devuelve el primero disponible para evitar acceso indebido.
+     */
     public function tipoEfectivo(): string
     {
         $disponibles = $this->tiposDisponibles();
@@ -101,6 +114,10 @@ class InformesIndex extends Component
         $this->previewGenerado = true;
     }
 
+    /**
+     * Genera y descarga el archivo Excel correspondiente al tipo de informe activo.
+     * Usa OpenSpout para escribir el archivo directamente a la salida sin cargar en memoria.
+     */
     public function download(): StreamedResponse
     {
         $tipo = $this->tipoEfectivo();

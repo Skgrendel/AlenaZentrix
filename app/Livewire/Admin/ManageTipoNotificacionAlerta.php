@@ -24,6 +24,9 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Notificaciones de Alerta')]
+/**
+ * Gestión CRUD del catálogo de tipos de notificación de alerta disponibles en los reportes de Fraudes.
+ */
 class ManageTipoNotificacionAlerta extends Component implements HasActions, HasForms, HasTable
 {
     use InteractsWithActions;

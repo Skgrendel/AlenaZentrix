@@ -27,6 +27,10 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Revisar Reporte')]
+/**
+ * Pantalla de revisión de reporte para el coordinador: permite aprobar (completar) o rechazar
+ * la orden después de que el técnico envió su reporte.
+ */
 class ReporteRevisar extends Component implements HasActions, HasForms
 {
     use InteractsWithActions;
@@ -44,6 +48,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
     {
         $estadosPermitidos = [EstadoOrden::EnRevision, EstadoOrden::Completada];
 
+        // Vigilancia permite revisar reportes individuales mientras la orden sigue EnProgreso
         if ($orden->tipo_servicio === TipoServicio::Vigilancia) {
             $estadosPermitidos[] = EstadoOrden::EnProgreso;
         }
@@ -84,6 +89,10 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             });
     }
 
+    /**
+     * Rechaza la orden con el motivo indicado. El técnico podrá corregir y reenviar el reporte.
+     * Los comentarios se persisten en el reporte para que el técnico conozca el motivo.
+     */
     public function rechazar(): void
     {
         $this->validate([
@@ -122,6 +131,9 @@ class ReporteRevisar extends Component implements HasActions, HasForms
         }
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function imagenUrls(): array
     {
         return collect($this->reporte->imagenes ?? [])
@@ -129,7 +141,12 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             ->all();
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Normaliza `datos_servicio` (JSON) a un mapa legible por la vista según el tipo de servicio.
+     * Resuelve IDs de catálogos a sus nombres para evitar consultas en Blade.
+     *
+     * @return array<string, mixed>
+     */
     public function datosServicioDisplay(): array
     {
         $datos = $this->reporte->datos_servicio ?? [];

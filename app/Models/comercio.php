@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Comercio o establecimiento encontrado durante la inspección de una orden de tipo Fraudes.
+ */
 class comercio extends Model
 {
     use HasFactory, HasUuids;

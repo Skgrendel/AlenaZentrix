@@ -33,6 +33,10 @@ use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
+/**
+ * Formulario de creación del reporte de campo por parte del técnico.
+ * El esquema del formulario varía según el tipo de servicio de la orden.
+ */
 #[Layout('layouts.app')]
 #[Title('Crear Reporte')]
 class ReporteCreate extends Component implements HasForms
@@ -41,8 +45,10 @@ class ReporteCreate extends Component implements HasForms
 
     public OrdenJob $orden;
 
+    /** @var string|null Latitud capturada en el dispositivo del técnico; nullable si el navegador deniega la geolocalización. */
     public ?string $latitud = null;
 
+    /** @var string|null Longitud capturada en el dispositivo del técnico; nullable si el navegador deniega la geolocalización. */
     public ?string $longitud = null;
 
     /** @var array<string, mixed> */
@@ -527,6 +533,10 @@ class ReporteCreate extends Component implements HasForms
         ];
     }
 
+    /**
+     * Despacha al método de guardado específico según el tipo de servicio.
+     * Fraudes tiene lógica propia por el comercio y la ubicación; Vigilancia no cierra la orden.
+     */
     public function submit(): void
     {
         $data = $this->form->getState();
@@ -615,10 +625,11 @@ class ReporteCreate extends Component implements HasForms
             'datos_servicio' => $datosServicio,
         ]);
 
-        // Vigilancia stays EnProgreso — the investigator closes the order manually
+        // Vigilancia permanece EnProgreso hasta que el investigador la cierre manualmente
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
 
+    /** Avisa al coordinador que el técnico envió el reporte para revisión. */
     protected function notificarCoordinador(): void
     {
         $email = $this->orden->creadoPor?->email;
@@ -639,7 +650,12 @@ class ReporteCreate extends Component implements HasForms
         }
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Envía alertas a todos los correos activos cuando se detecta fuga de gas o exceso de capacidad.
+     * Solo aplica a órdenes de tipo Fraudes.
+     *
+     * @param  array<string, mixed>  $data
+     */
     protected function notificarIncidencias(reportes $reporte, array $data): void
     {
         $correos = CorreoAlerta::where('activo', true)->pluck('email');

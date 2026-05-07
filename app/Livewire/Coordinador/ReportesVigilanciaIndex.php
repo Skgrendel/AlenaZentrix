@@ -29,6 +29,10 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Reportes de Vigilancia')]
+/**
+ * Listado de todos los reportes de turno acumulados en una orden de Vigilancia.
+ * El coordinador puede completar o rechazar la orden desde esta pantalla.
+ */
 class ReportesVigilanciaIndex extends Component implements HasActions, HasForms, HasTable
 {
     use InteractsWithActions;

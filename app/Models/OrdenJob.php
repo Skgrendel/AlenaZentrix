@@ -12,6 +12,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Orden de trabajo que representa una tarea de campo asignada a un técnico o investigador.
+ * Concentra el ciclo de vida completo: desde su creación hasta su completado y posterior auditoría.
+ */
 class OrdenJob extends Model
 {
     use HasFactory;
@@ -97,6 +101,7 @@ class OrdenJob extends Model
         });
 
         static::updated(function (self $model): void {
+            // Solo Fraudes genera auditoría automática al completarse
             if (
                 $model->wasChanged('estado') &&
                 $model->estado === EstadoOrden::Completada &&
@@ -114,6 +119,10 @@ class OrdenJob extends Model
         });
     }
 
+    /**
+     * Genera el siguiente número de orden correlativo en formato ODT-XXXXXX.
+     * Busca el máximo existente para evitar duplicados en inserciones concurrentes.
+     */
     protected static function generateNumeroOrden(): string
     {
         $last = static::query()
@@ -125,11 +134,13 @@ class OrdenJob extends Model
         return 'ODT-'.str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
     }
 
+    /** Técnico o investigador asignado a ejecutar la orden. */
     public function personal(): BelongsTo
     {
         return $this->belongsTo(personals::class, 'personals_id');
     }
 
+    /** Usuario (coordinador/admin) que creó la orden. */
     public function creadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creado_por_id');

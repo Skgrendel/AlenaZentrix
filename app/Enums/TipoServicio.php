@@ -2,6 +2,11 @@
 
 namespace App\Enums;
 
+/**
+ * Clasificación del tipo de servicio de una orden de trabajo.
+ * Determina el flujo, los campos del reporte y si requiere técnico asignado.
+ * Vigilancia es el único tipo sin técnico fijo: los reportes se acumulan mientras la orden sigue EnProgreso.
+ */
 enum TipoServicio: string
 {
     case Fraudes = 'fraudes';

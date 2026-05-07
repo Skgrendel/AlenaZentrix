@@ -12,6 +12,10 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Title('Profile settings')]
+/**
+ * Configuración del perfil del usuario autenticado: datos personales y verificación de email.
+ * Actualiza el registro `personals` asociado ya que el modelo User no tiene campo `name`.
+ */
 class Profile extends Component
 {
     public string $email = '';

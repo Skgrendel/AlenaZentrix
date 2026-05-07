@@ -23,6 +23,10 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Nueva Orden de Trabajo')]
+/**
+ * Formulario de creación de una nueva orden de trabajo.
+ * El formulario se adapta dinámicamente según el tipo de servicio seleccionado.
+ */
 class OrdenCreate extends Component implements HasForms
 {
     use InteractsWithForms;
@@ -240,6 +244,10 @@ class OrdenCreate extends Component implements HasForms
             ->statePath('data');
     }
 
+    /**
+     * Persiste la nueva orden y mueve las fotos del directorio temporal al definitivo en S3.
+     * Envía notificación al técnico si fue asignado en la creación.
+     */
     public function guardar(): void
     {
         $data = $this->form->getState();

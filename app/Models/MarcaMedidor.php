@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Catálogo de marcas de medidores de gas utilizados en las inspecciones de Fraudes.
+ */
 class MarcaMedidor extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;

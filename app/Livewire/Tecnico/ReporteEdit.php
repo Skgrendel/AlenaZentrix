@@ -33,6 +33,10 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Editar Reporte')]
+/**
+ * Formulario de corrección del reporte rechazado por el coordinador.
+ * Solo accesible cuando la orden está en estado Rechazada; permite al técnico subsanar las observaciones.
+ */
 class ReporteEdit extends Component implements HasForms
 {
     use InteractsWithForms;
@@ -540,6 +544,10 @@ class ReporteEdit extends Component implements HasForms
         ];
     }
 
+    /**
+     * Persiste las correcciones al reporte y lo vuelve a enviar a revisión del coordinador.
+     * Fraudes actualiza también el comercio asociado; el resto usa datos_servicio.
+     */
     public function submit(): void
     {
         $data = $this->form->getState();

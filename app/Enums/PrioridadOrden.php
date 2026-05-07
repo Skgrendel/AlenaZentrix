@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+/**
+ * Nivel de prioridad de una orden de trabajo, usado para ordenar la carga de trabajo del técnico.
+ */
 enum PrioridadOrden: string
 {
     case Baja = 'baja';

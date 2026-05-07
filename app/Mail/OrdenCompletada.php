@@ -11,10 +11,16 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Notificación enviada al técnico cuando el coordinador aprueba el reporte y marca la orden como completada.
+ */
 class OrdenCompletada extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /**
+     * @param  personals|null  $tecnico  Puede ser null en órdenes de Vigilancia sin asignado fijo.
+     */
     public function __construct(
         public OrdenJob $orden,
         public ?personals $tecnico,

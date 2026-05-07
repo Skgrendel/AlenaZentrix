@@ -25,6 +25,10 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Mis Órdenes')]
+/**
+ * Listado de órdenes activas para el técnico: incluye sus propias órdenes asignadas
+ * y todas las órdenes de Vigilancia abiertas (sin técnico fijo).
+ */
 class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTable
 {
     use InteractsWithActions;
@@ -149,6 +153,7 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
             ->defaultSort('fecha_limite', 'asc');
     }
 
+    /** Notifica al coordinador que el técnico inició la atención de la orden. */
     protected function notificarCreador(OrdenJob $orden): void
     {
         $email = $orden->creadoPor?->email;

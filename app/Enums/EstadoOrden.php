@@ -2,6 +2,9 @@
 
 namespace App\Enums;
 
+/**
+ * Ciclo de vida de una orden de trabajo: pendiente → asignada → en_progreso → en_revision → completada/rechazada/cancelada.
+ */
 enum EstadoOrden: string
 {
     case Pendiente = 'pendiente';

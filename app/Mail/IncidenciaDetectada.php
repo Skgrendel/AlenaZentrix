@@ -10,6 +10,10 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Alerta enviada a los correos de CorreoAlerta cuando un técnico detecta fuga de gas o exceso de capacidad
+ * durante una inspección de Fraudes.
+ */
 class IncidenciaDetectada extends Mailable
 {
     use Queueable, SerializesModels;

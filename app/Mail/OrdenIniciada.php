@@ -11,6 +11,9 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Notificación enviada al coordinador cuando el técnico confirma que inició la atención de la orden.
+ */
 class OrdenIniciada extends Mailable
 {
     use Queueable, SerializesModels;

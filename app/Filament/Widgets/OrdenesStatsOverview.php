@@ -8,6 +8,10 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Widget de tarjetas de resumen en el dashboard. Muestra métricas distintas según
+ * si el usuario tiene permisos de coordinador (`ordenes.ver`) o es técnico.
+ */
 class OrdenesStatsOverview extends BaseWidget
 {
     protected ?string $pollingInterval = null;
@@ -23,6 +27,7 @@ class OrdenesStatsOverview extends BaseWidget
         return $this->statsTecnico($user->personals_id);
     }
 
+    /** @return array<int, Stat> Estadísticas globales para el coordinador/admin. */
     private function statsCoordinador(): array
     {
         $total = OrdenJob::count();
@@ -58,6 +63,10 @@ class OrdenesStatsOverview extends BaseWidget
         ];
     }
 
+    /**
+     * @param  string|null  $personalsId  Puede ser null si el usuario no tiene personal vinculado; devuelve ceros.
+     * @return array<int, Stat>
+     */
     private function statsTecnico(?string $personalsId): array
     {
         $base = OrdenJob::where('personals_id', $personalsId);

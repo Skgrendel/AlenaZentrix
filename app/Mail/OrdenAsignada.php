@@ -11,6 +11,9 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Notificación enviada al técnico cuando se le asigna una nueva orden de trabajo.
+ */
 class OrdenAsignada extends Mailable
 {
     use Queueable, SerializesModels;

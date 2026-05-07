@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Catálogo de tipos de comercio o establecimiento encontrados durante inspecciones de Fraudes e Investigación.
+ */
 class TipoComercio extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;

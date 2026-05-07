@@ -8,6 +8,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * Cuenta de acceso al sistema. El nombre visible se obtiene a través de la relación `personal`.
+ */
 class User extends Authenticatable
 {
     use HasFactory;
@@ -37,6 +40,10 @@ class User extends Authenticatable
         return $this->belongsTo(personals::class, 'personals_id');
     }
 
+    /**
+     * Devuelve el nombre completo del usuario. Si no tiene personal asociado,
+     * retorna el email como identificador de respaldo.
+     */
     public function fullName(): string
     {
         $personal = $this->personal;
@@ -48,6 +55,10 @@ class User extends Authenticatable
         return $personal->nombres.' '.$personal->apellidos;
     }
 
+    /**
+     * Devuelve las iniciales del nombre y apellido para avatares.
+     * Retorna '?' si el usuario no tiene personal vinculado.
+     */
     public function initials(): string
     {
         $personal = $this->personal;

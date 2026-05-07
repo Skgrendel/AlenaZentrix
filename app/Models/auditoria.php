@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Registro de auditoría generado automáticamente cuando una orden de tipo Fraudes se completa.
+ * El auditor confirma o rechaza el hallazgo del técnico adjuntando evidencias.
+ */
 class auditoria extends Model
 {
     use HasFactory;

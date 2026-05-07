@@ -31,6 +31,10 @@ use Spatie\Permission\Models\Role;
 
 #[Layout('layouts.app')]
 #[Title('Gestión de Usuarios')]
+/**
+ * Gestión CRUD de usuarios del sistema. Crea simultáneamente el registro `personals` y el `User`
+ * y envía el correo de bienvenida con las credenciales al nuevo usuario.
+ */
 class ManageUsers extends Component implements HasActions, HasForms, HasTable
 {
     use InteractsWithActions;
@@ -160,6 +164,12 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
             ->defaultSort('created_at', 'desc');
     }
 
+    /**
+     * Esquema de formulario compartido para crear y editar usuarios.
+     * La contraseña es obligatoria solo en creación; en edición se omite si está vacía.
+     *
+     * @return array<int, mixed>
+     */
     protected function formSchema(bool $isCreating): array
     {
         $roles = Role::pluck('name', 'name')->toArray();

@@ -6,6 +6,10 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Reporte de campo registrado por el técnico al ejecutar una orden de trabajo.
+ * `personals_id` identifica a quien creó el reporte, no necesariamente al asignado de la orden.
+ */
 class reportes extends Model
 {
     use HasFactory, HasUuids;

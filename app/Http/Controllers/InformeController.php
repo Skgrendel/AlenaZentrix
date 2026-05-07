@@ -10,8 +10,16 @@ use Illuminate\Http\Request;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
 
+/**
+ * Controlador HTTP de descarga de informes en Excel.
+ * El tipo de informe se determina por el rol del usuario autenticado para evitar acceso indebido.
+ */
 class InformeController extends Controller
 {
+    /**
+     * Descarga el informe según el rol del usuario. Administrador puede elegir el tipo;
+     * los demás roles tienen el tipo fijado por su perfil (Lector → reportes, Auditor → auditorías).
+     */
     public function download(Request $request)
     {
         $user = auth()->user();
@@ -50,6 +58,11 @@ class InformeController extends Controller
         ]);
     }
 
+    /**
+     * Construye cabeceras, filas y nombre de archivo para el informe de órdenes.
+     *
+     * @return array{0: array<int, string>, 1: array<int, array<int, mixed>>, 2: string}
+     */
     private function dataOrdenes(?string $fechaInicio, ?string $fechaFin, ?string $estado): array
     {
         $ordenes = OrdenJob::query()
@@ -80,6 +93,12 @@ class InformeController extends Controller
         return [$headers, $rows, 'ordenes-asignadas-'.now()->format('Y-m-d')];
     }
 
+    /**
+     * Construye cabeceras, filas y nombre de archivo para el informe de reportes del técnico.
+     * Si el usuario no es Administrador, filtra solo las órdenes que le pertenecen.
+     *
+     * @return array{0: array<int, string>, 1: array<int, array<int, mixed>>, 2: string}
+     */
     private function dataReportes($user, ?string $fechaInicio, ?string $fechaFin, ?string $estado): array
     {
         $reportes = Reporte::query()
@@ -118,6 +137,11 @@ class InformeController extends Controller
         return [$headers, $rows, 'respuestas-tecnico-'.now()->format('Y-m-d')];
     }
 
+    /**
+     * Construye cabeceras, filas y nombre de archivo para el informe de auditorías.
+     *
+     * @return array{0: array<int, string>, 1: array<int, array<int, mixed>>, 2: string}
+     */
     private function dataAuditorias(?string $fechaInicio, ?string $fechaFin, ?string $estado): array
     {
         $auditorias = auditoria::query()

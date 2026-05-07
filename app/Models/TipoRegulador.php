@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Catálogo de tipos de presión / reguladores de gas inspeccionados en órdenes de tipo Fraudes.
+ */
 class TipoRegulador extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;

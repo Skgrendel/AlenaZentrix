@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * Catálogo de anomalías detectables durante una inspección de Fraudes (p.ej. bypass, manipulación).
+ */
 class TipoAnomalia extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;

@@ -9,10 +9,16 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Correo de bienvenida enviado al crear un nuevo usuario, con sus credenciales de acceso iniciales.
+ */
 class WelcomeNewUser extends Mailable
 {
     use Queueable, SerializesModels;
 
+    /**
+     * @param  string  $password  Contraseña en texto plano para informar al usuario; se hashea en BD antes de enviarse.
+     */
     public function __construct(
         public string $email,
         public string $firstName,

@@ -19,14 +19,20 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
+/**
+ * Componente genérico reutilizable para gestionar cualquier catálogo simple (nombre, nomenclatura, activo).
+ * El modelo y la etiqueta se inyectan desde la vista que lo monta para no duplicar código.
+ */
 class ManageCatalog extends Component implements HasActions, HasForms, HasTable
 {
     use InteractsWithActions;
     use InteractsWithForms;
     use InteractsWithTable;
 
+    /** Clase FQCN del modelo Eloquent que se va a gestionar (p.ej. App\Models\MarcaMedidor). */
     public string $catalogModel;
 
+    /** Etiqueta legible del catálogo para mostrar en modales y encabezados. */
     public string $catalogLabel;
 
     public function mount(string $model, string $label): void

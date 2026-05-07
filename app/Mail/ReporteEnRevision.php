@@ -11,6 +11,9 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * Notificación enviada al coordinador cuando el técnico envía su reporte para revisión.
+ */
 class ReporteEnRevision extends Mailable
 {
     use Queueable, SerializesModels;

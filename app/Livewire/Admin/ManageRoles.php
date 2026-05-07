@@ -21,6 +21,10 @@ use Spatie\Permission\Models\Role;
 
 #[Layout('layouts.app')]
 #[Title('Roles y Permisos')]
+/**
+ * Listado y creación de roles de Spatie Permission.
+ * Al crear un rol, redirige directamente al editor de permisos.
+ */
 class ManageRoles extends Component implements HasActions, HasForms, HasTable
 {
     use InteractsWithActions;

@@ -16,12 +16,17 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Revisar Auditoría')]
+/**
+ * Pantalla de revisión de auditoría donde el auditor sube evidencias y registra el resultado
+ * (Confirmado o Negativo) de una orden de Fraudes completada.
+ */
 class AuditoriaRevisar extends Component implements HasForms
 {
     use InteractsWithForms;
 
     public auditoria $auditoria;
 
+    /** Origen de navegación para saber a dónde redirigir al finalizar ('auditorias' u 'ordenes'). */
     public string $from = 'auditorias';
 
     /** @var array<string, mixed> */
@@ -80,6 +85,7 @@ class AuditoriaRevisar extends Component implements HasForms
             ->statePath('data');
     }
 
+    /** Persiste el resultado de la auditoría y redirige al listado de origen. */
     public function guardar(): void
     {
         $data = $this->form->getState();
@@ -105,6 +111,9 @@ class AuditoriaRevisar extends Component implements HasForms
         };
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function imagenUrls(): array
     {
         return collect($this->auditoria->reporte?->imagenes ?? [])

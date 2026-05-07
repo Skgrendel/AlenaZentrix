@@ -7,6 +7,10 @@ use App\Models\OrdenJob;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Gráfico de barras que muestra la distribución de órdenes por estado.
+ * El coordinador ve todas las órdenes; el técnico solo las propias.
+ */
 class OrdenesPorEstadoChart extends ChartWidget
 {
     protected ?string $heading = 'Órdenes por Estado';

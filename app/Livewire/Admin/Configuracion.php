@@ -9,6 +9,9 @@ use Livewire\Component;
 
 #[Layout('layouts.app')]
 #[Title('Configuración')]
+/**
+ * Página de configuración general del sistema para administradores.
+ */
 class Configuracion extends Component
 {
     public function render(): View
