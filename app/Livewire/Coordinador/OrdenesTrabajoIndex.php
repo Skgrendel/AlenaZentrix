@@ -5,6 +5,7 @@ namespace App\Livewire\Coordinador;
 use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
+use App\Enums\TipoServicio;
 use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
 use App\Models\personals;
@@ -50,6 +51,11 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->sortable()
                     ->badge()
                     ->color('primary'),
+                Tables\Columns\TextColumn::make('tipo_servicio')
+                    ->label('Servicio')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state instanceof TipoServicio ? $state->label() : $state)
+                    ->color(fn ($state) => $state instanceof TipoServicio ? $state->color() : 'gray'),
                 Tables\Columns\TextColumn::make('cliente')
                     ->label('Cliente')
                     ->searchable()
@@ -197,39 +203,67 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
             ? "ordenes/{$record->numero_orden}"
             : 'ordenes/temp';
 
+        $tipoServicio = $record?->tipo_servicio;
+
         return [
+            Section::make('Tipo de Servicio')
+                ->schema([
+                    Forms\Components\Select::make('tipo_servicio')
+                        ->label('Tipo de Servicio')
+                        ->options(
+                            collect(TipoServicio::cases())
+                                ->mapWithKeys(fn (TipoServicio $case) => [$case->value => $case->label()])
+                        )
+                        ->disabled()
+                        ->dehydrated(false),
+                ]),
+
+            // ── Fraudes ───────────────────────────────────────────────────
             Section::make('Datos del Punto de Servicio')
                 ->columns(2)
+                ->visible($tipoServicio === TipoServicio::Fraudes)
                 ->schema([
-                    Forms\Components\TextInput::make('contrato')
-                        ->label('Contrato')
-                        ->required()
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('cliente')
-                        ->label('Cliente')
-                        ->required()
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('direccion')
-                        ->label('Dirección')
-                        ->required()
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('barrio')
-                        ->label('Barrio')
-                        ->required()
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('medidor')
-                        ->label('N° Medidor')
-                        ->required()
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('tipo_medidor')
-                        ->label('Tipo de Medidor')
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('ciclo')
-                        ->label('Ciclo')
-                        ->required()
-                        ->maxLength(255)
-                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('contrato')->label('Contrato')->maxLength(255),
+                    Forms\Components\TextInput::make('cliente')->label('Cliente')->maxLength(255),
+                    Forms\Components\TextInput::make('direccion')->label('Dirección')->maxLength(255),
+                    Forms\Components\TextInput::make('barrio')->label('Barrio')->maxLength(255),
+                    Forms\Components\TextInput::make('medidor')->label('N° Medidor')->maxLength(255),
+                    Forms\Components\TextInput::make('tipo_medidor')->label('Tipo de Medidor')->maxLength(255),
+                    Forms\Components\TextInput::make('ciclo')->label('Ciclo')->maxLength(255)->columnSpanFull(),
                 ]),
+
+            // ── Investigación ─────────────────────────────────────────────
+            Section::make('Datos de la Investigación')
+                ->columns(2)
+                ->visible($tipoServicio === TipoServicio::Investigacion)
+                ->schema([
+                    Forms\Components\TextInput::make('contrato')->label('N° Contrato')->maxLength(255),
+                    Forms\Components\TextInput::make('cliente')->label('Nombre del Investigado / Comercio')->maxLength(255),
+                    Forms\Components\TextInput::make('direccion')->label('Dirección')->maxLength(255),
+                    Forms\Components\TextInput::make('barrio')->label('Barrio')->maxLength(255),
+                ]),
+
+            // ── Capturas y Bandas ─────────────────────────────────────────
+            Section::make('Datos de la Orden')
+                ->columns(2)
+                ->visible(in_array($tipoServicio, [TipoServicio::Capturas, TipoServicio::Bandas]))
+                ->schema([
+                    Forms\Components\TextInput::make('numero_noticia_criminal')->label('N° Noticia Criminal')->maxLength(255),
+                    Forms\Components\TextInput::make('direccion')->label('Dirección')->maxLength(255),
+                    Forms\Components\TextInput::make('barrio')->label('Municipio')->maxLength(255),
+                ]),
+
+            // ── Vigilancia ────────────────────────────────────────────────
+            Section::make('Datos del Punto Vigilado')
+                ->columns(2)
+                ->visible($tipoServicio === TipoServicio::Vigilancia)
+                ->schema([
+                    Forms\Components\TextInput::make('contrato')->label('Contrato')->maxLength(255),
+                    Forms\Components\TextInput::make('cliente')->label('Nombre del Comercio / Cliente')->maxLength(255),
+                    Forms\Components\TextInput::make('direccion')->label('Dirección')->maxLength(255),
+                    Forms\Components\TextInput::make('barrio')->label('Barrio / Municipio')->maxLength(255),
+                ]),
+
             Section::make('Fotos de la Orden')
                 ->schema([
                     Forms\Components\FileUpload::make('fotos')
@@ -241,22 +275,17 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         ->image()
                         ->imagePreviewHeight('120')
                         ->maxFiles(10)
-                        ->maxSize(5120) // 5 MB por foto
+                        ->maxSize(5120)
                         ->reorderable()
                         ->panelLayout('grid')
                         ->columnSpanFull(),
                 ]),
+
             Section::make('Gestión de la Orden')
                 ->columns(2)
                 ->schema([
-                    Forms\Components\TextInput::make('titulo')
-                        ->label('Título')
-                        ->maxLength(255)
-                        ->columnSpanFull(),
-                    Forms\Components\Textarea::make('descripcion')
-                        ->label('Descripción')
-                        ->rows(3)
-                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('titulo')->label('Título')->maxLength(255)->columnSpanFull(),
+                    Forms\Components\Textarea::make('descripcion')->label('Descripción')->rows(3)->columnSpanFull(),
                     Forms\Components\Select::make('prioridad')
                         ->label('Prioridad')
                         ->options(
@@ -273,20 +302,16 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         )
                         ->required()
                         ->default(EstadoOrden::Pendiente->value),
-                    Forms\Components\DateTimePicker::make('fecha_limite')
-                        ->label('Fecha Límite')
-                        ->nullable(),
+                    Forms\Components\DateTimePicker::make('fecha_limite')->label('Fecha Límite')->nullable(),
                     Forms\Components\Select::make('personals_id')
                         ->label('Técnico Asignado')
                         ->options($tecnicos)
                         ->searchable()
                         ->nullable()
                         ->placeholder('Sin asignar')
+                        ->visible($tipoServicio !== TipoServicio::Vigilancia)
                         ->columnSpanFull(),
-                    Forms\Components\Toggle::make('estado_servicio')
-                        ->label('Servicio Activo')
-                        ->default(true)
-                        ->columnSpanFull(),
+                    Forms\Components\Toggle::make('estado_servicio')->label('Servicio Activo')->default(true)->columnSpanFull(),
                 ]),
         ];
     }

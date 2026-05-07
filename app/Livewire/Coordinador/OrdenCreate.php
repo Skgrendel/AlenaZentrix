@@ -4,6 +4,7 @@ namespace App\Livewire\Coordinador;
 
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
+use App\Enums\TipoServicio;
 use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
 use App\Models\personals;
@@ -32,6 +33,7 @@ class OrdenCreate extends Component implements HasForms
     public function mount(): void
     {
         $this->form->fill([
+            'tipo_servicio' => TipoServicio::Fraudes->value,
             'prioridad' => PrioridadOrden::Media->value,
             'estado' => EstadoOrden::Pendiente->value,
             'estado_servicio' => true,
@@ -47,39 +49,126 @@ class OrdenCreate extends Component implements HasForms
 
         return $form
             ->schema([
+                // ── Tipo de Servicio ──────────────────────────────────────
+                Section::make('Tipo de Servicio')
+                    ->schema([
+                        Forms\Components\Select::make('tipo_servicio')
+                            ->label('Tipo de Servicio')
+                            ->options(
+                                collect(TipoServicio::cases())
+                                    ->mapWithKeys(fn (TipoServicio $case) => [$case->value => $case->label()])
+                            )
+                            ->required()
+                            ->live()
+                            ->default(TipoServicio::Fraudes->value),
+                    ]),
+
+                // ── Sección: Fraudes ──────────────────────────────────────
                 Section::make('Datos del Punto de Servicio')
                     ->columns(2)
+                    ->visible(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Fraudes->value)
                     ->schema([
                         Forms\Components\TextInput::make('contrato')
                             ->label('Contrato')
-                            ->required()
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Fraudes->value)
                             ->maxLength(255),
                         Forms\Components\TextInput::make('cliente')
                             ->label('Cliente')
-                            ->required()
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Fraudes->value)
                             ->maxLength(255),
                         Forms\Components\TextInput::make('direccion')
                             ->label('Dirección')
-                            ->required()
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Fraudes->value)
                             ->maxLength(255),
                         Forms\Components\TextInput::make('barrio')
                             ->label('Barrio')
-                            ->required()
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Fraudes->value)
                             ->maxLength(255),
                         Forms\Components\TextInput::make('medidor')
                             ->label('N° Medidor')
-                            ->required()
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Fraudes->value)
                             ->maxLength(255),
                         Forms\Components\TextInput::make('tipo_medidor')
                             ->label('Tipo de Medidor')
                             ->maxLength(255),
                         Forms\Components\TextInput::make('ciclo')
                             ->label('Ciclo')
-                            ->required()
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Fraudes->value)
                             ->maxLength(255)
                             ->columnSpanFull(),
                     ]),
 
+                // ── Sección: Investigación ────────────────────────────────
+                Section::make('Datos de la Investigación')
+                    ->columns(2)
+                    ->visible(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
+                    ->schema([
+                        Forms\Components\TextInput::make('contrato')
+                            ->label('N° Contrato')
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('cliente')
+                            ->label('Nombre del Investigado / Comercio')
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('direccion')
+                            ->label('Dirección')
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('barrio')
+                            ->label('Barrio')
+                            ->maxLength(255),
+                    ]),
+
+                // ── Sección: Capturas y Bandas ────────────────────────────
+                Section::make('Datos de la Orden')
+                    ->columns(2)
+                    ->visible(fn (Forms\Get $get) => in_array($get('tipo_servicio'), [
+                        TipoServicio::Capturas->value,
+                        TipoServicio::Bandas->value,
+                    ]))
+                    ->schema([
+                        Forms\Components\TextInput::make('numero_noticia_criminal')
+                            ->label('N° Noticia Criminal')
+                            ->required(fn (Forms\Get $get) => in_array($get('tipo_servicio'), [
+                                TipoServicio::Capturas->value,
+                                TipoServicio::Bandas->value,
+                            ]))
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('direccion')
+                            ->label('Dirección')
+                            ->required(fn (Forms\Get $get) => in_array($get('tipo_servicio'), [
+                                TipoServicio::Capturas->value,
+                                TipoServicio::Bandas->value,
+                            ]))
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('barrio')
+                            ->label('Municipio')
+                            ->maxLength(255),
+                    ]),
+
+                // ── Sección: Vigilancia ───────────────────────────────────
+                Section::make('Datos del Punto Vigilado')
+                    ->columns(2)
+                    ->visible(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value)
+                    ->schema([
+                        Forms\Components\TextInput::make('contrato')
+                            ->label('Contrato')
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value)
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('cliente')
+                            ->label('Nombre del Comercio / Cliente')
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value)
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('direccion')
+                            ->label('Dirección')
+                            ->required(fn (Forms\Get $get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value)
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('barrio')
+                            ->label('Barrio / Municipio')
+                            ->maxLength(255),
+                    ]),
+
+                // ── Fotos ─────────────────────────────────────────────────
                 Section::make('Fotos de la Orden')
                     ->schema([
                         Forms\Components\FileUpload::make('fotos')
@@ -97,6 +186,7 @@ class OrdenCreate extends Component implements HasForms
                             ->columnSpanFull(),
                     ]),
 
+                // ── Gestión ───────────────────────────────────────────────
                 Section::make('Gestión de la Orden')
                     ->columns(2)
                     ->schema([
@@ -131,6 +221,7 @@ class OrdenCreate extends Component implements HasForms
                             ->searchable()
                             ->nullable()
                             ->placeholder('Sin asignar')
+                            ->visible(fn (Forms\Get $get) => $get('tipo_servicio') !== TipoServicio::Vigilancia->value)
                             ->columnSpanFull(),
                         Forms\Components\Toggle::make('estado_servicio')
                             ->label('Servicio Activo')

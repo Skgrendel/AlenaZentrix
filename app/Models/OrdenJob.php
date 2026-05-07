@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
+use App\Enums\TipoServicio;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,7 @@ class OrdenJob extends Model
     protected $fillable = [
         'personals_id',
         'creado_por_id',
+        'tipo_servicio',
         'numero_orden',
         'contrato',
         'cliente',
@@ -29,6 +31,7 @@ class OrdenJob extends Model
         'medidor',
         'tipo_medidor',
         'ciclo',
+        'numero_noticia_criminal',
         'fotos',
         'titulo',
         'descripcion',
@@ -41,6 +44,7 @@ class OrdenJob extends Model
     ];
 
     protected $casts = [
+        'tipo_servicio' => TipoServicio::class,
         'prioridad' => PrioridadOrden::class,
         'estado' => EstadoOrden::class,
         'fotos' => 'array',

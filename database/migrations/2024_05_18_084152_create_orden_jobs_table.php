@@ -13,15 +13,17 @@ return new class extends Migration
             $table->uuid('personals_id')->nullable();
             $table->foreignUuid('creado_por_id')->nullable()->constrained('users')->nullOnDelete();
 
-            // Datos del punto de servicio (gas)
+            // Datos del punto de servicio
+            $table->string('tipo_servicio')->default('fraudes');
             $table->string('numero_orden');
-            $table->string('contrato');
-            $table->string('cliente');
-            $table->string('direccion');
-            $table->string('barrio');
-            $table->string('medidor');
+            $table->string('contrato')->nullable();
+            $table->string('cliente')->nullable();
+            $table->string('direccion')->nullable();
+            $table->string('barrio')->nullable();
+            $table->string('medidor')->nullable();
             $table->string('tipo_medidor')->nullable();
-            $table->string('ciclo');
+            $table->string('ciclo')->nullable();
+            $table->string('numero_noticia_criminal')->nullable();
             $table->json('fotos')->nullable();
 
             // Gestión de la orden

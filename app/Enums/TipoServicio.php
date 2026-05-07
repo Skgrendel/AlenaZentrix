@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Enums;
+
+enum TipoServicio: string
+{
+    case Fraudes = 'fraudes';
+    case Investigacion = 'investigacion';
+    case Capturas = 'capturas';
+    case Bandas = 'bandas';
+    case Vigilancia = 'vigilancia';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Fraudes => 'Fraudes',
+            self::Investigacion => 'Investigación',
+            self::Capturas => 'Capturas Criminales',
+            self::Bandas => 'Desarticulación de Bandas',
+            self::Vigilancia => 'Dispositivos de Vigilancia',
+        };
+    }
+
+    public function color(): string
+    {
+        return match ($this) {
+            self::Fraudes => 'danger',
+            self::Investigacion => 'warning',
+            self::Capturas => 'info',
+            self::Bandas => 'purple',
+            self::Vigilancia => 'success',
+        };
+    }
+
+    /** @return bool Servicios que tienen técnico asignado fijo */
+    public function tieneTecnicoAsignado(): bool
+    {
+        return $this !== self::Vigilancia;
+    }
+
+    /** @return bool Servicios que requieren contrato y cliente */
+    public function tieneContrato(): bool
+    {
+        return in_array($this, [self::Fraudes, self::Investigacion, self::Vigilancia]);
+    }
+
+    /** @return bool Servicios que tienen datos de medidor */
+    public function tieneMedidor(): bool
+    {
+        return $this === self::Fraudes;
+    }
+
+    /** @return bool Servicios que tienen número de noticia criminal */
+    public function tieneNoticiaCriminal(): bool
+    {
+        return in_array($this, [self::Capturas, self::Bandas]);
+    }
+}
