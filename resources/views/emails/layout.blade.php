@@ -28,7 +28,7 @@
         .header {
             padding: 20px 40px;
             border-bottom: 1px solid #e0e0e0;
-            text-align: left;
+            text-align: center;
         }
         .header img {
             height: 44px;
