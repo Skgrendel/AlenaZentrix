@@ -25,6 +25,15 @@
             height: 4px;
             background-color: #17222e;
         }
+        .header {
+            padding: 20px 40px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: left;
+        }
+        .header img {
+            height: 44px;
+            width: auto;
+        }
         /* Contenido */
         .content {
             padding: 32px 40px;
@@ -133,6 +142,10 @@
     <div class="wrapper">
 
         <div class="top-bar"></div>
+
+        <div class="header">
+            <img src="{{ asset('assets/image/LogoAlenaZentrix.svg') }}" alt="{{ config('app.name') }}">
+        </div>
 
         <div class="content">
             @yield('content')
