@@ -33,10 +33,21 @@
             </div>
 
             <div>
+                <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Servicio</label>
+                <select wire:model="servicio"
+                    class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
+                    <option value="">Todos</option>
+                    @foreach($servicioOptions as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
                 <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Estado</label>
                 <select wire:model="estado"
                     class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
-                    <option value="">Seleccionar</option>
+                    <option value="">Todos</option>
                     @foreach($estadoOptions as $value => $label)
                         <option value="{{ $value }}">{{ $label }}</option>
                     @endforeach

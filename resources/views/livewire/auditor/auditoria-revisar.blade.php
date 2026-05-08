@@ -124,7 +124,7 @@
                 @keydown.escape.window="open = false"
                 class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900"
             >
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Evidencias del Técnico ({{ count($imagenUrls) }} fotos)</h3>
+                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Evidencias del Investigador ({{ count($imagenUrls) }} fotos)</h3>
                 <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     @foreach($imagenUrls as $url)
                         <button type="button" @click="src = '{{ $url }}'; open = true"
@@ -151,7 +151,7 @@
 
             @if($reporte?->observaciones)
             <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Observaciones del Técnico</h3>
+                <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Observaciones del Investigador</h3>
                 <p class="whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">{{ $reporte->observaciones }}</p>
             </div>
             @endif
@@ -163,7 +163,7 @@
 
             {{-- Técnico --}}
             <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Técnico</h3>
+                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Investigador</h3>
                 <dl class="space-y-2">
                     <div>
                         <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Nombre</dt>

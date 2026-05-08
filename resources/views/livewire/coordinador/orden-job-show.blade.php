@@ -159,7 +159,7 @@
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Técnico Asignado</dt>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Investigador Asignado</dt>
                         <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
                             {{ $orden->personal ? "{$orden->personal->nombres} {$orden->personal->apellidos}" : '—' }}
                         </dd>

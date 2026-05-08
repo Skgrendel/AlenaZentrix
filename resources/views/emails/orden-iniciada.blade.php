@@ -6,13 +6,13 @@
     <div class="greeting">Notificación de seguimiento</div>
 
     <div class="alert warning">
-        El técnico <strong>{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</strong>
+        El investigador <strong>{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</strong>
         ha iniciado la atención de la orden <strong>{{ $orden->numero_orden }}</strong>.
     </div>
 
     <div class="intro">
         La orden ha cambiado a estado <strong>En Progreso</strong>.
-        El técnico se encuentra actualmente en el punto de servicio.
+        El investigador se encuentra actualmente en el punto de servicio.
     </div>
 
     <div class="section">
@@ -36,7 +36,7 @@
     </div>
 
     <div class="section">
-        <div class="section-title">Técnico Asignado</div>
+        <div class="section-title">Investigador Asignado</div>
         <div class="detail-row">
             <span class="detail-label">Nombre</span>
             <span class="detail-value">{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</span>

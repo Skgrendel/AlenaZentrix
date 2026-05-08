@@ -11,7 +11,7 @@
     </div>
 
     <div class="intro">
-        El técnico asignado ha reportado incidencias para esta orden.
+        El investigador asignado ha reportado incidencias para esta orden.
     </div>
 
     <div class="section">
@@ -50,7 +50,7 @@
 
     @if($orden->personal)
     <div class="section">
-        <div class="section-title">Técnico Responsable</div>
+        <div class="section-title">Investigador Responsable</div>
         <div class="detail-row">
             <span class="detail-label">Nombre</span>
             <span class="detail-value">{{ $orden->personal->nombres }} {{ $orden->personal->apellidos }}</span>

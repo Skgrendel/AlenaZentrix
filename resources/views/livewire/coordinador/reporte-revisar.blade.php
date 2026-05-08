@@ -443,7 +443,7 @@
                 </dl>
             </div>
 
-            {{-- Técnico / Investigador --}}
+            {{-- Investigador --}}
             @php
                 $responsable = $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia
                     ? $reporte->personal
@@ -451,7 +451,7 @@
             @endphp
             <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                 <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    {{ $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia ? 'Investigador' : 'Técnico' }}
+                    Investigador
                 </h3>
                 <dl class="space-y-2">
                     <div>
@@ -514,7 +514,7 @@
 
                 <div x-show="rechazo" x-cloak>
                     <p class="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
-                        Indica el motivo del rechazo. El técnico lo verá al editar el reporte.
+                        Indica el motivo del rechazo. El investigador lo verá al editar el reporte.
                     </p>
                     <textarea
                         wire:model="comentarios"

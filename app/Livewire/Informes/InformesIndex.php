@@ -4,6 +4,7 @@ namespace App\Livewire\Informes;
 
 use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
+use App\Enums\TipoServicio;
 use App\Models\auditoria;
 use App\Models\OrdenJob;
 use App\Models\reportes as Reporte;
@@ -31,6 +32,8 @@ class InformesIndex extends Component
 
     public string $estado = '';
 
+    public string $servicio = '';
+
     public bool $previewGenerado = false;
 
     public array $preview = [];
@@ -54,7 +57,7 @@ class InformesIndex extends Component
             $tipos['ordenes'] = 'Órdenes Asignadas';
         }
         if ($user->can('informes.tecnico')) {
-            $tipos['reportes'] = 'Respuestas del Técnico';
+            $tipos['reportes'] = 'Respuestas del Investigador';
         }
         if ($user->can('informes.auditorias')) {
             $tipos['auditorias'] = 'Respuestas del Auditor';
@@ -101,9 +104,17 @@ class InformesIndex extends Component
             ->all();
     }
 
+    public function servicioOptions(): array
+    {
+        return collect(TipoServicio::cases())
+            ->mapWithKeys(fn (TipoServicio $c) => [$c->value => $c->label()])
+            ->all();
+    }
+
     public function updatedTipoInforme(): void
     {
         $this->estado = '';
+        $this->servicio = '';
         $this->preview = [];
         $this->previewGenerado = false;
     }
@@ -149,10 +160,12 @@ class InformesIndex extends Component
             ->when($this->fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaInicio))
             ->when($this->fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaFin))
             ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
+            ->when($this->servicio, fn ($q) => $q->where('tipo_servicio', $this->servicio))
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn (OrdenJob $o) => [
                 $o->numero_orden,
+                $o->tipo_servicio->label(),
                 $o->estado->label(),
                 $o->cliente,
                 $o->contrato,
@@ -168,7 +181,7 @@ class InformesIndex extends Component
             ->all();
 
         return [
-            ['N° Orden', 'Estado', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Prioridad', 'Técnico', 'Fecha Asignación', 'Fecha Límite', 'Fecha Completado'],
+            ['N° Orden', 'Servicio', 'Estado', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Prioridad', 'Investigador', 'Fecha Asignación', 'Fecha Límite', 'Fecha Completado'],
             $rows,
             'ordenes-asignadas-'.now()->format('Y-m-d'),
         ];
@@ -186,10 +199,14 @@ class InformesIndex extends Component
             ->when($this->estado, fn ($q) => $q->whereHas(
                 'ordenJob', fn ($q2) => $q2->where('estado', $this->estado)
             ))
+            ->when($this->servicio, fn ($q) => $q->whereHas(
+                'ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
+            ))
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn (Reporte $r) => [
                 $r->ordenJob?->numero_orden ?? '',
+                $r->ordenJob?->tipo_servicio?->label() ?? '',
                 $r->ordenJob?->estado?->label() ?? '',
                 $r->ordenJob?->cliente ?? '',
                 $r->ordenJob?->contrato ?? '',
@@ -209,7 +226,7 @@ class InformesIndex extends Component
             ->all();
 
         return [
-            ['N° Orden', 'Estado Orden', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Técnico', 'Lectura', 'N° Medidor', 'Comercio', 'Tipo Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Observaciones', 'Fecha Reporte'],
+            ['N° Orden', 'Servicio', 'Estado Orden', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Investigador', 'Lectura', 'N° Medidor', 'Comercio', 'Tipo Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Observaciones', 'Fecha Reporte'],
             $rows,
             'respuestas-tecnico-'.now()->format('Y-m-d'),
         ];
@@ -222,10 +239,14 @@ class InformesIndex extends Component
             ->when($this->fechaInicio, fn ($q) => $q->whereDate('fecha_auditoria', '>=', $this->fechaInicio))
             ->when($this->fechaFin, fn ($q) => $q->whereDate('fecha_auditoria', '<=', $this->fechaFin))
             ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
+            ->when($this->servicio, fn ($q) => $q->whereHas(
+                'reporte.ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
+            ))
             ->orderBy('fecha_auditoria', 'desc')
             ->get()
             ->map(fn (auditoria $a) => [
                 $a->reporte?->ordenJob?->numero_orden ?? '',
+                $a->reporte?->ordenJob?->tipo_servicio?->label() ?? '',
                 $a->reporte?->ordenJob?->estado?->label() ?? '',
                 $a->reporte?->ordenJob?->cliente ?? '',
                 $a->reporte?->ordenJob?->contrato ?? '',
@@ -242,7 +263,7 @@ class InformesIndex extends Component
             ->all();
 
         return [
-            ['N° Orden', 'Estado Orden', 'Cliente', 'Contrato', 'Medidor', 'Barrio', 'Técnico', 'Estado Auditoría', 'Observaciones', 'Fecha Completado Orden', 'Fecha Auditoría'],
+            ['N° Orden', 'Servicio', 'Estado Orden', 'Cliente', 'Contrato', 'Medidor', 'Barrio', 'Investigador', 'Estado Auditoría', 'Observaciones', 'Fecha Completado Orden', 'Fecha Auditoría'],
             $rows,
             'respuestas-auditor-'.now()->format('Y-m-d'),
         ];
@@ -259,18 +280,20 @@ class InformesIndex extends Component
                 ->when($this->fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaInicio))
                 ->when($this->fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaFin))
                 ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
+                ->when($this->servicio, fn ($q) => $q->where('tipo_servicio', $this->servicio))
                 ->orderBy('created_at', 'desc')
                 ->limit(50)
                 ->get()
                 ->map(fn (OrdenJob $o) => [
                     'N° Orden' => $o->numero_orden,
+                    'Servicio' => $o->tipo_servicio->label(),
                     'Estado' => $o->estado->label(),
                     'Cliente' => $o->cliente,
                     'Contrato' => $o->contrato,
                     'Medidor' => $o->medidor,
                     'Barrio' => $o->barrio,
                     'Prioridad' => $o->prioridad->label(),
-                    'Técnico' => $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '—',
+                    'Investigador' => $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '—',
                     'Fecha Límite' => $o->fecha_limite?->format('d/m/Y') ?? '—',
                     'Fecha Completado' => $o->fecha_completado?->format('d/m/Y') ?? '—',
                 ])
@@ -288,17 +311,21 @@ class InformesIndex extends Component
                 ->when($this->estado, fn ($q) => $q->whereHas(
                     'ordenJob', fn ($q2) => $q2->where('estado', $this->estado)
                 ))
+                ->when($this->servicio, fn ($q) => $q->whereHas(
+                    'ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
+                ))
                 ->orderBy('created_at', 'desc')
                 ->limit(50)
                 ->get()
                 ->map(fn (Reporte $r) => [
                     'N° Orden' => $r->ordenJob?->numero_orden ?? '—',
+                    'Servicio' => $r->ordenJob?->tipo_servicio?->label() ?? '—',
                     'Estado Orden' => $r->ordenJob?->estado?->label() ?? '—',
                     'Cliente' => $r->ordenJob?->cliente ?? '—',
                     'Contrato' => $r->ordenJob?->contrato ?? '—',
                     'N° Medidor' => $r->numero_medidor ?? '—',
                     'Barrio' => $r->ordenJob?->barrio ?? '—',
-                    'Técnico' => $r->ordenJob?->personal
+                    'Investigador' => $r->ordenJob?->personal
                         ? "{$r->ordenJob->personal->nombres} {$r->ordenJob->personal->apellidos}"
                         : '—',
                     'Lectura' => $r->lectura ?? '—',
@@ -316,17 +343,21 @@ class InformesIndex extends Component
                 ->when($this->fechaInicio, fn ($q) => $q->whereDate('fecha_auditoria', '>=', $this->fechaInicio))
                 ->when($this->fechaFin, fn ($q) => $q->whereDate('fecha_auditoria', '<=', $this->fechaFin))
                 ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
+                ->when($this->servicio, fn ($q) => $q->whereHas(
+                    'reporte.ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
+                ))
                 ->orderBy('fecha_auditoria', 'desc')
                 ->limit(50)
                 ->get()
                 ->map(fn (auditoria $a) => [
                     'N° Orden' => $a->reporte?->ordenJob?->numero_orden ?? '—',
+                    'Servicio' => $a->reporte?->ordenJob?->tipo_servicio?->label() ?? '—',
                     'Estado Orden' => $a->reporte?->ordenJob?->estado?->label() ?? '—',
                     'Cliente' => $a->reporte?->ordenJob?->cliente ?? '—',
                     'Contrato' => $a->reporte?->ordenJob?->contrato ?? '—',
                     'Medidor' => $a->reporte?->ordenJob?->medidor ?? '—',
                     'Barrio' => $a->reporte?->ordenJob?->barrio ?? '—',
-                    'Técnico' => $a->reporte?->ordenJob?->personal
+                    'Investigador' => $a->reporte?->ordenJob?->personal
                         ? "{$a->reporte->ordenJob->personal->nombres} {$a->reporte->ordenJob->personal->apellidos}"
                         : '—',
                     'Estado Auditoría' => $a->estado instanceof EstadoAuditoria ? $a->estado->label() : ($a->estado ?? '—'),
@@ -345,6 +376,7 @@ class InformesIndex extends Component
             'puedeSeleccionarTipo' => $this->puedeSeleccionarTipo(),
             'tiposDisponibles' => $this->tiposDisponibles(),
             'estadoOptions' => $this->estadoOptions(),
+            'servicioOptions' => $this->servicioOptions(),
             'tipoEfectivo' => $this->tipoEfectivo(),
         ]);
     }

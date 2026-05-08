@@ -6,13 +6,13 @@
     <div class="greeting">Reporte listo para revisión</div>
 
     <div class="alert info">
-        El técnico <strong>{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</strong>
+        El investigador <strong>{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</strong>
         ha enviado el reporte de la orden <strong>{{ $orden->numero_orden }}</strong> para revisión.
     </div>
 
     <div class="intro">
         La orden ha pasado a estado <strong>En Revisión</strong>.
-        El técnico está esperando tu aprobación.
+        El investigador está esperando tu aprobación.
     </div>
 
     <div class="section">
@@ -36,7 +36,7 @@
     </div>
 
     <div class="section">
-        <div class="section-title">Técnico</div>
+        <div class="section-title">Investigador</div>
         <div class="detail-row">
             <span class="detail-label">Nombre</span>
             <span class="detail-value">{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</span>
