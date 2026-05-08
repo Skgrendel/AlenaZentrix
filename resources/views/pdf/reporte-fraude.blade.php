@@ -7,7 +7,7 @@
     <style>
         @page {
             size: A4;
-            margin: 190px 50px 110px 50px;
+            margin: 155px 50px 110px 50px;
         }
 
         body {
@@ -22,12 +22,12 @@
         /* ── Header fijo en todas las páginas ── */
         .header {
             position: fixed;
-            top: -175px;
+            top: -143px;
             left: 0;
             right: 0;
-            height: 165px;
+            height: 133px;
             background: white;
-            padding: 12px 50px 8px 50px;
+            padding: 10px 50px 6px 50px;
             z-index: 1000;
         }
 
@@ -75,7 +75,7 @@
         /* ── Línea separadora del header ── */
         .header-separator {
             position: fixed;
-            top: -12px;
+            top: -10px;
             left: 50px;
             right: 50px;
             height: 0;
@@ -445,13 +445,6 @@
                     <div class="info-row">
                         <div class="info-label">N° Noticia Criminal:</div>
                         <div class="info-value">{{ $orden->numero_noticia_criminal }}</div>
-                    </div>
-                    @endif
-                    @php $tecnico = $orden->personal; @endphp
-                    @if ($tecnico)
-                    <div class="info-row">
-                        <div class="info-label">Investigador Responsable:</div>
-                        <div class="info-value">{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</div>
                     </div>
                     @endif
                 </div>
