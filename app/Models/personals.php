@@ -26,9 +26,9 @@ class personals extends Model
         'tipo_documento',
         'numero_documento',
         'nombres',
-        'telefono',
         'apellidos',
-        'estado',
+        'telefono',
+        'cargo',
     ];
 
     protected $casts = [

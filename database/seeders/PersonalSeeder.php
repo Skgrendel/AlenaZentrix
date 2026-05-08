@@ -18,7 +18,7 @@ class PersonalSeeder extends Seeder
             'numero_documento' => '0000',
             'nombres' => 'Administrador',
             'apellidos' => 'Sistema',
-            'estado' => '3',
+            'cargo' => 'Administrador del Sistema',
         ]);
 
         // Personal de Auditor Predeterminado
@@ -27,7 +27,7 @@ class PersonalSeeder extends Seeder
             'numero_documento' => '0001',
             'nombres' => 'Auditor',
             'apellidos' => 'Sistema',
-            'estado' => '3',
+            'cargo' => 'Auditor',
         ]);
 
     }

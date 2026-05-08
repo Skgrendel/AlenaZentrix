@@ -40,7 +40,13 @@
                     label="Teléfono"
                     type="text"
                     autocomplete="tel"
-                    class="sm:col-span-2"
+                />
+                <flux:input
+                    value="{{ auth()->user()->personal?->cargo ?? '—' }}"
+                    label="Cargo"
+                    type="text"
+                    readonly
+                    disabled
                 />
             </div>
 

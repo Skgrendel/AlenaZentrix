@@ -21,7 +21,7 @@ class PersonalsFactory extends Factory
             'nombres' => fake()->firstName(),
             'apellidos' => fake()->lastName(),
             'telefono' => fake()->phoneNumber(),
-            'estado' => '1',
+            'cargo' => fake()->jobTitle(),
         ];
     }
 }

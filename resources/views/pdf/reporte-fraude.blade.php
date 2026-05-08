@@ -542,7 +542,9 @@
                 <div class="firma-linea"></div>
 
                 <div class="firma-nombre">{{ $firma['nombre'] }}</div>
-                <div class="firma-meta"><strong>Cargo:</strong> Coordinador — Alena / PRODERI S.A.S</div>
+                @if ($firma['cargo'])
+                <div class="firma-meta"><strong>Cargo:</strong> {{ $firma['cargo'] }}</div>
+                @endif
                 <div class="firma-meta"><strong>Correo electrónico:</strong> {{ $firma['email'] }}</div>
 
                 <div style="margin-top:8px;">

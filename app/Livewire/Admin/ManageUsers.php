@@ -85,7 +85,7 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                             'nombres' => $data['nombres'],
                             'apellidos' => $data['apellidos'],
                             'telefono' => $data['telefono'] ?? null,
-                            'estado' => '1',
+                            'cargo' => $data['cargo'] ?? null,
                         ]);
 
                         $plainPassword = $data['password'];
@@ -123,6 +123,7 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                         'nombres' => $record->personal?->nombres,
                         'apellidos' => $record->personal?->apellidos,
                         'telefono' => $record->personal?->telefono,
+                        'cargo' => $record->personal?->cargo,
                         'email' => $record->email,
                         'estado' => $record->estado,
                         'rol' => $record->roles->first()?->name,
@@ -134,6 +135,7 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                             'nombres' => $data['nombres'],
                             'apellidos' => $data['apellidos'],
                             'telefono' => $data['telefono'] ?? null,
+                            'cargo' => $data['cargo'] ?? null,
                         ]);
 
                         $record->update([
@@ -205,6 +207,11 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                         ->label('Teléfono')
                         ->tel()
                         ->maxLength(20),
+
+                    Forms\Components\TextInput::make('cargo')
+                        ->label('Cargo')
+                        ->maxLength(100)
+                        ->columnSpanFull(),
                 ]),
 
             Section::make('Acceso al Sistema')

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nombres');
             $table->string('apellidos');
             $table->string('telefono')->nullable();
-            $table->string('estado', 9)->default('3');
+            $table->string('cargo')->nullable();
             $table->timestamps();
         });
     }
