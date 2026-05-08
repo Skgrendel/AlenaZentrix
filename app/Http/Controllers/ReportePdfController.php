@@ -92,7 +92,7 @@ class ReportePdfController extends Controller
                     $content = $disk->get($path);
 
                     return 'data:'.$mimeType.';base64,'.base64_encode($content);
-                } catch (\Exception) {
+                } catch (\Throwable) {
                     return null;
                 }
             })
