@@ -27,6 +27,7 @@ class PermissionsSeeder extends Seeder
         'informes.ordenes' => ['label' => 'Ver/descargar informe de órdenes asignadas',        'modulo' => 'Informes'],
         'informes.tecnico' => ['label' => 'Ver/descargar informe de respuestas del técnico',   'modulo' => 'Informes'],
         'informes.auditorias' => ['label' => 'Ver/descargar informe de auditorías',               'modulo' => 'Informes'],
+        'informes.fraude' => ['label' => 'Descargar informe individual de inspección por fraude', 'modulo' => 'Informes'],
         'legal.ver' => ['label' => 'Acceso al módulo Legal',                            'modulo' => 'Legal'],
         'evidencias.ver' => ['label' => 'Ver fotos y documentos',                            'modulo' => 'Recursos'],
         'usuarios.ver' => ['label' => 'Ver listado de usuarios',                           'modulo' => 'Usuarios'],
@@ -48,7 +49,7 @@ class PermissionsSeeder extends Seeder
         'Coordinador' => [
             'ordenes.ver', 'ordenes.crear', 'ordenes.editar', 'ordenes.eliminar', 'ordenes.revisar',
             'auditorias.ver',
-            'informes.ordenes',
+            'informes.ordenes', 'informes.fraude',
             'evidencias.ver',
         ],
 

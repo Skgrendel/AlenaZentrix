@@ -14,14 +14,26 @@
                 @endif
             </flux:text>
         </div>
-        <flux:button
-            href="{{ $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia ? route('operaciones.ordenes-trabajo.reportes', $orden) : route('operaciones.ordenes-trabajo') }}"
-            icon="arrow-left"
-            variant="ghost"
-            wire:navigate
-        >
-            Volver
-        </flux:button>
+        <div class="flex items-center gap-2">
+            @if($orden->tipo_servicio === \App\Enums\TipoServicio::Fraudes && auth()->user()->can('informes.fraude'))
+                <flux:button
+                    href="{{ route('operaciones.ordenes-trabajo.reporte-pdf', [$orden, 'reporte' => $reporte->id]) }}"
+                    icon="arrow-down-tray"
+                    variant="filled"
+                    target="_blank"
+                >
+                    Descargar PDF
+                </flux:button>
+            @endif
+            <flux:button
+                href="{{ $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia ? route('operaciones.ordenes-trabajo.reportes', $orden) : route('operaciones.ordenes-trabajo') }}"
+                icon="arrow-left"
+                variant="ghost"
+                wire:navigate
+            >
+                Volver
+            </flux:button>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">

@@ -176,6 +176,19 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         ? route('operaciones.ordenes-trabajo.reportes', $record)
                         : route('operaciones.ordenes-trabajo.revisar', $record)
                     ),
+                Action::make('descargar_pdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('info')
+                    ->visible(fn (OrdenJob $record): bool => $record->tipo_servicio === TipoServicio::Fraudes
+                        && $record->estado === EstadoOrden::Completada
+                        && auth()->user()->can('informes.fraude')
+                    )
+                    ->url(fn (OrdenJob $record): string => route(
+                        'operaciones.ordenes-trabajo.reporte-pdf',
+                        [$record, 'reporte' => $record->reportes->sortByDesc('created_at')->first()?->id]
+                    ))
+                    ->openUrlInNewTab(),
                 Action::make('view')
                     ->label('Ver')
                     ->icon('heroicon-o-eye')
