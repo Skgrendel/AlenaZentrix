@@ -1,11 +1,13 @@
 @extends('emails.layout')
 
-@section('title', 'Orden de Trabajo Asignada')
-@section('badge', $orden->numero_orden)
+@section('title', 'Orden de Trabajo Asignada — ' . $orden->numero_orden)
+
 @section('content')
     <div class="greeting">¡Hola {{ $tecnico->nombres }} {{ $tecnico->apellidos }}!</div>
-    <div class="intro">
-        Se te ha asignado una nueva orden de trabajo. A continuación encontrarás todos los detalles necesarios para atenderla.
+
+    <div class="alert info">
+        Se te ha asignado la orden de trabajo <strong>{{ $orden->numero_orden }}</strong>.
+        A continuación encontrarás todos los detalles para atenderla.
     </div>
 
     <div class="section">

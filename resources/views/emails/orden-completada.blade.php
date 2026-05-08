@@ -1,15 +1,17 @@
 @extends('emails.layout')
 
-@section('title', 'Orden Completada')
-@section('badge', $orden->numero_orden)
-@section('banner_type', 'success')
-@section('banner', 'Tu reporte ha sido revisado y la orden ha sido marcada como <strong>Completada</strong>. ¡Buen trabajo!')
+@section('title', 'Orden Completada — ' . $orden->numero_orden)
 
 @section('content')
     <div class="greeting">Hola{{ $tecnico ? ', ' . $tecnico->nombres : '' }}.</div>
+
+    <div class="alert success">
+        Tu reporte ha sido revisado y la orden <strong>{{ $orden->numero_orden }}</strong>
+        ha sido marcada como <strong>Completada</strong>. ¡Buen trabajo!
+    </div>
+
     <div class="intro">
-        El coordinador ha revisado tu reporte para la orden <strong>{{ $orden->numero_orden }}</strong>
-        y ha confirmado que el trabajo fue realizado correctamente.
+        El coordinador ha confirmado que el trabajo fue realizado correctamente.
     </div>
 
     <div class="section">

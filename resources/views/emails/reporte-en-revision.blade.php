@@ -1,15 +1,18 @@
 @extends('emails.layout')
 
-@section('title', 'Reporte Enviado para Revisión')
-@section('badge', $orden->numero_orden)
-@section('banner_type', 'info')
-@section('banner')El técnico <strong>{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</strong> ha enviado el reporte para revisión.@endsection
+@section('title', 'Reporte en Revisión — ' . $orden->numero_orden)
 
 @section('content')
     <div class="greeting">Reporte listo para revisión</div>
+
+    <div class="alert info">
+        El técnico <strong>{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</strong>
+        ha enviado el reporte de la orden <strong>{{ $orden->numero_orden }}</strong> para revisión.
+    </div>
+
     <div class="intro">
-        La orden <strong>{{ $orden->numero_orden }}</strong> ha pasado a estado <strong>En Revisión</strong>.
-        El técnico ha completado su reporte y está esperando tu aprobación.
+        La orden ha pasado a estado <strong>En Revisión</strong>.
+        El técnico está esperando tu aprobación.
     </div>
 
     <div class="section">
@@ -38,10 +41,10 @@
             <span class="detail-label">Nombre</span>
             <span class="detail-value">{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</span>
         </div>
-        @if($tecnico->celular)
+        @if($tecnico->telefono)
         <div class="detail-row">
             <span class="detail-label">Teléfono</span>
-            <span class="detail-value">{{ $tecnico->celular }}</span>
+            <span class="detail-value">{{ $tecnico->telefono }}</span>
         </div>
         @endif
     </div>

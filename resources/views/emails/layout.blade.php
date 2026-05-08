@@ -21,38 +21,10 @@
             overflow: hidden;
             border: 1px solid #e0e0e0;
         }
-        /* Header */
-        .header {
-            padding: 28px 40px 24px;
-            border-bottom: 3px solid #17222e;
-            text-align: center;
-        }
-        .header img {
-            height: 48px;
-            width: auto;
-        }
-        /* Badge de orden */
-        .order-badge {
-            display: inline-block;
-            margin-top: 14px;
+        .top-bar {
+            height: 4px;
             background-color: #17222e;
-            color: #ffffff;
-            padding: 4px 16px;
-            border-radius: 4px;
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 1px;
         }
-        /* Banner de estado */
-        .status-banner {
-            padding: 12px 40px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-        .status-banner.success { background-color: #f0faf4; border-left: 3px solid #2d9e5f; color: #1a5e38; }
-        .status-banner.danger  { background-color: #fdf2f2; border-left: 3px solid #c0392b; color: #7f1d1d; }
-        .status-banner.info    { background-color: #f4f6f9; border-left: 3px solid #17222e; color: #17222e; }
-        .status-banner.warning { background-color: #fffbf0; border-left: 3px solid #d4a017; color: #7a5800; }
         /* Contenido */
         .content {
             padding: 32px 40px;
@@ -68,6 +40,19 @@
             color: #555555;
             margin-bottom: 24px;
         }
+        /* Alertas integradas al contenido */
+        .alert {
+            padding: 14px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+        .alert.success { background-color: #f0faf4; border-color: #2d9e5f; color: #1a5e38; }
+        .alert.danger  { background-color: #fdf2f2; border-color: #c0392b; color: #7f1d1d; }
+        .alert.info    { background-color: #f4f6f9; border-color: #17222e; color: #17222e; }
+        .alert.warning { background-color: #fffbf0; border-color: #d4a017; color: #7a5800; }
         /* Secciones */
         .section {
             border: 1px solid #e8e8e8;
@@ -147,27 +132,12 @@
 <body>
     <div class="wrapper">
 
-        {{-- Header con logo y número de orden --}}
-        <div class="header">
-            <img src="{{ asset('assets/image/LogoAlenaZentrix.svg') }}" alt="{{ config('app.name') }}">
-            @hasSection('badge')
-                <br><span class="order-badge">@yield('badge')</span>
-            @endif
-        </div>
+        <div class="top-bar"></div>
 
-        {{-- Banner de estado (opcional) --}}
-        @hasSection('banner')
-            <div class="status-banner @yield('banner_type', 'info')">
-                @yield('banner')
-            </div>
-        @endif
-
-        {{-- Contenido principal --}}
         <div class="content">
             @yield('content')
         </div>
 
-        {{-- Footer --}}
         <div class="footer">
             &copy; {{ date('Y') }} {{ config('app.name') }}. Todos los derechos reservados.
         </div>

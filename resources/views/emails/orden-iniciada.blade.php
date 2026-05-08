@@ -1,14 +1,17 @@
 @extends('emails.layout')
 
-@section('title', 'Orden en Progreso')
-@section('badge', $orden->numero_orden)
-@section('banner_type', 'warning')
-@section('banner')El técnico <strong>{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</strong> ha iniciado la atención de esta orden.@endsection
+@section('title', 'Orden en Progreso — ' . $orden->numero_orden)
 
 @section('content')
     <div class="greeting">Notificación de seguimiento</div>
+
+    <div class="alert warning">
+        El técnico <strong>{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</strong>
+        ha iniciado la atención de la orden <strong>{{ $orden->numero_orden }}</strong>.
+    </div>
+
     <div class="intro">
-        La orden <strong>{{ $orden->numero_orden }}</strong> ha cambiado a estado <strong>En Progreso</strong>.
+        La orden ha cambiado a estado <strong>En Progreso</strong>.
         El técnico se encuentra actualmente en el punto de servicio.
     </div>
 
@@ -42,10 +45,12 @@
             <span class="detail-label">Documento</span>
             <span class="detail-value">{{ $tecnico->numero_documento }}</span>
         </div>
+        @if($tecnico->telefono)
         <div class="detail-row">
             <span class="detail-label">Teléfono</span>
             <span class="detail-value">{{ $tecnico->telefono }}</span>
         </div>
+        @endif
         @if($orden->fecha_limite)
         <div class="detail-row">
             <span class="detail-label">Fecha Límite</span>

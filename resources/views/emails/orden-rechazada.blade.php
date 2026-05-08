@@ -1,15 +1,18 @@
 @extends('emails.layout')
 
-@section('title', 'Reporte Rechazado')
-@section('badge', $orden->numero_orden)
-@section('banner_type', 'danger')
-@section('banner', 'Tu reporte ha sido <strong>rechazado</strong>. Debes corregirlo y reenviarlo.')
+@section('title', 'Reporte Rechazado — ' . $orden->numero_orden)
 
 @section('content')
     <div class="greeting">Hola{{ $tecnico ? ', ' . $tecnico->nombres : '' }}.</div>
+
+    <div class="alert danger">
+        Tu reporte para la orden <strong>{{ $orden->numero_orden }}</strong> ha sido
+        <strong>rechazado</strong>. Debes corregirlo y reenviarlo.
+    </div>
+
     <div class="intro">
-        El coordinador ha revisado tu reporte para la orden <strong>{{ $orden->numero_orden }}</strong>
-        y ha solicitado correcciones. Por favor revisa el motivo y edita el reporte desde la aplicación.
+        El coordinador ha revisado tu reporte y ha solicitado correcciones.
+        Por favor revisa el motivo y edita el reporte desde la aplicación.
     </div>
 
     <div class="comment-box">

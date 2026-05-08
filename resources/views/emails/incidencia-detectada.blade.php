@@ -1,14 +1,17 @@
 @extends('emails.layout')
 
-@section('title', 'Alerta de Incidencia')
-@section('badge', $orden->numero_orden)
-@section('banner_type', 'danger')
-@section('banner')Se detectaron <strong>{{ count($incidencias) }}</strong> incidencia(s) en el reporte de la orden <strong>{{ $orden->numero_orden }}</strong>.@endsection
+@section('title', 'Alerta de Incidencia — ' . $orden->numero_orden)
 
 @section('content')
     <div class="greeting">Incidencias detectadas en campo</div>
+
+    <div class="alert danger">
+        Se detectaron <strong>{{ count($incidencias) }}</strong> incidencia(s) en el reporte
+        de la orden <strong>{{ $orden->numero_orden }}</strong> que requieren atención inmediata.
+    </div>
+
     <div class="intro">
-        El técnico asignado ha reportado incidencias que requieren atención inmediata para la orden <strong>{{ $orden->numero_orden }}</strong>.
+        El técnico asignado ha reportado incidencias para esta orden.
     </div>
 
     <div class="section">
