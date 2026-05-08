@@ -30,6 +30,7 @@ class ReportePdfController extends Controller
             'marcaMedidor',
             'marcaRegulador',
             'tipoNotificacionAlerta',
+            'auditoria.auditadoPor.personal',
         ]);
 
         $reporte = $reporteId

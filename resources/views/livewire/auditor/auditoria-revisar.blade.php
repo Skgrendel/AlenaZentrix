@@ -237,7 +237,7 @@
                     <div>
                         <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Auditado por</dt>
                         <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
-                            {{ $auditoria->auditadoPor->name }}
+                            {{ $auditoria->auditadoPor->fullName() }}
                         </dd>
                     </div>
                     @endif

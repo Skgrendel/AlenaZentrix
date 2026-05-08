@@ -546,9 +546,55 @@
             <div class="content-box">{{ $reporte->observaciones ?: 'Sin observaciones registradas.' }}</div>
         </div>
 
-        {{-- ── 6. Evidencias Fotográficas ── --}}
+        {{-- ── 6. Resultado de la Auditoría ── --}}
+        @php $auditoria = $reporte->auditoria; @endphp
+        @if ($auditoria && $auditoria->estado?->value !== 'pendiente_auditoria')
         <div class="section">
-            <div class="section-title">6. EVIDENCIAS FOTOGRÁFICAS</div>
+            <div class="section-title">6. RESULTADO DE LA AUDITORÍA</div>
+            <div class="info-box">
+                <div class="info-grid">
+                    <div class="info-row">
+                        <div class="info-label">Resultado:</div>
+                        <div class="info-value">
+                            @if ($auditoria->estado?->value === 'confirmado')
+                                <span class="badge badge-green">&#10003; Confirmado</span>
+                            @else
+                                <span class="badge badge-red">&#10005; Negativo</span>
+                            @endif
+                        </div>
+                    </div>
+                    @if ($auditoria->fecha_auditoria)
+                    <div class="info-row">
+                        <div class="info-label">Fecha de Auditoría:</div>
+                        <div class="info-value">{{ $auditoria->fecha_auditoria->format('d/m/Y H:i') }}</div>
+                    </div>
+                    @endif
+                    @if ($auditoria->auditadoPor)
+                    <div class="info-row">
+                        <div class="info-label">Auditado por:</div>
+                        <div class="info-value">{{ $auditoria->auditadoPor->fullName() }}</div>
+                    </div>
+                    @if ($auditoria->auditadoPor->personal?->cargo)
+                    <div class="info-row">
+                        <div class="info-label">Cargo:</div>
+                        <div class="info-value">{{ $auditoria->auditadoPor->personal->cargo }}</div>
+                    </div>
+                    @endif
+                    @endif
+                    @if ($auditoria->observaciones)
+                    <div class="info-row">
+                        <div class="info-label">Observaciones:</div>
+                        <div class="info-value">{{ $auditoria->observaciones }}</div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        {{-- ── 7. Evidencias Fotográficas ── --}}
+        <div class="section">
+            <div class="section-title">7. EVIDENCIAS FOTOGRÁFICAS</div>
             @if (count($imagenes) > 0)
                 <p style="font-size:7.5pt; color:#64748b; margin:4px 0 8px 0;">
                     Se registraron <strong>{{ count($imagenes) }}</strong> evidencia(s) fotográfica(s) durante la inspección del Contrato N° <strong>{{ $orden->contrato ?? $orden->numero_orden }}</strong>.
@@ -576,9 +622,9 @@
             @endif
         </div>
 
-        {{-- ── 7. Firma Digital del Coordinador ── --}}
+        {{-- ── 8. Firma Digital del Coordinador ── --}}
         <div class="firma-section">
-            <div class="section-title">7. FIRMA DIGITAL DEL COORDINADOR</div>
+            <div class="section-title">8. FIRMA DIGITAL DEL COORDINADOR</div>
             <p style="font-size:8pt; margin:5px 0 10px 0;">
                 El coordinador identificado a continuación ha generado y validado este informe mediante
                 firma digital, quedando registrado el acceso con los datos técnicos del dispositivo utilizado.

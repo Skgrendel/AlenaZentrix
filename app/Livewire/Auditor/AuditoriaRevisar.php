@@ -50,7 +50,7 @@ class AuditoriaRevisar extends Component implements HasForms
             'reporte.marcaMedidor',
             'reporte.marcaRegulador',
             'reporte.ubicacion',
-            'auditadoPor',
+            'auditadoPor.personal',
         ]);
 
         $this->form->fill();
