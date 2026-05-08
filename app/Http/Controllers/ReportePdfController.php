@@ -57,6 +57,8 @@ class ReportePdfController extends Controller
             'fecha' => now()->format('d/m/Y H:i:s'),
         ];
 
+        $objetivos = $this->resolveObjetivos($orden->tipo_servicio->value);
+
         $pdf = Pdf::loadView('pdf.reporte-fraude', [
             'orden' => $orden,
             'reporte' => $reporte,
@@ -65,6 +67,7 @@ class ReportePdfController extends Controller
             'imagenes' => $imagenes,
             'fechaGeneracion' => now()->format('d-m-Y'),
             'firma' => $firma,
+            'objetivos' => $objetivos,
         ]);
 
         $pdf->setPaper('A4', 'portrait');
@@ -99,6 +102,22 @@ class ReportePdfController extends Controller
             ->filter()
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array<int, array{numero: string, items: array<int, string>}>
+     */
+    private function resolveObjetivos(string $tipoServicio): array
+    {
+        $path = resource_path('data/objetivos-pdf.json');
+
+        if (! file_exists($path)) {
+            return [];
+        }
+
+        $data = json_decode(file_get_contents($path), true);
+
+        return $data[$tipoServicio] ?? [];
     }
 
     private function fileToBase64(string $path, string $mimeType): string

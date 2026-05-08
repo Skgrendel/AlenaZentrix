@@ -299,6 +299,43 @@
         .firma-meta strong {
             color: #333;
         }
+
+        /* ── Objetivos ── */
+        .objetivos-box {
+            border: 1px solid #003E72;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin: 8px 0 14px 0;
+            background-color: #f8f9fa;
+        }
+
+        .objetivo-grupo {
+            margin-bottom: 8px;
+        }
+
+        .objetivo-grupo:last-child {
+            margin-bottom: 0;
+        }
+
+        .objetivo-numero {
+            font-weight: bold;
+            font-size: 8pt;
+            color: #003E72;
+            margin-bottom: 3px;
+        }
+
+        .objetivo-item {
+            font-size: 8pt;
+            line-height: 1.45;
+            text-align: justify;
+            color: #333;
+            margin-bottom: 5px;
+            padding-left: 10px;
+        }
+
+        .objetivo-item:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -331,7 +368,7 @@
     {{-- ── Footer fijo ── --}}
     <div class="footer">
         <div class="footer-line">Informe de Inspección Técnica por Fraude — Uso Interno y Confidencial</div>
-        <div>© {{ date('Y') }} Alena / PRODERI S.A.S. — Todos los derechos reservados</div>
+        <div>© {{ date('Y') }} AlenaZentrix / PRODERI S.A.S. — Todos los derechos reservados</div>
         <div>Este documento contiene información confidencial protegida por las leyes de propiedad intelectual</div>
     </div>
 
@@ -361,6 +398,23 @@
             datos técnicos, las lecturas del medidor y la evidencia fotográfica. La información aquí
             presentada es fundamental para la evaluación de riesgos y la gestión operativa asociada.
         </p>
+
+        {{-- ── Objetivos ── --}}
+        @if (count($objetivos) > 0)
+        <div class="section">
+            <div class="section-title">OBJETIVOS</div>
+            <div class="objetivos-box">
+                @foreach ($objetivos as $grupo)
+                <div class="objetivo-grupo">
+                    <div class="objetivo-numero">{{ $grupo['numero'] }}.</div>
+                    @foreach ($grupo['items'] as $item)
+                    <div class="objetivo-item">{{ $item }}</div>
+                    @endforeach
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
 
         {{-- ── 1. Información de la Orden ── --}}
         <div class="section">
@@ -396,7 +450,7 @@
                     @php $tecnico = $orden->personal; @endphp
                     @if ($tecnico)
                     <div class="info-row">
-                        <div class="info-label">Técnico Responsable:</div>
+                        <div class="info-label">Investigador Responsable:</div>
                         <div class="info-value">{{ $tecnico->nombres }} {{ $tecnico->apellidos }}</div>
                     </div>
                     @endif
