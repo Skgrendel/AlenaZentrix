@@ -579,7 +579,13 @@ class ReporteCreate extends Component implements HasForms
 
         $this->notificarCoordinador();
 
-        if ($data['hay_fuga_gas'] || $data['excede_capacidad']) {
+        $bypassId = TipoAnomalia::where('activo', true)->where('nombre', 'Bypass')->value('id');
+        $hasBypass = $bypassId
+            && ! empty($data['anomalia'])
+            && is_array($data['anomalia'])
+            && in_array($bypassId, $data['anomalia'], true);
+
+        if ($data['hay_fuga_gas'] || $data['excede_capacidad'] || $hasBypass) {
             $this->notificarIncidencias($reporte, $data);
         }
 
@@ -672,6 +678,14 @@ class ReporteCreate extends Component implements HasForms
 
         if ($data['excede_capacidad']) {
             $incidencias[] = 'Excede Capacidad';
+        }
+
+        if (! empty($data['anomalia']) && is_array($data['anomalia'])) {
+            $bypassId = TipoAnomalia::where('activo', true)->where('nombre', 'Bypass')->value('id');
+
+            if ($bypassId && in_array($bypassId, $data['anomalia'], true)) {
+                $incidencias[] = 'Bypass';
+            }
         }
 
         foreach ($correos as $email) {
