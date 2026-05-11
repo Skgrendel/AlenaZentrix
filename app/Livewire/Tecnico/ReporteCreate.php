@@ -30,6 +30,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\UnableToCheckExistence;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -664,9 +665,13 @@ class ReporteCreate extends Component implements HasForms
             return null;
         }
 
-        return Storage::disk('s3')->exists($fotoDetectorFuga)
-            ? Storage::disk('s3')->get($fotoDetectorFuga)
-            : null;
+        try {
+            return Storage::disk('s3')->exists($fotoDetectorFuga)
+                ? Storage::disk('s3')->get($fotoDetectorFuga)
+                : null;
+        } catch (UnableToCheckExistence) {
+            return null;
+        }
     }
 
     private function cargarFotoDetectorMimeType(?string $fotoDetectorFuga): ?string
@@ -675,9 +680,13 @@ class ReporteCreate extends Component implements HasForms
             return null;
         }
 
-        return Storage::disk('s3')->exists($fotoDetectorFuga)
-            ? Storage::disk('s3')->mimeType($fotoDetectorFuga)
-            : null;
+        try {
+            return Storage::disk('s3')->exists($fotoDetectorFuga)
+                ? Storage::disk('s3')->mimeType($fotoDetectorFuga)
+                : null;
+        } catch (UnableToCheckExistence) {
+            return null;
+        }
     }
 
     /** @param array<string, mixed> $data */

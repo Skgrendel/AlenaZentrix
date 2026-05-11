@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\UnableToCheckExistence;
 
 Route::get('/', function () {
     return auth()->check()
@@ -23,7 +24,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             $disk = Storage::disk('s3');
 
-            if (! $disk->exists($path)) {
+            try {
+                if (! $disk->exists($path)) {
+                    abort(404);
+                }
+            } catch (UnableToCheckExistence) {
                 abort(404);
             }
 
