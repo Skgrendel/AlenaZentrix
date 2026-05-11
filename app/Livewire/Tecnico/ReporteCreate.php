@@ -198,7 +198,23 @@ class ReporteCreate extends Component implements HasForms
                     Forms\Components\Toggle::make('hay_fuga_gas')
                         ->label('Hay Fuga de Gas')
                         ->helperText('Detecta fugas o escapes de gas')
+                        ->live()
                         ->default(false),
+                    Forms\Components\FileUpload::make('foto_detector_fuga')
+                        ->label('Foto del detector de fuga')
+                        ->helperText('Toma o sube una foto del detector cuando se detecte fuga de gas')
+                        ->disk('s3')
+                        ->directory('reportes/'.$this->orden->numero_orden)
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->maxFiles(1)
+                        ->maxSize(5120)
+                        ->panelLayout('grid')
+                        ->extraInputAttributes(['capture' => 'environment'])
+                        ->visible(fn ($get) => (bool) $get('hay_fuga_gas'))
+                        ->required(fn ($get) => (bool) $get('hay_fuga_gas'))
+                        ->dehydrated(fn ($get) => (bool) $get('hay_fuga_gas'))
+                        ->columnSpanFull(),
                     Forms\Components\Toggle::make('excede_capacidad')
                         ->label('Excede Capacidad')
                         ->helperText('La instalación supera capacidad permitida')
@@ -558,7 +574,9 @@ class ReporteCreate extends Component implements HasForms
             'tipo_comercio_id' => $data['tipo_comercio_id'],
         ]);
 
-        unset($data['nombre_comercio'], $data['tipo_comercio_id']);
+        $imagenes = $this->normalizarImagenes($data);
+
+        unset($data['nombre_comercio'], $data['tipo_comercio_id'], $data['foto_detector_fuga']);
 
         $ubicacionRecord = ubicacion::create([
             'latitud' => $this->latitud,
@@ -568,6 +586,7 @@ class ReporteCreate extends Component implements HasForms
 
         $reporte = reportes::create([
             ...$data,
+            'imagenes' => $imagenes,
             'orden_job_id' => $this->orden->id,
             'personals_id' => auth()->user()->personals_id,
             'numero_orden' => $this->orden->numero_orden,
@@ -590,6 +609,31 @@ class ReporteCreate extends Component implements HasForms
         }
 
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<int, string>|null
+     */
+    private function normalizarImagenes(array $data): ?array
+    {
+        $imagenes = [];
+
+        if (! empty($data['imagenes']) && is_array($data['imagenes'])) {
+            $imagenes = array_values($data['imagenes']);
+        }
+
+        if (! empty($data['foto_detector_fuga'])) {
+            $fotoDetectorFuga = $data['foto_detector_fuga'];
+
+            if (is_array($fotoDetectorFuga)) {
+                $imagenes = array_merge($imagenes, array_values($fotoDetectorFuga));
+            } elseif (is_string($fotoDetectorFuga)) {
+                $imagenes[] = $fotoDetectorFuga;
+            }
+        }
+
+        return $imagenes !== [] ? $imagenes : null;
     }
 
     /** @param array<string, mixed> $data */
