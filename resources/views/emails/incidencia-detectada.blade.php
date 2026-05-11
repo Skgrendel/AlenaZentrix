@@ -24,6 +24,19 @@
         @endforeach
     </div>
 
+    @if($fotoDetectorUrl)
+    <div class="section">
+        <div class="section-title">Foto del Detector de Fuga</div>
+        <div style="padding: 16px; text-align: center;">
+            @if($fotoDetectorData)
+                <img src="{{ $message->embedData($fotoDetectorData, $fotoDetectorNombre ?? 'foto-detector-fuga.jpg') }}" alt="Foto del detector de fuga" style="max-width: 100%; border-radius: 6px; border: 1px solid #e5e7eb;">
+            @else
+                <img src="{{ $fotoDetectorUrl }}" alt="Foto del detector de fuga" style="max-width: 100%; border-radius: 6px; border: 1px solid #e5e7eb;">
+            @endif
+        </div>
+    </div>
+    @endif
+
     <div class="section">
         <div class="section-title">Datos del Punto de Servicio</div>
         <div class="detail-row">

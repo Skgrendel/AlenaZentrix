@@ -27,6 +27,7 @@ use Filament\Schemas\Schema;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -583,6 +584,9 @@ class ReporteEdit extends Component implements HasForms
         ]);
 
         $imagenes = $this->normalizarImagenes($data);
+        $fotoDetectorFuga = $this->extraerFotoDetectorFuga($data);
+        $fotoDetectorData = $this->cargarFotoDetectorData($fotoDetectorFuga);
+        $fotoDetectorMimeType = $this->cargarFotoDetectorMimeType($fotoDetectorFuga);
 
         unset($data['nombre_comercio'], $data['tipo_comercio_id'], $data['foto_detector_fuga']);
 
@@ -596,7 +600,7 @@ class ReporteEdit extends Component implements HasForms
         $this->notificarCoordinador();
 
         if (($data['hay_fuga_gas'] ?? false) || ($data['excede_capacidad'] ?? false)) {
-            $this->notificarIncidencias($data);
+            $this->notificarIncidencias($data, $fotoDetectorFuga, $fotoDetectorData, $fotoDetectorMimeType);
         }
 
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
@@ -625,6 +629,46 @@ class ReporteEdit extends Component implements HasForms
         }
 
         return $imagenes !== [] ? $imagenes : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function extraerFotoDetectorFuga(array $data): ?string
+    {
+        if (empty($data['foto_detector_fuga'])) {
+            return null;
+        }
+
+        $fotoDetectorFuga = $data['foto_detector_fuga'];
+
+        if (is_array($fotoDetectorFuga)) {
+            $fotoDetectorFuga = reset($fotoDetectorFuga);
+        }
+
+        return is_string($fotoDetectorFuga) && $fotoDetectorFuga !== '' ? $fotoDetectorFuga : null;
+    }
+
+    private function cargarFotoDetectorData(?string $fotoDetectorFuga): ?string
+    {
+        if (! $fotoDetectorFuga) {
+            return null;
+        }
+
+        return Storage::disk('s3')->exists($fotoDetectorFuga)
+            ? Storage::disk('s3')->get($fotoDetectorFuga)
+            : null;
+    }
+
+    private function cargarFotoDetectorMimeType(?string $fotoDetectorFuga): ?string
+    {
+        if (! $fotoDetectorFuga) {
+            return null;
+        }
+
+        return Storage::disk('s3')->exists($fotoDetectorFuga)
+            ? Storage::disk('s3')->mimeType($fotoDetectorFuga)
+            : null;
     }
 
     /** @param array<string, mixed> $data */
@@ -668,8 +712,12 @@ class ReporteEdit extends Component implements HasForms
     }
 
     /** @param array<string, mixed> $data */
-    protected function notificarIncidencias(array $data): void
-    {
+    protected function notificarIncidencias(
+        array $data,
+        ?string $fotoDetectorFuga = null,
+        ?string $fotoDetectorData = null,
+        ?string $fotoDetectorMimeType = null,
+    ): void {
         $correos = CorreoAlerta::where('activo', true)->pluck('email');
 
         if ($correos->isEmpty()) {
@@ -688,7 +736,14 @@ class ReporteEdit extends Component implements HasForms
 
         foreach ($correos as $email) {
             try {
-                Mail::to($email)->send(new IncidenciaDetectada($this->orden, $incidencias));
+                Mail::to($email)->send(new IncidenciaDetectada(
+                    $this->orden,
+                    $incidencias,
+                    $fotoDetectorFuga,
+                    $fotoDetectorData,
+                    $fotoDetectorMimeType,
+                    $fotoDetectorFuga ? basename($fotoDetectorFuga) : null,
+                ));
             } catch (\Exception $e) {
                 Log::error('No se pudo enviar alerta de incidencia.', [
                     'orden' => $this->orden->numero_orden,

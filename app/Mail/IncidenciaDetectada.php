@@ -5,10 +5,10 @@ namespace App\Mail;
 use App\Models\OrdenJob;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Alerta enviada a los correos de CorreoAlerta cuando un técnico detecta fuga de gas o exceso de capacidad
@@ -22,6 +22,10 @@ class IncidenciaDetectada extends Mailable
     public function __construct(
         public OrdenJob $orden,
         public array $incidencias,
+        public ?string $fotoDetectorFuga = null,
+        public ?string $fotoDetectorData = null,
+        public ?string $fotoDetectorMimeType = null,
+        public ?string $fotoDetectorNombre = null,
     ) {}
 
     public function envelope(): Envelope
@@ -38,11 +42,14 @@ class IncidenciaDetectada extends Mailable
             with: [
                 'orden' => $this->orden,
                 'incidencias' => $this->incidencias,
+                'fotoDetectorUrl' => $this->fotoDetectorFuga ? Storage::disk('s3')->url($this->fotoDetectorFuga) : null,
+                'fotoDetectorData' => $this->fotoDetectorData,
+                'fotoDetectorMimeType' => $this->fotoDetectorMimeType,
+                'fotoDetectorNombre' => $this->fotoDetectorNombre,
             ],
         );
     }
 
-    /** @return array<int, Attachment> */
     public function attachments(): array
     {
         return [];
