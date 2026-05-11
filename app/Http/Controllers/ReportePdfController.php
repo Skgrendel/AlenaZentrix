@@ -50,7 +50,7 @@ class ReportePdfController extends Controller
         $firmante = auth()->user();
 
         $firma = [
-            'nombre' => $firmante->name,
+            'nombre' => $firmante->fullname(),
             'cargo' => $firmante->personal?->cargo,
             'email' => $firmante->email,
             'ip' => request()->ip(),
