@@ -406,7 +406,7 @@
             <div class="objetivos-box">
                 @foreach ($objetivos as $grupo)
                 <div class="objetivo-grupo">
-                    <div class="objetivo-numero">{{ $grupo['numero'] }}.</div>
+                    <div class="objetivo-numero"></div>
                     @foreach ($grupo['items'] as $item)
                     <div class="objetivo-item">{{ $item }}</div>
                     @endforeach
