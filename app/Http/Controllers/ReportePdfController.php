@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ReportePdfController extends Controller
 {
-    public function download(OrdenJob $orden): Response
+    public function DownLoadInformeFraude(OrdenJob $orden): Response
     {
         abort_unless($orden->tipo_servicio === TipoServicio::Fraudes, 403);
         abort_unless(auth()->user()->can('informes.fraude'), 403);

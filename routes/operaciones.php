@@ -21,6 +21,6 @@ Route::middleware(['auth', 'verified', 'permission:ordenes.ver'])
 
         Route::get('ordenes-trabajo/{orden}', OrdenJobShow::class)->name('ordenes-trabajo.show');
         Route::get('ordenes-trabajo/{orden}/revisar', ReporteRevisar::class)->name('ordenes-trabajo.revisar');
-        Route::get('ordenes-trabajo/{orden}/reporte-pdf', [ReportePdfController::class, 'download'])->name('ordenes-trabajo.reporte-pdf');
+        Route::get('ordenes-trabajo/{orden}/reporte-fraude', [ReportePdfController::class, 'DownLoadInformeFraude'])->name('ordenes-trabajo.reporte-fraude');
         Route::get('ordenes-trabajo/{orden}/reportes', ReportesVigilanciaIndex::class)->name('ordenes-trabajo.reportes');
     });
