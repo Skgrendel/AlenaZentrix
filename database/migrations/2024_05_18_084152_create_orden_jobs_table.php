@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('ciclo')->nullable();
             $table->string('numero_noticia_criminal')->nullable();
             $table->string('tipo_investigacion')->nullable(); // 'interna' | 'contratista' (solo para Investigación)
-            $table->json('fotos')->nullable();
+            $table->json('documentos')->nullable();
 
             // Gestión de la orden
             $table->enum('prioridad', ['baja', 'media', 'alta', 'urgente'])->default('media'); // baja | media | alta | urgente

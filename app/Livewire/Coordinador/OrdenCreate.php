@@ -235,8 +235,8 @@ class OrdenCreate extends Component implements HasForms
                 // ── Fotos ─────────────────────────────────────────────────
                 Section::make('Gestion de la Orden')
                     ->schema([
-                        Forms\Components\FileUpload::make('fotos')
-                            ->label('Subir fotos')
+                        Forms\Components\FileUpload::make('documentos')
+                            ->label('Subir documentos')
                             ->disk('s3')
                             ->directory('ordenes/temp')
                             ->visibility('public')
@@ -295,13 +295,13 @@ class OrdenCreate extends Component implements HasForms
     {
         $data = $this->form->getState();
 
-        $fotosTemp = $data['fotos'] ?? [];
-        unset($data['fotos']);
+        $documentosTemp = $data['documentos'] ?? [];
+        unset($data['documentos']);
 
         $orden = OrdenJob::create($data);
 
-        if (! empty($fotosTemp)) {
-            $orden->update(['fotos' => $this->moverFotos($fotosTemp, $orden->numero_orden)]);
+        if (! empty($documentosTemp)) {
+            $orden->update(['documentos' => $this->moverdocumentos($documentosTemp, $orden->numero_orden)]);
         }
 
         if (! empty($data['personals_id'])) {
@@ -313,13 +313,13 @@ class OrdenCreate extends Component implements HasForms
         $this->redirect(route('operaciones.ordenes-trabajo'), navigate: true);
     }
 
-    /** @param array<string> $fotos */
-    private function moverFotos(array $fotos, string $numeroOrden): array
+    /** @param array<string> $documentos */
+    private function moverdocumentos(array $documentos, string $numeroOrden): array
     {
         $directorio = "ordenes/{$numeroOrden}";
         $resultado = [];
 
-        foreach ($fotos as $rutaTemp) {
+        foreach ($documentos as $rutaTemp) {
             $nombreArchivo = basename($rutaTemp);
             $rutaFinal = "{$directorio}/{$nombreArchivo}";
 
@@ -328,7 +328,7 @@ class OrdenCreate extends Component implements HasForms
                     Storage::disk('s3')->move($rutaTemp, $rutaFinal);
                 }
             } catch (\Exception $e) {
-                Log::error('No se pudo mover foto de orden.', [
+                Log::error('No se pudo mover documento de orden.', [
                     'origen' => $rutaTemp,
                     'destino' => $rutaFinal,
                     'error' => $e->getMessage(),
