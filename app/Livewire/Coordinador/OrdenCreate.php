@@ -92,19 +92,31 @@ class OrdenCreate extends Component implements HasForms
                             ->label('N° Medidor')
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Fraudes->value)
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('tipo_medidor')
+                        Forms\Components\Select::make('tipo_medidor')
                             ->label('Tipo de Medidor')
-                            ->maxLength(255),
+                            ->options([
+                                'por_definir' => 'Por definir',
+                                'analogico' => 'Analógico',
+                                'digital' => 'Digital',
+                            ])
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Fraudes->value)
+                            ->placeholder('Seleccionar'),
                         Forms\Components\TextInput::make('ciclo')
                             ->label('Ciclo')
-                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Fraudes->value)
                             ->maxLength(255)
                             ->columnSpanFull(),
+                        Forms\Components\Textarea::make('actividades')
+                            ->label('Actividades a Realizar')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
+                            ->columnSpanFull()
+                            ->rows(5)
+                            ->cols(10)
+                            ->maxLength(1000),
                     ]),
 
                 // ── Sección: Investigación ────────────────────────────────
                 Section::make('Datos de la Investigación')
-                    ->columns(2)
+                    ->columns(1)
                     ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
                     ->schema([
                         Forms\Components\Select::make('tipo_investigacion')
@@ -112,29 +124,34 @@ class OrdenCreate extends Component implements HasForms
                             ->options([
                                 'interna' => 'Interna',
                                 'contratista' => 'Contratista',
+                                'Terceros' => 'Terceros',
                             ])
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
                             ->placeholder('Seleccionar')
                             ->columnSpanFull(),
-                        Forms\Components\TextInput::make('contrato')
-                            ->label('N° Contrato')
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('cliente')
-                            ->label('Nombre del Investigado / Comercio')
+                        Forms\Components\Textarea::make('antecedente')
+                            ->label('Antecedentes')
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('direccion')
-                            ->label('Dirección')
+                            ->rows(5)
+                            ->cols(5)
+                            ->maxLength(1000),
+                        Forms\Components\Textarea::make('objetivo')
+                            ->label('Objetivo de la Investigación')
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('barrio')
-                            ->label('Barrio')
-                            ->maxLength(255),
+                            ->rows(5)
+                            ->cols(5)
+                            ->maxLength(1000),
+                        Forms\Components\Textarea::make('actividades')
+                            ->label('Actividades a Realizar')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
+                            ->rows(5)
+                            ->cols(5)
+                            ->maxLength(1000),
                     ]),
 
                 // ── Sección: Capturas y Bandas ────────────────────────────
                 Section::make('Datos de la Orden')
-                    ->columns(2)
+                    ->columns(1)
                     ->visible(fn ($get) => in_array($get('tipo_servicio'), [
                         TipoServicio::Capturas->value,
                         TipoServicio::Bandas->value,
@@ -142,21 +159,25 @@ class OrdenCreate extends Component implements HasForms
                     ->schema([
                         Forms\Components\TextInput::make('numero_noticia_criminal')
                             ->label('N° Noticia Criminal')
+                            ->maxLength(255),
+                        Forms\Components\Textarea::make('objetivo')
+                            ->label('Objetivo de la Gestion Legal')
                             ->required(fn ($get) => in_array($get('tipo_servicio'), [
                                 TipoServicio::Capturas->value,
                                 TipoServicio::Bandas->value,
                             ]))
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('direccion')
-                            ->label('Dirección')
+                            ->rows(5)
+                            ->cols(5)
+                            ->maxLength(1000),
+                        Forms\Components\Textarea::make('actividades')
+                            ->label('Actividades a Realizar')
                             ->required(fn ($get) => in_array($get('tipo_servicio'), [
                                 TipoServicio::Capturas->value,
                                 TipoServicio::Bandas->value,
                             ]))
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('barrio')
-                            ->label('Municipio')
-                            ->maxLength(255),
+                            ->rows(5)
+                            ->cols(5)
+                            ->maxLength(1000),
                     ]),
 
                 // ── Sección: Vigilancia ───────────────────────────────────
@@ -166,7 +187,6 @@ class OrdenCreate extends Component implements HasForms
                     ->schema([
                         Forms\Components\TextInput::make('contrato')
                             ->label('Contrato')
-                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value)
                             ->maxLength(255),
                         Forms\Components\TextInput::make('cliente')
                             ->label('Nombre del Comercio / Cliente')
@@ -179,10 +199,41 @@ class OrdenCreate extends Component implements HasForms
                         Forms\Components\TextInput::make('barrio')
                             ->label('Barrio / Municipio')
                             ->maxLength(255),
+                            Forms\Components\Textarea::make('objetivo')
+                            ->label('Objetivo de la Investigación')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value)
+                            ->rows(5)
+                            ->columnSpanFull()
+                            ->cols(5)
+                            ->maxLength(1000),
+                        Forms\Components\Textarea::make('actividades')
+                            ->label('Actividades a Realizar')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value)
+                            ->rows(5)
+                            ->columnSpanFull()
+                            ->cols(5)
+                            ->maxLength(1000)
                     ]),
-
+                    // ── Sección: Gestión de Riesgo ─────────────────────────────
+                Section::make('Datos de Gestión de Riesgo')
+                    ->columns(1)
+                    ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::Gestion_Riesgo->value)
+                    ->schema([
+                        Forms\Components\Textarea::make('objetivo')
+                            ->label('Objetivo de la Gestión de Riesgo')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Gestion_Riesgo->value)
+                            ->rows(5)
+                            ->cols(5)
+                            ->maxLength(1000),
+                        Forms\Components\Textarea::make('actividades')
+                            ->label('Actividades a Realizar')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Gestion_Riesgo->value)
+                            ->rows(5)
+                            ->cols(5)
+                            ->maxLength(1000),
+                    ]),
                 // ── Fotos ─────────────────────────────────────────────────
-                Section::make('Fotos de la Orden')
+                Section::make('Gestion de la Orden')
                     ->schema([
                         Forms\Components\FileUpload::make('fotos')
                             ->label('Subir fotos')
@@ -203,14 +254,6 @@ class OrdenCreate extends Component implements HasForms
                 Section::make('Gestión de la Orden')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\TextInput::make('titulo')
-                            ->label('Título')
-                            ->maxLength(255)
-                            ->columnSpanFull(),
-                        Forms\Components\Textarea::make('descripcion')
-                            ->label('Descripción')
-                            ->rows(3)
-                            ->columnSpanFull(),
                         Forms\Components\Select::make('prioridad')
                             ->label('Prioridad')
                             ->options(
@@ -229,7 +272,7 @@ class OrdenCreate extends Component implements HasForms
                             ->label('Fecha Límite')
                             ->nullable(),
                         Forms\Components\Select::make('personals_id')
-                            ->label(fn ($get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value ? 'Investigador Asignado' : 'Técnico Asignado')
+                            ->label(fn ($get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value ? 'Investigador Asignado' : 'Personal Asignado')
                             ->options($tecnicos)
                             ->searchable()
                             ->nullable()

@@ -14,6 +14,7 @@ enum TipoServicio: string
     case Capturas = 'capturas';
     case Bandas = 'bandas';
     case Vigilancia = 'vigilancia';
+    case Gestion_Riesgo = 'Gestión de Riesgo';
 
     public function label(): string
     {
@@ -23,6 +24,7 @@ enum TipoServicio: string
             self::Capturas => 'Capturas Criminales',
             self::Bandas => 'Desarticulación de Bandas',
             self::Vigilancia => 'Dispositivos de Vigilancia',
+            self::Gestion_Riesgo => 'Gestión de Riesgo',
         };
     }
 
@@ -34,6 +36,7 @@ enum TipoServicio: string
             self::Capturas => 'info',
             self::Bandas => 'purple',
             self::Vigilancia => 'success',
+            self::Gestion_Riesgo => 'primary',
         };
     }
 

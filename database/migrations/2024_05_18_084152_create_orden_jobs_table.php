@@ -21,6 +21,9 @@ return new class extends Migration
             $table->string('direccion')->nullable();
             $table->string('barrio')->nullable();
             $table->string('medidor')->nullable();
+            $table->text('antecedente')->nullable();
+            $table->text('objetivo')->nullable();
+            $table->text('actividades')->nullable();
             $table->string('tipo_medidor')->nullable();
             $table->string('ciclo')->nullable();
             $table->string('numero_noticia_criminal')->nullable();
@@ -28,8 +31,6 @@ return new class extends Migration
             $table->json('fotos')->nullable();
 
             // Gestión de la orden
-            $table->string('titulo')->nullable();
-            $table->text('descripcion')->nullable();
             $table->enum('prioridad', ['baja', 'media', 'alta', 'urgente'])->default('media'); // baja | media | alta | urgente
             $table->enum('estado', ['pendiente', 'asignada', 'en_progreso', 'en_revision', 'completada', 'rechazada', 'cancelada'])->default('pendiente');
             $table->boolean('estado_servicio')->default(true);

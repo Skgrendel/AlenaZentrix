@@ -29,6 +29,7 @@ class reportes extends Model
         'marca_medidor_id',
         'marca_regulador_id',
         'tipo_notificacion_alerta_id',
+        'actividades',
         'hay_fuga_gas',
         'excede_capacidad',
         'imagenes',
@@ -44,6 +45,7 @@ class reportes extends Model
     protected $casts = [
         'anomalia' => 'array',
         'imagenes' => 'array',
+        'actividades' => 'array',
         'datos_servicio' => 'array',
         'coincide_medidor' => 'boolean',
         'hay_fuga_gas' => 'boolean',

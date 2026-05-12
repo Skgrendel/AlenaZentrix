@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('lectura')->nullable();
             $table->json('datos_servicio')->nullable();
             $table->json('anomalia')->nullable();
+            $table->json('actividades')->nullable();
             $table->uuid('tipo_imposibilidad_id')->nullable();
             $table->uuid('tipo_regulador_id')->nullable();
             $table->uuid('marca_medidor_id')->nullable();
