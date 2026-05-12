@@ -742,7 +742,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
     private function submitServicioGenerico(array $data): void
     {
         $datosServicio = $data;
-        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
 
         reportes::create([
             'orden_job_id' => $this->orden->id,
@@ -766,7 +766,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
     private function submitVigilancia(array $data): void
     {
         $datosServicio = $data;
-        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
 
         reportes::create([
             'orden_job_id' => $this->orden->id,
