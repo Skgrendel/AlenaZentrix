@@ -200,6 +200,9 @@ class ReporteRevisar extends Component implements HasActions, HasForms
 
     public function render(): View
     {
+        // Recargar la orden para obtener datos más recientes (como actividades)
+        $this->orden->refresh();
+
         return view('livewire.coordinador.reporte-revisar', [
             'imagenUrls' => $this->imagenUrls(),
             'datosServicio' => $this->datosServicioDisplay(),
