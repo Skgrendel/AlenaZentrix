@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Informe de Inspección por Fraude - {{ $orden->numero_orden }}</title>
     <style>
         @page {
@@ -206,9 +207,20 @@
             font-weight: bold;
         }
 
-        .badge-red   { background-color: #ef4444; color: white; }
-        .badge-orange { background-color: #f97316; color: white; }
-        .badge-green  { background-color: #10b981; color: white; }
+        .badge-red {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .badge-orange {
+            background-color: #f97316;
+            color: white;
+        }
+
+        .badge-green {
+            background-color: #10b981;
+            color: white;
+        }
 
         /* ── Observaciones / texto libre ── */
         .content-box {
@@ -338,6 +350,7 @@
         }
     </style>
 </head>
+
 <body>
 
     {{-- ── Header fijo ── --}}
@@ -401,19 +414,19 @@
 
         {{-- ── Objetivos ── --}}
         @if (count($objetivos) > 0)
-        <div class="section">
-            <div class="section-title">OBJETIVOS</div>
-            <div class="objetivos-box">
-                @foreach ($objetivos as $grupo)
-                <div class="objetivo-grupo">
-                    <div class="objetivo-numero"></div>
-                    @foreach ($grupo['items'] as $item)
-                    <div class="objetivo-item">{{ $item }}</div>
+            <div class="section">
+                <div class="section-title">OBJETIVOS</div>
+                <div class="objetivos-box">
+                    @foreach ($objetivos as $grupo)
+                        <div class="objetivo-grupo">
+                            <div class="objetivo-numero"></div>
+                            @foreach ($grupo['items'] as $item)
+                                <div class="objetivo-item">{{ $item }}</div>
+                            @endforeach
+                        </div>
                     @endforeach
                 </div>
-                @endforeach
             </div>
-        </div>
         @endif
 
         {{-- ── 1. Información de la Orden ── --}}
@@ -435,17 +448,18 @@
                     </div>
                     <div class="info-row">
                         <div class="info-label">Dirección:</div>
-                        <div class="info-value">{{ $orden->direccion }}{{ $orden->barrio ? ', '.$orden->barrio : '' }}</div>
+                        <div class="info-value">{{ $orden->direccion }}{{ $orden->barrio ? ', ' . $orden->barrio : '' }}
+                        </div>
                     </div>
                     <div class="info-row">
                         <div class="info-label">Fecha de Inspección:</div>
                         <div class="info-value">{{ $reporte->created_at->format('d/m/Y') }}</div>
                     </div>
                     @if ($orden->numero_noticia_criminal)
-                    <div class="info-row">
-                        <div class="info-label">N° Noticia Criminal:</div>
-                        <div class="info-value">{{ $orden->numero_noticia_criminal }}</div>
-                    </div>
+                        <div class="info-row">
+                            <div class="info-label">N° Noticia Criminal:</div>
+                            <div class="info-value">{{ $orden->numero_noticia_criminal }}</div>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -453,27 +467,27 @@
 
         {{-- ── 2. Comercio Inspeccionado ── --}}
         @if ($reporte->comercio)
-        <div class="section">
-            <div class="section-title">2. COMERCIO INSPECCIONADO</div>
-            <div class="info-box">
-                <div class="info-grid">
-                    <div class="info-row">
-                        <div class="info-label">Nombre del Comercio:</div>
-                        <div class="info-value">{{ $reporte->comercio->nombre_comercio ?? '—' }}</div>
+            <div class="section">
+                <div class="section-title">2. COMERCIO INSPECCIONADO</div>
+                <div class="info-box">
+                    <div class="info-grid">
+                        <div class="info-row">
+                            <div class="info-label">Nombre del Comercio:</div>
+                            <div class="info-value">{{ $reporte->comercio->nombre_comercio ?? '—' }}</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Tipo de Comercio:</div>
+                            <div class="info-value">{{ $reporte->comercio->tipoComercio?->nombre ?? '—' }}</div>
+                        </div>
+                        @if ($reporte->comercio->medidor_anomalia)
+                            <div class="info-row">
+                                <div class="info-label">Medidor Anomalía:</div>
+                                <div class="info-value">{{ $reporte->comercio->medidor_anomalia }}</div>
+                            </div>
+                        @endif
                     </div>
-                    <div class="info-row">
-                        <div class="info-label">Tipo de Comercio:</div>
-                        <div class="info-value">{{ $reporte->comercio->tipoComercio?->nombre ?? '—' }}</div>
-                    </div>
-                    @if ($reporte->comercio->medidor_anomalia)
-                    <div class="info-row">
-                        <div class="info-label">Medidor Anomalía:</div>
-                        <div class="info-value">{{ $reporte->comercio->medidor_anomalia }}</div>
-                    </div>
-                    @endif
                 </div>
             </div>
-        </div>
         @endif
 
         {{-- ── 3. Datos Técnicos del Medidor ── --}}
@@ -549,47 +563,47 @@
         {{-- ── 6. Resultado de la Auditoría ── --}}
         @php $auditoria = $reporte->auditoria; @endphp
         @if ($auditoria && $auditoria->estado?->value !== 'pendiente_auditoria')
-        <div class="section">
-            <div class="section-title">6. RESULTADO DE LA AUDITORÍA</div>
-            <div class="info-box">
-                <div class="info-grid">
-                    <div class="info-row">
-                        <div class="info-label">Resultado:</div>
-                        <div class="info-value">
-                            @if ($auditoria->estado?->value === 'confirmado')
-                                <span class="badge badge-green">&#10003; Confirmado</span>
-                            @else
-                                <span class="badge badge-red">&#10005; Negativo</span>
-                            @endif
+            <div class="section">
+                <div class="section-title">6. RESULTADO DE LA AUDITORÍA</div>
+                <div class="info-box">
+                    <div class="info-grid">
+                        <div class="info-row">
+                            <div class="info-label">Resultado:</div>
+                            <div class="info-value">
+                                @if ($auditoria->estado?->value === 'confirmado')
+                                    <span class="badge badge-green">&#10003; Confirmado</span>
+                                @else
+                                    <span class="badge badge-red">&#10005; Negativo</span>
+                                @endif
+                            </div>
                         </div>
+                        @if ($auditoria->fecha_auditoria)
+                            <div class="info-row">
+                                <div class="info-label">Fecha de Auditoría:</div>
+                                <div class="info-value">{{ $auditoria->fecha_auditoria->format('d/m/Y H:i') }}</div>
+                            </div>
+                        @endif
+                        @if ($auditoria->auditadoPor)
+                            <div class="info-row">
+                                <div class="info-label">Auditado por:</div>
+                                <div class="info-value">{{ $auditoria->auditadoPor->fullName() }}</div>
+                            </div>
+                            @if ($auditoria->auditadoPor->personal?->cargo)
+                                <div class="info-row">
+                                    <div class="info-label">Cargo:</div>
+                                    <div class="info-value">{{ $auditoria->auditadoPor->personal->cargo }}</div>
+                                </div>
+                            @endif
+                        @endif
+                        @if ($auditoria->observaciones)
+                            <div class="info-row">
+                                <div class="info-label">Observaciones:</div>
+                                <div class="info-value">{{ $auditoria->observaciones }}</div>
+                            </div>
+                        @endif
                     </div>
-                    @if ($auditoria->fecha_auditoria)
-                    <div class="info-row">
-                        <div class="info-label">Fecha de Auditoría:</div>
-                        <div class="info-value">{{ $auditoria->fecha_auditoria->format('d/m/Y H:i') }}</div>
-                    </div>
-                    @endif
-                    @if ($auditoria->auditadoPor)
-                    <div class="info-row">
-                        <div class="info-label">Auditado por:</div>
-                        <div class="info-value">{{ $auditoria->auditadoPor->fullName() }}</div>
-                    </div>
-                    @if ($auditoria->auditadoPor->personal?->cargo)
-                    <div class="info-row">
-                        <div class="info-label">Cargo:</div>
-                        <div class="info-value">{{ $auditoria->auditadoPor->personal->cargo }}</div>
-                    </div>
-                    @endif
-                    @endif
-                    @if ($auditoria->observaciones)
-                    <div class="info-row">
-                        <div class="info-label">Observaciones:</div>
-                        <div class="info-value">{{ $auditoria->observaciones }}</div>
-                    </div>
-                    @endif
                 </div>
             </div>
-        </div>
         @endif
 
         {{-- ── 7. Evidencias Fotográficas ── --}}
@@ -597,7 +611,8 @@
             <div class="section-title">7. EVIDENCIAS FOTOGRÁFICAS</div>
             @if (count($imagenes) > 0)
                 <p style="font-size:7.5pt; color:#64748b; margin:4px 0 8px 0;">
-                    Se registraron <strong>{{ count($imagenes) }}</strong> evidencia(s) fotográfica(s) durante la inspección del Contrato N° <strong>{{ $orden->contrato ?? $orden->numero_orden }}</strong>.
+                    Se registraron <strong>{{ count($imagenes) }}</strong> evidencia(s) fotográfica(s) durante la
+                    inspección del Contrato N° <strong>{{ $orden->contrato ?? $orden->numero_orden }}</strong>.
                 </p>
                 @php $rows = array_chunk($imagenes, 2); @endphp
                 <table class="evidencias-tabla">
@@ -622,9 +637,33 @@
             @endif
         </div>
 
+        {{-- ── 5. Observaciones ── --}}
+        <div class="section">
+            <div class="section-title">8. DESTINACIÓN DEL INFORME </div>
+            <div class="content-box">
+                El presente informe se presenta con fines exclusivamente informativos, en el marco de una investigación
+                interna desarrollada por la compañía, razón por la cual no debe ser entendido de manera inequívoca como
+                un medio de prueba autónomo, suficiente o exclusivo para sustentar la desvinculación de personas
+                naturales o jurídicas. La adopción de decisiones de tal alcance corresponde única y exclusivamente a la
+                empresa contratante Surtigas S.A. E.S.P., en ejercicio de sus competencias legales, contractuales y de
+                gobierno corporativo.
+
+                Se deja expresa constancia de que la información aquí consignada se obtuvo principalmente a través de
+                testimonios voluntarios de los entrevistados, con la observancia y en presencia de los funcionarios que
+                en el cuerpo del informe se mencionan, lo que asegura trazabilidad, transparencia y respeto por la buena
+                fe en la documentación de los hechos.
+
+                De igual forma, los registros audiovisuales descritos fueron recolectados respetando la voluntad de
+                quienes detentan la posesión de tales materiales, por lo que su utilización, difusión o destinación
+                ulterior deberá ser consultada, evaluada o legalizada mediante los mecanismos conducentes en derecho y
+                de acuerdo con los protocolos internos que resulten aplicables al caso.
+
+            </div>
+        </div>
+
         {{-- ── 8. Firma Digital del Coordinador ── --}}
         <div class="firma-section">
-            <div class="section-title">8. FIRMA DIGITAL DEL COORDINADOR</div>
+            <div class="section-title">9. FIRMA DIGITAL DEL COORDINADOR</div>
             <p style="font-size:8pt; margin:5px 0 10px 0;">
                 El coordinador identificado a continuación ha generado y validado este informe mediante
                 firma digital, quedando registrado el acceso con los datos técnicos del dispositivo utilizado.
@@ -636,7 +675,7 @@
 
                 <div class="firma-nombre">{{ $firma['nombre'] }}</div>
                 @if ($firma['cargo'])
-                <div class="firma-meta"><strong>Cargo:</strong> {{ $firma['cargo'] }}</div>
+                    <div class="firma-meta"><strong>Cargo:</strong> {{ $firma['cargo'] }}</div>
                 @endif
                 <div class="firma-meta"><strong>Correo electrónico:</strong> {{ $firma['email'] }}</div>
 
@@ -650,4 +689,5 @@
 
     </div>{{-- Fin del contenido --}}
 </body>
+
 </html>

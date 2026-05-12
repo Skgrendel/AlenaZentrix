@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('medidor')->nullable();
             $table->text('antecedente')->nullable();
             $table->text('objetivo')->nullable();
-            $table->text('actividades')->nullable();
+            $table->json('actividades')->nullable();
             $table->string('tipo_medidor')->nullable();
             $table->string('ciclo')->nullable();
             $table->string('numero_noticia_criminal')->nullable();

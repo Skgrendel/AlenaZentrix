@@ -10,9 +10,12 @@ use App\Models\OrdenJob;
 use App\Models\personals;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Forms\Components\Repeater;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -27,9 +30,10 @@ use Livewire\Component;
  * Formulario de creación de una nueva orden de trabajo.
  * El formulario se adapta dinámicamente según el tipo de servicio seleccionado.
  */
-class OrdenCreate extends Component implements HasForms
+class OrdenCreate extends Component implements HasActions, HasForms
 {
     use InteractsWithForms;
+    use InteractsWithActions;
 
     /** @var array<string, mixed> */
     public array $data = [];
@@ -141,12 +145,6 @@ class OrdenCreate extends Component implements HasForms
                             ->rows(5)
                             ->cols(5)
                             ->maxLength(1000),
-                        Forms\Components\Textarea::make('actividades')
-                            ->label('Actividades a Realizar')
-                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
-                            ->rows(5)
-                            ->cols(5)
-                            ->maxLength(1000),
                     ]),
 
                 // ── Sección: Capturas y Bandas ────────────────────────────
@@ -214,7 +212,24 @@ class OrdenCreate extends Component implements HasForms
                             ->cols(5)
                             ->maxLength(1000)
                     ]),
-                    // ── Sección: Gestión de Riesgo ─────────────────────────────
+                // ── Sección: Actividad A Realizar ─────────────────────────────
+                 Section::make('Actividad A Realizar')
+                             ->icon('heroicon-o-check-badge')
+                            ->schema([
+                                    Repeater::make('actividades_investigacion')
+                                    ->label('Actividades por realizar')
+                                    ->schema([
+                                    Forms\Components\Textarea::make('descripcion')
+                                    ->autosize()
+                                    ->label('Actividades')
+                                    ->columnSpanFull()
+                                    ->placeholder('Describe las actividades realizadas durante la investigación...')
+                                    ->required(),
+                                ])
+                                ->columns(2)
+                                ->collapsible()
+                ]),
+                // ── Sección: Gestión de Riesgo ─────────────────────────────
                 Section::make('Datos de Gestión de Riesgo')
                     ->columns(1)
                     ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::Gestion_Riesgo->value)

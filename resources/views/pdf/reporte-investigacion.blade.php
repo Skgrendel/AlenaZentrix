@@ -424,6 +424,19 @@
             presentada es fundamental para la evaluación operativa y documental del caso.
         </p>
 
+         {{-- ── antecedentes ── --}}
+        @if ($datosOrden['antecedente'])
+            <div class="section">
+                <div class="section-title">ANTECEDENTES</div>
+                <div class="objetivos-box">
+                    <div class="objetivo-grupo">
+                        <div class="objetivo-numero"></div>
+                        <div class="objetivo-item">{{ $datosOrden['antecedente'] }}</div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         {{-- ── Objetivos ── --}}
         @if ($datosOrden['objetivo'])
             <div class="section">
@@ -432,19 +445,6 @@
                     <div class="objetivo-grupo">
                         <div class="objetivo-numero"></div>
                         <div class="objetivo-item">{{ $datosOrden['objetivo'] }}</div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
-        {{-- ── antecedentes ── --}}
-        @if ($datosOrden['antecedente'])
-            <div class="section">
-                <div class="section-title">ANTECEDENTES</div>
-                <div class="objetivos-box">
-                    <div class="objetivo-grupo">
-                        <div class="objetivo-numero"></div>
-                        <div class="objetivo-item">{{ $datosOrden['antecedente'] }}</div>
                     </div>
                 </div>
             </div>
@@ -475,10 +475,6 @@
                     <div class="info-row">
                         <div class="info-label">Tipo de Servicio:</div>
                         <div class="info-value">{{ $datosOrden['servicio'] ?? '—' }}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">Prioridad:</div>
-                        <div class="info-value">{{ $datosOrden['prioridad'] ?? '—' }}</div>
                     </div>
                     <div class="info-row">
                         <div class="info-label">Estado:</div>
@@ -553,11 +549,11 @@
             </div>
         </div>
         {{-- ── Acompañamiento Técnico ── --}}
-         @if ($datosReporte['acompanamiento_tecnico'] == true)
-        <div class="section">
-            <div class="section-title">DATOS DE ACOMPAÑAMIENTO TECNICO</div>
-            <div class="info-box">
-                <div class="info-grid">
+        @if ($datosReporte['acompanamiento_tecnico'] == true)
+            <div class="section">
+                <div class="section-title">DATOS DE ACOMPAÑAMIENTO TECNICO</div>
+                <div class="info-box">
+                    <div class="info-grid">
 
                         <div class="info-row">
                             <div class="info-label">Acompañamiento Técnico:</div>
@@ -569,9 +565,9 @@
                                 @endif
                             </div>
                         </div>
+                    </div>
                 </div>
             </div>
-        </div>
         @endif
 
         {{-- ── 3. Actividad Realizada ── --}}
@@ -632,7 +628,7 @@
 
         {{-- ── 6. Observaciones ── --}}
         <div class="section">
-            <div class="section-title">OBSERVACIONES</div>
+            <div class="section-title">CONCLUSIONES</div>
             <div class="content-box">{{ $datosReporte['observaciones'] ?? 'Sin observaciones registradas.' }}</div>
         </div>
 
