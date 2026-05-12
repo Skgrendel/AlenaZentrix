@@ -35,6 +35,11 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
     use InteractsWithForms;
     use InteractsWithTable;
 
+    /**
+     * @var array<string, bool>
+     */
+    protected array $columnPresenceCache = [];
+
     public function table(Table $table): Table
     {
         return $table
@@ -74,10 +79,12 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                 Tables\Columns\TextColumn::make('cliente')
                     ->label('Cliente / Referencia')
                     ->searchable()
+                     ->visible(fn (): bool => $this->tableColumnHasData('cliente'))
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('direccion')
                     ->label('Dirección')
                     ->searchable()
+                     ->visible(fn (): bool => $this->tableColumnHasData('direccion'))
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
@@ -179,6 +186,25 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                 'error' => $e->getMessage(),
             ]);
         }
+    }
+
+    /** verifica si la columna tiene datos disponibles */
+    protected function tableColumnHasData(string $column): bool
+    {
+        if (array_key_exists($column, $this->columnPresenceCache)) {
+            return $this->columnPresenceCache[$column];
+        }
+
+        $query = $this->getTable()->getQuery();
+
+        if (! $query) {
+            return $this->columnPresenceCache[$column] = false;
+        }
+
+        return $this->columnPresenceCache[$column] = (clone $query)
+            ->whereNotNull($column)
+            ->where($column, '!=', '')
+            ->exists();
     }
 
     public function render(): View

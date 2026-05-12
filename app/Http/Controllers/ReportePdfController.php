@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\TipoServicio;
+use App\Models\Convencion;
 use App\Models\OrdenJob;
+use App\Models\ResultadoReporte;
+use App\Models\TipoComercio;
 use App\Models\TipoAnomalia;
+use App\Models\reportes;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
@@ -50,7 +54,7 @@ class ReportePdfController extends Controller
         $firmante = auth()->user();
 
         $firma = [
-            'nombre' => $firmante->fullname(),
+            'nombre' => $firmante->fullName(),
             'cargo' => $firmante->personal?->cargo,
             'email' => $firmante->email,
             'ip' => request()->ip(),
@@ -74,6 +78,159 @@ class ReportePdfController extends Controller
         $pdf->setPaper('A4', 'portrait');
 
         return $pdf->download("reporte-fraude-{$orden->numero_orden}.pdf");
+    }
+
+    public function DownLoadInformeInvestigacion(OrdenJob $orden): Response
+    {
+        abort_unless($orden->tipo_servicio === TipoServicio::Investigacion, 403);
+        abort_unless(auth()->user()->can('informes'), 403);
+
+        ini_set('memory_limit', '256M');
+
+        $reporteId = request()->query('reporte');
+
+        $orden->load(['personal', 'creadoPor']);
+
+        $query = $orden->reportes()->with([
+            'comercio.tipoComercio',
+            'tipoImposibilidad',
+            'tipoRegulador',
+            'marcaMedidor',
+            'marcaRegulador',
+            'tipoNotificacionAlerta',
+            'auditoria.auditadoPor.personal',
+        ]);
+
+        $reporte = $reporteId
+            ? $query->where('id', $reporteId)->firstOrFail()
+            : $query->latest()->firstOrFail();
+
+        $anomalias = collect($reporte->anomalia ?? [])
+            ->map(fn (string|int $id) => TipoAnomalia::find($id)?->nombre)
+            ->filter()
+            ->implode(', ');
+
+        $logoProderi = $this->fileToBase64(public_path('assets/image/LOGO PRODERI CON SLOGAN.png'), 'image/png');
+
+        $imagenes = $this->resolveImagenes($reporte->imagenes ?? []);
+
+        /** @var User $firmante */
+        $firmante = auth()->user();
+
+        $firma = [
+            'nombre' => $firmante->fullName(),
+            'cargo' => $firmante->personal?->cargo,
+            'email' => $firmante->email,
+            'ip' => request()->ip(),
+            'agente' => request()->userAgent() ?? 'No disponible',
+            'fecha' => now()->format('d/m/Y H:i:s'),
+        ];
+
+
+        $datosOrden = $this->buildDatosOrden($orden);
+        $datosReporte = $this->buildDatosReporteInvestigacion($reporte);
+
+        $pdf = Pdf::loadView('pdf.reporte-investigacion', [
+            'orden' => $orden,
+            'reporte' => $reporte,
+            'anomalias' => $anomalias,
+            'logoProderi' => $logoProderi,
+            'imagenes' => $imagenes,
+            'fechaGeneracion' => now()->format('d-m-Y'),
+            'firma' => $firma,
+            'objetivos' => $orden->objetivos,
+            'datosOrden' => $datosOrden,
+            'datosReporte' => $datosReporte,
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download("reporte-investigacion-{$orden->numero_orden}.pdf");
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildDatosOrden(OrdenJob $orden): array
+    {
+        return [
+            'numero_orden' => $orden->numero_orden,
+            'servicio' => $orden->tipo_servicio?->label() ?? '—',
+            'prioridad' => $orden->prioridad?->label() ?? '—',
+            'estado' => $orden->estado?->label() ?? '—',
+            'tecnico' => trim(($orden->personal?->nombres ?? '').' '.($orden->personal?->apellidos ?? '')) ?: 'Sin asignar',
+            'contrato' => $orden->contrato ?: '—',
+            'cliente' => $orden->cliente ?: '—',
+            'direccion' => trim($orden->direccion.($orden->barrio ? ', '.$orden->barrio : '')) ?: '—',
+            'medidor' => $orden->medidor ?: '—',
+            'tipo_medidor' => $this->formatTipoMedidor($orden->tipo_medidor),
+            'ciclo' => $orden->ciclo ?: '—',
+            'tipo_investigacion' => $orden->tipo_investigacion,
+            'antecedente' => $orden->antecedente ?: '—',
+            'objetivo' => $orden->objetivo ?: '—',
+            'actividades' => $orden->actividades ?: '—',
+            'noticia_criminal' => $orden->numero_noticia_criminal ?: '—',
+            'fecha_asignacion' => $orden->fecha_asignacion?->format('d/m/Y H:i') ?? '—',
+            'fecha_limite' => $orden->fecha_limite?->format('d/m/Y H:i') ?? '—',
+            'fecha_completado' => $orden->fecha_completado?->format('d/m/Y H:i') ?? '—',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildDatosReporteInvestigacion(reportes $reporte): array
+    {
+        $datos = $reporte->datos_servicio ?? [];
+
+        return [
+            'convencion' => Convencion::find($datos['convencion_id'] ?? null)?->nombre ?? '—',
+            'acompanamiento_tecnico' => (bool) ($datos['acompanamiento_tecnico'] ?? false),
+            'acompanante_nombre' => $datos['acompanante_nombre'] ?? '—',
+            'acompanante_identificacion' => $datos['acompanante_identificacion'] ?? '—',
+            'acompanante_cargo' => $datos['acompanante_cargo'] ?? '—',
+            'acompanante_cuadrilla' => $datos['acompanante_cuadrilla'] ?? '—',
+            'tipo_investigado' => $datos['tipo_investigado'] ?? null,
+            'nombre_investigado' => $datos['nombre_investigado'] ?? '—',
+            'identificacion' => $datos['identificacion'] ?? '—',
+            'descripcion_fisica' => $datos['descripcion_fisica'] ?? '—',
+            'nombre_comercio_inv' => $datos['nombre_comercio_inv'] ?? '—',
+            'tipo_comercio_inv' => TipoComercio::find($datos['tipo_comercio_inv_id'] ?? null)?->nombre ?? '—',
+            'resultado' => ResultadoReporte::find($datos['resultado_reporte_id'] ?? null)?->nombre ?? '—',
+            'actividades' => $this->normalizeActividades($reporte->actividades ?? []),
+            'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
+        ];
+    }
+
+    /**
+     * @param array<int, mixed> $actividades
+     * @return array<int, string>
+     */
+    private function normalizeActividades(array $actividades): array
+    {
+        return collect($actividades)
+            ->map(function (mixed $actividad): ?string {
+                if (is_array($actividad)) {
+                    $texto = $actividad['actividades'] ?? null;
+
+                    return is_string($texto) ? trim($texto) : null;
+                }
+
+                return is_string($actividad) ? trim($actividad) : null;
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function formatTipoMedidor(?string $tipoMedidor): string
+    {
+        return match (strtolower((string) $tipoMedidor)) {
+            'analogico', 'analógico' => 'Analógico',
+            'digital' => 'Digital',
+            'por_definir' => 'Por definir',
+            default => $tipoMedidor ?: '—',
+        };
     }
 
     /**
