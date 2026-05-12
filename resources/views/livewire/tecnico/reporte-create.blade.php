@@ -135,6 +135,4 @@
         </div>
     </form>
 
-    <x-filament-actions::modals />
-
 </div>

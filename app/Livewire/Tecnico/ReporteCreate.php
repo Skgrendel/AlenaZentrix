@@ -21,11 +21,15 @@ use App\Models\TipologiaOrden;
 use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
 use App\Models\ubicacion;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
+use Illuminate\Support\Str;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Forms\Components\Repeater;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -41,8 +45,9 @@ use Livewire\Component;
  */
 #[Layout('layouts.app')]
 #[Title('Crear Reporte')]
-class ReporteCreate extends Component implements HasForms
+class ReporteCreate extends Component implements HasActions, HasForms
 {
+    use InteractsWithActions;
     use InteractsWithForms;
 
     public OrdenJob $orden;
@@ -344,8 +349,23 @@ class ReporteCreate extends Component implements HasForms
                         ->placeholder('Seleccionar')
                         ->visible(fn ($get) => $get('tipo_investigado') === 'comercio'),
                 ]),
-
-            Section::make('3. Resultado')
+            Section::make('3. Actividad Realizada')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Repeater::make('actividades')
+                        ->label('Actividades Realizadas')
+                        ->schema([
+                            Forms\Components\Textarea::make('actividades')
+                                    ->autosize()
+                                    ->label('Actividades')
+                                    ->columnSpanFull()
+                                    ->placeholder('Describe las actividades realizadas durante la investigación...')
+                                    ->required(),
+                                ])
+                ->columns(2)
+                ->collapsible()
+                ]),
+            Section::make('4. Resultado')
                 ->icon('heroicon-o-check-badge')
                 ->schema([
                     Forms\Components\Select::make('resultado_reporte_id')
@@ -360,7 +380,7 @@ class ReporteCreate extends Component implements HasForms
                         ->placeholder('Seleccionar'),
                 ]),
 
-            Section::make('4. Observaciones')
+            Section::make('5. Observaciones')
                 ->icon('heroicon-o-pencil-square')
                 ->schema([
                     Forms\Components\Textarea::make('observaciones')
@@ -370,7 +390,7 @@ class ReporteCreate extends Component implements HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('5. Evidencias')
+            Section::make('6. Evidencias')
                 ->icon('heroicon-o-camera')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
@@ -429,7 +449,22 @@ class ReporteCreate extends Component implements HasForms
                         ->maxLength(255)
                         ->columnSpanFull(),
                 ]),
-
+            Section::make('3. Actividad Realizada')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Repeater::make('actividades')
+                        ->label('Actividades Realizadas')
+                        ->schema([
+                            Forms\Components\Textarea::make('actividades')
+                                    ->autosize()
+                                    ->label('Actividades')
+                                    ->columnSpanFull()
+                                    ->placeholder('Describe las actividades realizadas durante la investigación...')
+                                    ->required(),
+                                ])
+                ->columns(2)
+                ->collapsible()
+                ]),
             Section::make('2. Observaciones')
                 ->icon('heroicon-o-pencil-square')
                 ->schema([
@@ -439,8 +474,7 @@ class ReporteCreate extends Component implements HasForms
                         ->rows(4)
                         ->columnSpanFull(),
                 ]),
-
-            Section::make('3. Evidencias')
+            Section::make('4. Evidencias')
                 ->icon('heroicon-o-camera')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
@@ -564,6 +598,15 @@ class ReporteCreate extends Component implements HasForms
     {
         $data = $this->form->getState();
 
+        // Normalizar actividades con UUID
+        if (!empty($data['actividades']) && is_array($data['actividades'])) {
+            foreach ($data['actividades'] as $i => $item) {
+                if (empty($item['uuid'])) {
+                    $data['actividades'][$i]['uuid'] = (string) Str::uuid();
+                }
+            }
+        }
+
         match ($this->orden->tipo_servicio) {
             TipoServicio::Fraudes => $this->submitFraudes($data),
             TipoServicio::Investigacion => $this->submitServicioGenerico($data),
@@ -602,6 +645,7 @@ class ReporteCreate extends Component implements HasForms
             'numero_orden' => $this->orden->numero_orden,
             'ubicacions_id' => $ubicacionRecord->id,
             'comercios_id' => $comercioRecord->id,
+            'actividades' => $data['actividades'] ?? null,
         ]);
 
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
@@ -708,6 +752,7 @@ class ReporteCreate extends Component implements HasForms
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
             'datos_servicio' => $datosServicio,
+            'actividades' => $data['actividades'] ?? null,
         ]);
 
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
@@ -731,6 +776,7 @@ class ReporteCreate extends Component implements HasForms
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
             'datos_servicio' => $datosServicio,
+            'actividades' => $data['actividades'] ?? null,
         ]);
 
         // Vigilancia permanece EnProgreso hasta que el investigador la cierre manualmente

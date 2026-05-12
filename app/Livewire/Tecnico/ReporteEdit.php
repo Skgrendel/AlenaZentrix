@@ -19,7 +19,10 @@ use App\Models\TipoImposibilidad;
 use App\Models\TipologiaOrden;
 use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
+use Illuminate\Support\Str;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
@@ -39,8 +42,9 @@ use Livewire\Component;
  * Formulario de corrección del reporte rechazado por el coordinador.
  * Solo accesible cuando la orden está en estado Rechazada; permite al técnico subsanar las observaciones.
  */
-class ReporteEdit extends Component implements HasForms
+class ReporteEdit extends Component implements HasActions, HasForms
 {
+    use InteractsWithActions;
     use InteractsWithForms;
 
     public OrdenJob $orden;
@@ -574,6 +578,15 @@ class ReporteEdit extends Component implements HasForms
     public function submit(): void
     {
         $data = $this->form->getState();
+
+        // Normalizar actividades con UUID
+        if (!empty($data['actividades']) && is_array($data['actividades'])) {
+            foreach ($data['actividades'] as $i => $item) {
+                if (empty($item['uuid'])) {
+                    $data['actividades'][$i]['uuid'] = (string) Str::uuid();
+                }
+            }
+        }
 
         match ($this->orden->tipo_servicio) {
             TipoServicio::Fraudes => $this->submitFraudes($data),

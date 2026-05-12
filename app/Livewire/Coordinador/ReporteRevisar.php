@@ -167,6 +167,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
                 'nombre_comercio_inv' => $datos['nombre_comercio_inv'] ?? null,
                 'tipo_comercio_inv' => TipoComercio::find($datos['tipo_comercio_inv_id'] ?? null)?->nombre,
                 'resultado' => ResultadoReporte::find($datos['resultado_reporte_id'] ?? null)?->nombre,
+                'actividades' => $datos['actividades'] ?? null,
             ];
         }
 
@@ -177,6 +178,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
                 'departamento' => $datos['departamento'] ?? null,
                 'municipio' => $datos['municipio'] ?? null,
                 'radio_objetivo' => $datos['radio_objetivo'] ?? null,
+                'actividades' => $datos['actividades'] ?? null,
             ];
         }
 
@@ -188,6 +190,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
                 'hay_novedad' => $datos['hay_novedad'] ?? false,
                 'descripcion_novedad' => $datos['descripcion_novedad'] ?? null,
                 'hay_reincidencia' => $datos['hay_reincidencia'] ?? false,
+                'actividades' => $datos['actividades'] ?? null,
                 'resultado' => ResultadoReporte::find($datos['resultado_reporte_id'] ?? null)?->nombre,
             ];
         }
