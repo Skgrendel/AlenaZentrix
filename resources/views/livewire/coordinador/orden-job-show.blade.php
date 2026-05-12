@@ -17,97 +17,138 @@
         <div class="space-y-6 lg:col-span-2">
 
             {{-- Datos del punto de servicio --}}
-            <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Datos del Punto de Servicio</h3>
-                <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Contrato</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->contrato }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Cliente</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->cliente }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Dirección</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->direccion }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Barrio</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->barrio }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">N° Medidor</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->medidor }}</dd>
-                    </div>
-                    @if($orden->tipo_medidor)
-                    <div>
-                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tipo de Medidor</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->tipo_medidor }}</dd>
-                    </div>
-                    @endif
-                    <div class="sm:col-span-2">
-                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Ciclo</dt>
-                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->ciclo }}</dd>
-                    </div>
-                </dl>
-            </div>
+            @if ($orden->contrato || $orden->cliente || $orden->direccion || $orden->barrio || $orden->medidor)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        Datos
+                        del Punto de Servicio</h3>
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                        <div>
+                            <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Contrato</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->contrato }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Cliente</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->cliente }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Dirección</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->direccion }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Barrio</dt>
+                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->barrio }}
+                            </dd>
+                        </div>
+                        @if ($orden->medidor)
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">N° Medidor</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ $orden->medidor }}
+                                </dd>
+                            </div>
+                        @endif
 
-            {{-- Fotos --}}
-            @if(! empty($fotoUrls))
-            <div
-                x-data="{ open: false, src: '' }"
-                @keydown.escape.window="open = false"
-                class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900"
-            >
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Fotos ({{ count($fotoUrls) }})</h3>
-                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    @foreach($fotoUrls as $url)
-                        <button
-                            type="button"
-                            @click="src = '{{ $url }}'; open = true"
-                            class="block overflow-hidden rounded-lg border border-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700"
-                        >
-                            <img src="{{ $url }}" alt="Foto de orden" class="h-44 w-full object-cover transition hover:opacity-80">
-                        </button>
-                    @endforeach
-                </div>
+                        @if ($orden->tipo_medidor)
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tipo de Medidor
+                                </dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ $orden->tipo_medidor }}</dd>
+                            </div>
+                        @endif
+                        @if ($orden->ciclo)
+                            <div class="sm:col-span-2">
+                                <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Ciclo</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->ciclo }}
+                                </dd>
+                            </div>
+                        @endif
 
-                {{-- Lightbox --}}
-                <div
-                    x-show="open"
-                    x-transition.opacity
-                    @click.self="open = false"
-                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-                    style="display: none"
-                >
-                    <div class="relative max-h-full max-w-4xl">
-                        <button
-                            type="button"
-                            @click="open = false"
-                            class="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-800 shadow-lg hover:bg-zinc-100"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                        <img :src="src" alt="Foto ampliada" class="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl">
-                    </div>
+                    </dl>
                 </div>
-            </div>
             @endif
 
             {{-- Descripción --}}
-            @if($orden->titulo || $orden->descripcion)
-            <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Descripción</h3>
-                @if($orden->titulo)
-                    <p class="mb-2 font-semibold text-zinc-900 dark:text-white">{{ $orden->titulo }}</p>
-                @endif
-                @if($orden->descripcion)
-                    <p class="text-sm text-zinc-600 dark:text-zinc-300 whitespace-pre-line">{{ $orden->descripcion }}</p>
-                @endif
-            </div>
+            @if ($orden->antecedente)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        Antecedentes de la Orden</h3>
+                    <p class="mb-2 font-semibold text-zinc-900 dark:text-white">{{ $orden->antecedente }}</p>
+                </div>
+            @endif
+
+            @if ($orden->objetivo)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        Objetivo de la Orden</h3>
+                    <p class="mb-2 font-semibold text-zinc-900 dark:text-white">{{ $orden->objetivo }}</p>
+                </div>
+            @endif
+
+            @if ($orden->actividades)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        Actividades a Realizar</h3>
+                    <p class="mb-2 font-semibold text-zinc-900 dark:text-white">{{ $orden->actividades }}</p>
+                </div>
+            @endif
+
+            {{-- Documentos --}}
+            @if (!empty($documentoUrls))
+                <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
+                    class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        Documentos ({{ count($documentoUrls) }})</h3>
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        @foreach ($documentoUrls as $url)
+                            @php
+                                $extension = strtolower(pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
+                                $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']);
+                            @endphp
+                            @if ($isImage)
+                                <button type="button" @click="src = '{{ $url }}'; open = true"
+                                    class="block overflow-hidden rounded-lg border border-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                    <img src="{{ $url }}" alt="Documento de orden"
+                                        class="h-44 w-full object-cover transition hover:opacity-80">
+                                </button>
+                            @else
+                                <a href="{{ $url }}" download
+                                    class="flex flex-col items-center justify-center gap-2 rounded-lg border border-zinc-100 bg-zinc-50 p-4 transition hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="h-8 w-8 text-zinc-600 dark:text-zinc-300" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <span class="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                                        {{ strtoupper($extension) }}
+                                    </span>
+                                </a>
+                            @endif
+                        @endforeach
+                    </div>
+
+                    {{-- Lightbox --}}
+                    <div x-show="open" x-transition.opacity @click.self="open = false"
+                        class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+                        style="display: none">
+                        <div class="relative max-h-full max-w-4xl">
+                            <button type="button" @click="open = false"
+                                class="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-800 shadow-lg hover:bg-zinc-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            <img :src="src" alt="Foto ampliada"
+                                class="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl">
+                        </div>
+                    </div>
+                </div>
             @endif
 
         </div>
@@ -117,18 +158,29 @@
 
             {{-- Estado y prioridad --}}
             <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Gestión</h3>
+                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Gestión
+                </h3>
                 <dl class="space-y-3">
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tipo de Servicio</dt>
+                        <dd class="mt-1">
+                            <flux:badge
+                                :color="match($orden->tipo_servicio->value) {'fraudes'=> 'zinc','investigacion'=> 'blue', 'capturas'=> 'yellow', 'bandas' => 'red','vigilancia' => 'green','Gestión de Riesgo' => 'purple',default   => 'zinc',}">
+                                {{ $orden->tipo_servicio->label() }}
+                            </flux:badge>
+                        </dd>
+                    </div>
                     <div>
                         <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Prioridad</dt>
                         <dd class="mt-1">
-                            <flux:badge :color="match($orden->prioridad->value) {
-                                'baja'    => 'zinc',
-                                'media'   => 'blue',
-                                'alta'    => 'yellow',
-                                'urgente' => 'red',
-                                default   => 'zinc',
-                            }">
+                            <flux:badge
+                                :color="match($orden->prioridad->value) {
+                                                                                                                                                                'baja'    => 'zinc',
+                                                                                                                                                                'media'   => 'blue',
+                                                                                                                                                                'alta'    => 'yellow',
+                                                                                                                                                                'urgente' => 'red',
+                                                                                                                                                                default   => 'zinc',
+                                                                                                                                                            }">
                                 {{ $orden->prioridad->label() }}
                             </flux:badge>
                         </dd>
@@ -136,16 +188,17 @@
                     <div>
                         <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Estado</dt>
                         <dd class="mt-1">
-                            <flux:badge :color="match($orden->estado->value) {
-                                'pendiente'   => 'zinc',
-                                'asignada'    => 'blue',
-                                'en_progreso' => 'yellow',
-                                'en_revision' => 'purple',
-                                'completada'  => 'green',
-                                'rechazada'   => 'red',
-                                'cancelada'   => 'zinc',
-                                default       => 'zinc',
-                            }">
+                            <flux:badge
+                                :color="match($orden->estado->value) {
+                                                                                                                                                                'pendiente'   => 'zinc',
+                                                                                                                                                                'asignada'    => 'blue',
+                                                                                                                                                                'en_progreso' => 'yellow',
+                                                                                                                                                                'en_revision' => 'purple',
+                                                                                                                                                                'completada'  => 'green',
+                                                                                                                                                                'rechazada'   => 'red',
+                                                                                                                                                                'cancelada'   => 'zinc',
+                                                                                                                                                                default       => 'zinc',
+                                                                                                                                                            }">
                                 {{ $orden->estado->label() }}
                             </flux:badge>
                         </dd>
@@ -169,7 +222,8 @@
 
             {{-- Fechas --}}
             <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Fechas</h3>
+                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Fechas
+                </h3>
                 <dl class="space-y-3">
                     <div>
                         <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Asignación</dt>
@@ -179,7 +233,8 @@
                     </div>
                     <div>
                         <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Fecha Límite</dt>
-                        <dd class="mt-0.5 text-sm font-semibold {{ $orden->fecha_limite && $orden->fecha_limite->isPast() && $orden->estado->value !== 'completada' ? 'text-red-600' : 'text-zinc-900 dark:text-white' }}">
+                        <dd
+                            class="mt-0.5 text-sm font-semibold {{ $orden->fecha_limite && $orden->fecha_limite->isPast() && $orden->estado->value !== 'completada' ? 'text-red-600' : 'text-zinc-900 dark:text-white' }}">
                             {{ $orden->fecha_limite?->format('d/m/Y H:i') ?? '—' }}
                         </dd>
                     </div>

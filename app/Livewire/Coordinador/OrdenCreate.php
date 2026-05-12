@@ -241,7 +241,6 @@ class OrdenCreate extends Component implements HasForms
                             ->directory('ordenes/temp')
                             ->visibility('public')
                             ->multiple()
-                            ->image()
                             ->imagePreviewHeight('120')
                             ->maxFiles(10)
                             ->maxSize(5120)

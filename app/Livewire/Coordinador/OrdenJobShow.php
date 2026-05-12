@@ -24,13 +24,13 @@ class OrdenJobShow extends Component
     }
 
     /**
-     * Genera las URLs firmadas/proxy de las fotos almacenadas en S3 para mostrarlas en la vista.
+     * Genera las URLs firmadas/proxy de los documentos almacenados en S3 para mostrarlos en la vista.
      *
      * @return array<int, string>
      */
-    public function fotoUrls(): array
+    public function documentoUrls(): array
     {
-        return collect($this->orden->fotos ?? [])
+        return collect($this->orden->documentos ?? [])
             ->map(fn (string $path) => route('operaciones.foto', ['path' => $path]))
             ->all();
     }
@@ -38,7 +38,7 @@ class OrdenJobShow extends Component
     public function render(): View
     {
         return view('livewire.coordinador.orden-job-show', [
-            'fotoUrls' => $this->fotoUrls(),
+            'documentoUrls' => $this->documentoUrls(),
         ]);
     }
 }

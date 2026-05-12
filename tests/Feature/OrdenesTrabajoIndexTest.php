@@ -1,10 +1,13 @@
 <?php
 
 use App\Enums\EstadoOrden;
+use App\Enums\PrioridadOrden;
+use App\Enums\TipoServicio;
 use App\Models\OrdenJob;
 use App\Models\personals;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -13,8 +16,12 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-    Role::create(['name' => 'Administrador', 'guard_name' => 'web']);
-    Role::create(['name' => 'Coordinador', 'guard_name' => 'web']);
+    Permission::create(['name' => 'ordenes.ver', 'guard_name' => 'web']);
+
+    Role::create(['name' => 'Administrador', 'guard_name' => 'web'])
+        ->givePermissionTo('ordenes.ver');
+    Role::create(['name' => 'Coordinador', 'guard_name' => 'web'])
+        ->givePermissionTo('ordenes.ver');
     Role::create(['name' => 'Lector', 'guard_name' => 'web']);
 });
 
@@ -48,6 +55,68 @@ test('administrador can access ordenes de trabajo', function () {
     $this->actingAs($user)
         ->get(route('operaciones.ordenes-trabajo'))
         ->assertOk();
+});
+
+test('empty cliente contrato and barrio columns are hidden when no records have data', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    OrdenJob::create([
+        'tipo_servicio' => TipoServicio::Fraudes,
+        'contrato' => null,
+        'cliente' => null,
+        'direccion' => null,
+        'barrio' => null,
+        'medidor' => null,
+        'tipo_medidor' => null,
+        'ciclo' => null,
+        'numero_noticia_criminal' => null,
+        'tipo_investigacion' => null,
+        'documentos' => null,
+        'prioridad' => PrioridadOrden::Media,
+        'estado' => EstadoOrden::Pendiente,
+        'estado_servicio' => true,
+        'fecha_limite' => null,
+        'fecha_completado' => null,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo'))
+        ->assertOk()
+        ->assertDontSee('Cliente')
+        ->assertDontSee('Contrato')
+        ->assertDontSee('Barrio');
+});
+
+test('cliente contrato and barrio columns are shown when records have data', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    OrdenJob::create([
+        'tipo_servicio' => TipoServicio::Fraudes,
+        'contrato' => 'CONT-1234',
+        'cliente' => 'Cliente de prueba',
+        'direccion' => 'Dirección de prueba',
+        'barrio' => 'Centro',
+        'medidor' => null,
+        'tipo_medidor' => null,
+        'ciclo' => null,
+        'numero_noticia_criminal' => null,
+        'tipo_investigacion' => null,
+        'documentos' => null,
+        'prioridad' => PrioridadOrden::Media,
+        'estado' => EstadoOrden::Pendiente,
+        'estado_servicio' => true,
+        'fecha_limite' => null,
+        'fecha_completado' => null,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo'))
+        ->assertOk()
+        ->assertSee('Cliente')
+        ->assertSee('Contrato')
+        ->assertSee('Barrio');
 });
 
 test('creating an orden job auto generates numero orden with ODT prefix', function () {

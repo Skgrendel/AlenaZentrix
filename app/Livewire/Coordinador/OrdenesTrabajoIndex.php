@@ -44,6 +44,11 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
     use InteractsWithForms;
     use InteractsWithTable;
 
+    /**
+     * @var array<string, bool>
+     */
+    protected array $columnPresenceCache = [];
+
     public function table(Table $table): Table
     {
         return $table
@@ -63,13 +68,16 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                 Tables\Columns\TextColumn::make('cliente')
                     ->label('Cliente')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->visible(fn (): bool => $this->tableColumnHasData('cliente')),
                 Tables\Columns\TextColumn::make('contrato')
                     ->label('Contrato')
-                    ->searchable(),
+                    ->searchable()
+                    ->visible(fn (): bool => $this->tableColumnHasData('contrato')),
                 Tables\Columns\TextColumn::make('barrio')
                     ->label('Barrio')
-                    ->searchable(),
+                    ->searchable()
+                    ->visible(fn (): bool => $this->tableColumnHasData('barrio')),
                 Tables\Columns\TextColumn::make('prioridad')
                     ->label('Prioridad')
                     ->badge()
@@ -81,7 +89,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->formatStateUsing(fn ($state) => $state instanceof EstadoOrden ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof EstadoOrden ? $state->color() : 'gray'),
                 Tables\Columns\TextColumn::make('personal.nombres')
-                    ->label('Técnico Asignado')
+                    ->label('Personal Asignado')
                     ->formatStateUsing(fn ($state, OrdenJob $record): string => $record->personal
                             ? "{$record->personal->nombres} {$record->personal->apellidos}"
                             : '—'
@@ -193,7 +201,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->label('Ver')
                     ->icon('heroicon-o-eye')
                     ->color('gray')
-                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Pendiente)
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::EnProgreso || $record->estado === EstadoOrden::EnRevision || $record->estado === EstadoOrden::Asignada)
                     ->url(fn (OrdenJob $record): string => route('operaciones.ordenes-trabajo.show', $record)),
                 EditAction::make()
                     ->modalHeading(fn (OrdenJob $record): string => "Editar Orden: {$record->numero_orden}")
@@ -202,7 +210,6 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->using(function (OrdenJob $record, array $data): OrdenJob {
                         $tecnicoAnterior = $record->personals_id;
                         $record->update($data);
-
                         if (
                             ! empty($data['personals_id']) &&
                             $data['personals_id'] !== $tecnicoAnterior
@@ -222,6 +229,24 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    protected function tableColumnHasData(string $column): bool
+    {
+        if (array_key_exists($column, $this->columnPresenceCache)) {
+            return $this->columnPresenceCache[$column];
+        }
+
+        $query = $this->getTable()->getQuery();
+
+        if (! $query) {
+            return $this->columnPresenceCache[$column] = false;
+        }
+
+        return $this->columnPresenceCache[$column] = (clone $query)
+            ->whereNotNull($column)
+            ->where($column, '!=', '')
+            ->exists();
     }
 
     /**
