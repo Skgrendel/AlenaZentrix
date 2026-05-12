@@ -359,11 +359,11 @@
                 <ul class="space-y-3">
                     @foreach($orden->actividades as $actividad)
                     <li class="flex items-start gap-3 pb-3 border-b border-zinc-100 last:border-b-0 dark:border-zinc-800 last:pb-0">
-                        <div class="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                        <div class="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-bold shrink-0 mt-0.5">
                             ✓
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm text-zinc-900 dark:text-white break-words">{{ $actividad['actividades'] }}</p>
+                            <p class="text-sm text-zinc-900 dark:text-white wrap-break-word">{{ $actividad['actividades'] }}</p>
                             @if($actividad['uuid'] ?? null)
                             <p class="mt-1 text-xs text-zinc-400 font-mono">{{ $actividad['uuid'] }}</p>
                             @endif
