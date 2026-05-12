@@ -15,7 +15,7 @@ class ReportePdfController extends Controller
     public function DownLoadInformeFraude(OrdenJob $orden): Response
     {
         abort_unless($orden->tipo_servicio === TipoServicio::Fraudes, 403);
-        abort_unless(auth()->user()->can('informes.fraude'), 403);
+        abort_unless(auth()->user()->can('informes'), 403);
 
         ini_set('memory_limit', '256M');
 
