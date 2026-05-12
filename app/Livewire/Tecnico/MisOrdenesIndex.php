@@ -97,6 +97,13 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
             ])
             ->headerActions([])
             ->actions([
+                Action::make('ver')
+                    ->label('Ver')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->visible(fn (OrdenJob $record): bool => $record->estado !== EstadoOrden::EnProgreso)
+                    ->url(fn (OrdenJob $record): string => route('tecnico.ordenes.show', $record)),
+
                 Action::make('iniciar')
                     ->label('Iniciar')
                     ->icon('heroicon-o-play')
