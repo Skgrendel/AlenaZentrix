@@ -324,11 +324,23 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     Forms\Components\TextInput::make('barrio')->label('Barrio')->maxLength(255),
                 ]),
 
-            // ── Capturas y Bandas ─────────────────────────────────────────
-            Section::make('Datos de la Orden')
+            // ── Gestión Legal ─────────────────────────────────────────
+            Section::make('Datos de Gestión Legal')
                 ->columns(2)
-                ->visible(in_array($tipoServicio, [TipoServicio::Capturas, TipoServicio::Bandas]))
+                ->visible($tipoServicio === TipoServicio::GestionLegal)
                 ->schema([
+                    Forms\Components\Select::make('tipo_gestion_legal')
+                        ->label('Tipo de Gestión Legal')
+                        ->options([
+                            'capturas' => 'Capturas Criminales',
+                            'bandas' => 'Desarticulación de Bandas',
+                            'querella' => 'Querella Penal',
+                            'seguimiento_denuncia' => 'Seguimiento a Denuncia',
+                            'diligencia_judicial' => 'Diligencia Judicial',
+                            'incautacion_equipos' => 'Incautación de Equipos',
+                        ])
+                        ->placeholder('Seleccionar')
+                        ->columnSpanFull(),
                     Forms\Components\TextInput::make('numero_noticia_criminal')->label('N° Noticia Criminal')->maxLength(255),
                     Forms\Components\TextInput::make('direccion')->label('Dirección')->maxLength(255),
                     Forms\Components\TextInput::make('barrio')->label('Municipio')->maxLength(255),
