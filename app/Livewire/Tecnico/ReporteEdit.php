@@ -22,7 +22,6 @@ use App\Models\TipoRegulador;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
-use Illuminate\Support\Str;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
@@ -31,6 +30,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use League\Flysystem\UnableToCheckExistence;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -88,7 +88,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
         $schema = match ($this->orden->tipo_servicio) {
             TipoServicio::Fraudes => $this->fraudesSchema(),
             TipoServicio::Investigacion => $this->investigacionSchema(),
-            TipoServicio::Capturas, TipoServicio::Bandas => $this->capturasSchema(),
+            TipoServicio::GestionLegal => $this->gestionLegalSchema(),
+            TipoServicio::Gestion_Riesgo => $this->gestionRiesgoSchema(),
             TipoServicio::Vigilancia => $this->vigilanciaSchema(),
         };
 
@@ -411,7 +412,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
     }
 
     /** @return array<int, Section> */
-    private function capturasSchema(): array
+    private function gestionLegalSchema(): array
     {
         return [
             Section::make('1. Datos de la Actividad')
@@ -471,6 +472,50 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->reorderable()
                         ->panelLayout('grid')
                         ->extraInputAttributes(['capture' => 'environment'])
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('video')
+                        ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                ]),
+        ];
+    }
+
+    /** @return array<int, Section> */
+    private function gestionRiesgoSchema(): array
+    {
+        return [
+            Section::make('1. Actividades Realizadas')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Forms\Components\Textarea::make('observaciones')
+                        ->label('Novedades / Observaciones')
+                        ->placeholder('Describe los hallazgos y novedades...')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('2. Evidencias')
+                ->icon('heroicon-o-paper-clip')
+                ->schema([
+                    Forms\Components\FileUpload::make('imagenes')
+                        ->label('Archivos / Evidencias')
+                        ->disk('s3')
+                        ->directory('reportes/'.$this->orden->numero_orden)
+                        ->fetchFileInformation(false)
+                        ->multiple()
+                        ->acceptedFileTypes([
+                            'image/*',
+                            'application/pdf',
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                        ])
+                        ->maxFiles(10)
+                        ->maxSize(10240)
+                        ->reorderable()
+                        ->panelLayout('grid')
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
@@ -580,7 +625,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
         $data = $this->form->getState();
 
         // Normalizar actividades con UUID
-        if (!empty($data['actividades']) && is_array($data['actividades'])) {
+        if (! empty($data['actividades']) && is_array($data['actividades'])) {
             foreach ($data['actividades'] as $i => $item) {
                 if (empty($item['uuid'])) {
                     $data['actividades'][$i]['uuid'] = (string) Str::uuid();
