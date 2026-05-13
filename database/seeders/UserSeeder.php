@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Company;
 use App\Models\personals;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -9,37 +10,43 @@ use Spatie\Permission\Models\Role;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Usuario de Administrador Predeterminado
-        $personal = personals::where('numero_documento', '0000')->firstOrFail();
+        // Superadmin — no company, no personal, acceso global
+        User::create([
+            'email' => 'superadmin@proderi.com',
+            'personals_id' => null,
+            'company_id' => null,
+            'is_superadmin' => true,
+            'password' => bcrypt('super.**'),
+            'estado' => true,
+            'email_verified_at' => now(),
+        ]);
 
-        $user = User::create([
+        $company = Company::first();
+
+        // Administrador de empresa
+        $personal = personals::withoutGlobalScopes()->where('numero_documento', '0000')->firstOrFail();
+        $admin = User::create([
             'email' => 'admin@proderi.com',
             'personals_id' => $personal->id,
+            'company_id' => $company->id,
             'password' => bcrypt('0000.**'),
-            'estado' => 1,
+            'estado' => true,
             'email_verified_at' => now(),
         ]);
+        $admin->assignRole(Role::where('name', 'Administrador')->firstOrFail());
 
-        $Role = Role::where('name', 'Administrador')->firstOrFail();
-        $user->assignRole($Role);
-
-        // Usuario Auditor Predeterminado
-        $personalAuditor = personals::where('numero_documento', '0001')->firstOrFail();
-
-        $userAuditor = User::create([
+        // Auditor predeterminado
+        $personalAuditor = personals::withoutGlobalScopes()->where('numero_documento', '0001')->firstOrFail();
+        $auditor = User::create([
             'email' => 'auditor@proderi.com',
             'personals_id' => $personalAuditor->id,
+            'company_id' => $company->id,
             'password' => bcrypt('0001.**'),
-            'estado' => 1,
+            'estado' => true,
             'email_verified_at' => now(),
         ]);
-
-        $roleAuditor = Role::where('name', 'Auditor')->firstOrFail();
-        $userAuditor->assignRole($roleAuditor);
+        $auditor->assignRole(Role::where('name', 'Auditor')->firstOrFail());
     }
 }

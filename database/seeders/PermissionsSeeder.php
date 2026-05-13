@@ -41,11 +41,24 @@ class PermissionsSeeder extends Seeder
         'roles.editar' => ['label' => 'Editar roles y asignarles permisos',                'modulo' => 'Roles'],
         'roles.eliminar' => ['label' => 'Eliminar roles',                                    'modulo' => 'Roles'],
         'admin.configuracion' => ['label' => 'Gestionar configuración del sistema',               'modulo' => 'Administración'],
+        'empresa.admin' => ['label' => 'Gestionar configuración de la propia empresa',          'modulo' => 'Administración'],
     ];
 
     /** @var array<string, string[]> */
     private array $roles = [
-        'Administrador' => ['*'],
+        'Administrador' => [
+            'ordenes.ver', 'ordenes.crear', 'ordenes.editar', 'ordenes.eliminar', 'ordenes.revisar',
+            'mis-ordenes.ver', 'mis-ordenes.reportar',
+            'auditorias.ver', 'auditorias.registrar',
+            'informes.ordenes', 'informes.tecnico', 'informes.auditorias', 'informes',
+            'mapa.ver',
+            'legal.ver',
+            'evidencias.ver',
+            'usuarios.ver', 'usuarios.crear', 'usuarios.editar', 'usuarios.eliminar', 'usuarios.asignar-roles',
+            'roles.ver',
+            'admin.configuracion',
+            'empresa.admin',
+        ],
 
         'Coordinador' => [
             'ordenes.ver', 'ordenes.crear', 'ordenes.editar', 'ordenes.eliminar', 'ordenes.revisar',
