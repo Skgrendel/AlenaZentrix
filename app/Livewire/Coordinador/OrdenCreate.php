@@ -8,14 +8,14 @@ use App\Enums\TipoServicio;
 use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
 use App\Models\personals;
-use Filament\Forms;
-use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
+use Filament\Forms;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Forms\Components\Repeater;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -32,8 +32,8 @@ use Livewire\Component;
  */
 class OrdenCreate extends Component implements HasActions, HasForms
 {
-    use InteractsWithForms;
     use InteractsWithActions;
+    use InteractsWithForms;
 
     /** @var array<string, mixed> */
     public array $data = [];
@@ -140,23 +140,29 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->maxLength(1000),
                     ]),
 
-                // ── Sección: Capturas y Bandas ────────────────────────────
-                Section::make('Datos de la Orden')
+                // ── Sección: Gestión Legal ────────────────────────────────
+                Section::make('Datos de Gestión Legal')
                     ->columns(1)
-                    ->visible(fn ($get) => in_array($get('tipo_servicio'), [
-                        TipoServicio::Capturas->value,
-                        TipoServicio::Bandas->value,
-                    ]))
+                    ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::GestionLegal->value)
                     ->schema([
+                        Forms\Components\Select::make('tipo_gestion_legal')
+                            ->label('Tipo de Gestión Legal')
+                            ->options([
+                                'capturas' => 'Capturas Criminales',
+                                'bandas' => 'Desarticulación de Bandas',
+                                'querella' => 'Querella Penal',
+                                'seguimiento_denuncia' => 'Seguimiento a Denuncia',
+                                'diligencia_judicial' => 'Diligencia Judicial',
+                                'incautacion_equipos' => 'Incautación de Equipos',
+                            ])
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::GestionLegal->value)
+                            ->placeholder('Seleccionar'),
                         Forms\Components\TextInput::make('numero_noticia_criminal')
                             ->label('N° Noticia Criminal')
                             ->maxLength(255),
                         Forms\Components\Textarea::make('objetivo')
-                            ->label('Objetivo de la Gestion Legal')
-                            ->required(fn ($get) => in_array($get('tipo_servicio'), [
-                                TipoServicio::Capturas->value,
-                                TipoServicio::Bandas->value,
-                            ]))
+                            ->label('Objetivo de la Gestión Legal')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::GestionLegal->value)
                             ->rows(5)
                             ->cols(5)
                             ->maxLength(1000),
@@ -181,7 +187,7 @@ class OrdenCreate extends Component implements HasActions, HasForms
                         Forms\Components\TextInput::make('barrio')
                             ->label('Barrio / Municipio')
                             ->maxLength(255),
-                            Forms\Components\Textarea::make('objetivo')
+                        Forms\Components\Textarea::make('objetivo')
                             ->label('Objetivo de la Investigación')
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value)
                             ->rows(5)
@@ -203,21 +209,21 @@ class OrdenCreate extends Component implements HasActions, HasForms
                     ]),
                 // ── Sección: Actividad A Realizar ─────────────────────────
                 Section::make('Actividad A Realizar')
-                            ->icon('heroicon-o-check-badge')
+                    ->icon('heroicon-o-check-badge')
+                    ->schema([
+                        Repeater::make('actividades')
+                            ->label('Actividades por realizar')
                             ->schema([
-                                    Repeater::make('actividades')
-                                    ->label('Actividades por realizar')
-                                    ->schema([
-                                    Forms\Components\Textarea::make('descripcion')
+                                Forms\Components\Textarea::make('descripcion')
                                     ->autosize()
                                     ->label('Actividades')
                                     ->columnSpanFull()
                                     ->placeholder('Describe las actividades realizadas durante la investigación...')
                                     ->required(),
-                                ])
-                                ->columns(2)
-                                ->collapsible()
-                                ->createItemButtonLabel('Agregar Actividad')]),
+                            ])
+                            ->columns(2)
+                            ->collapsible()
+                            ->createItemButtonLabel('Agregar Actividad')]),
                 // ── Documentos  ──────────────────────────────────────────
                 Section::make('Gestion de Documentos')
                     ->schema([
