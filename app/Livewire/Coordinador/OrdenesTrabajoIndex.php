@@ -337,7 +337,6 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                             'querella' => 'Querella Penal',
                             'seguimiento_denuncia' => 'Seguimiento a Denuncia',
                             'diligencia_judicial' => 'Diligencia Judicial',
-                            'incautacion_equipos' => 'Incautación de Equipos',
                         ])
                         ->placeholder('Seleccionar')
                         ->columnSpanFull(),

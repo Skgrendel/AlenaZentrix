@@ -153,7 +153,6 @@ class OrdenCreate extends Component implements HasActions, HasForms
                                 'querella' => 'Querella Penal',
                                 'seguimiento_denuncia' => 'Seguimiento a Denuncia',
                                 'diligencia_judicial' => 'Diligencia Judicial',
-                                'incautacion_equipos' => 'Incautación de Equipos',
                             ])
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::GestionLegal->value)
                             ->placeholder('Seleccionar'),

@@ -196,7 +196,6 @@ class ReporteRevisar extends Component implements HasActions, HasForms
                 'querella' => 'Querella Penal',
                 'seguimiento_denuncia' => 'Seguimiento a Denuncia',
                 'diligencia_judicial' => 'Diligencia Judicial',
-                'incautacion_equipos' => 'Incautación de Equipos',
             ];
 
             return [

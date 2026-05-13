@@ -195,7 +195,6 @@ class ReportePdfController extends Controller
             'querella' => 'Querella Penal',
             'seguimiento_denuncia' => 'Seguimiento a Denuncia',
             'diligencia_judicial' => 'Diligencia Judicial',
-            'incautacion_equipos' => 'Incautación de Equipos',
         ];
 
         $datosOrden = $this->buildDatosOrden($orden);
