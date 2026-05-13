@@ -169,7 +169,14 @@
                         <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tipo de Servicio</dt>
                         <dd class="mt-1">
                             <flux:badge
-                                :color="match($orden->tipo_servicio->value) {'fraudes'=> 'zinc','investigacion'=> 'blue', 'capturas'=> 'yellow', 'bandas' => 'red','vigilancia' => 'green','Gestión de Riesgo' => 'purple',default   => 'zinc',}">
+                                :color="match($orden->tipo_servicio->value) {
+                                    'fraudes'           => 'zinc',
+                                    'investigacion'     => 'blue',
+                                    'gestion_legal'     => 'info',
+                                    'vigilancia'        => 'green',
+                                    'Gestión de Riesgo' => 'purple',
+                                    default             => 'zinc',
+                                }">
                                 {{ $orden->tipo_servicio->label() }}
                             </flux:badge>
                         </dd>

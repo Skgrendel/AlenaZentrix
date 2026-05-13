@@ -25,9 +25,9 @@ class OrdenesPorServicioChart extends ChartWidget
         $colorMap = [
             'fraudes' => 'rgba(239,68,68,0.8)',
             'investigacion' => 'rgba(245,158,11,0.8)',
-            'capturas' => 'rgba(59,130,246,0.8)',
-            'bandas' => 'rgba(139,92,246,0.8)',
+            'gestion_legal' => 'rgba(59,130,246,0.8)',
             'vigilancia' => 'rgba(16,185,129,0.8)',
+            'Gestión de Riesgo' => 'rgba(99,102,241,0.8)',
         ];
 
         $labels = [];
