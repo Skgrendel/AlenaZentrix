@@ -1,10 +1,17 @@
 <?php
 
+use App\Livewire\SuperAdmin\Companies\CompaniesIndex;
+use App\Livewire\SuperAdmin\Dashboard;
+use App\Livewire\SuperAdmin\Roles\RolesIndex;
+use App\Livewire\SuperAdmin\Users\UsersIndex;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'superadmin'])
     ->prefix('superadmin')
     ->name('superadmin.')
     ->group(function () {
-        Route::view('/', 'livewire.super-admin.dashboard')->name('dashboard');
+        Route::get('/', Dashboard::class)->name('dashboard');
+        Route::get('companies', CompaniesIndex::class)->name('companies');
+        Route::get('users', UsersIndex::class)->name('users');
+        Route::get('roles', RolesIndex::class)->name('roles');
     });

@@ -1,2 +1,3 @@
-<!DOCTYPE html>
-<html><body><p>Superadmin panel</p></body></html>
+<div>
+    {{-- Smile, breathe, and go slowly. - Thich Nhat Hanh --}}
+</div>
