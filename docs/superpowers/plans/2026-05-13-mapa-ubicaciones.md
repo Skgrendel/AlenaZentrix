@@ -16,7 +16,7 @@
 - Modify: `resources/views/partials/head.blade.php`
 - Modify: `resources/views/layouts/app/sidebar.blade.php`
 
-- [ ] **Step 1: Agregar `@stack('styles')` al final de head.blade.php**
+- [x] **Step 1: Agregar `@stack('styles')` al final de head.blade.php**
 
 Abrir `resources/views/partials/head.blade.php`. Agregar al final del archivo:
 
@@ -45,7 +45,7 @@ El archivo completo quedará:
 @stack('styles')
 ```
 
-- [ ] **Step 2: Agregar `@stack('scripts')` en sidebar.blade.php antes de `@fluxScripts`**
+- [x] **Step 2: Agregar `@stack('scripts')` en sidebar.blade.php antes de `@fluxScripts`**
 
 Abrir `resources/views/layouts/app/sidebar.blade.php`. Localizar el bloque final del body:
 
@@ -76,7 +76,7 @@ Reemplazarlo por:
 </body>
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add resources/views/partials/head.blade.php resources/views/layouts/app/sidebar.blade.php
@@ -93,7 +93,7 @@ git commit -m "feat: agregar stacks de estilos y scripts al layout para soporte 
 - Modify: `app/Models/ubicacion.php`
 - Modify: `app/Models/reportes.php`
 
-- [ ] **Step 1: Crear `UbicacionFactory`**
+- [x] **Step 1: Crear `UbicacionFactory`**
 
 Ejecutar:
 
@@ -134,7 +134,7 @@ class UbicacionFactory extends Factory
 }
 ```
 
-- [ ] **Step 2: Crear `ReportesFactory`**
+- [x] **Step 2: Crear `ReportesFactory`**
 
 Ejecutar:
 
@@ -194,14 +194,14 @@ class ReportesFactory extends Factory
 }
 ```
 
-- [ ] **Step 3: Agregar `HasFactory` a los modelos `ubicacion` y `reportes`**
+- [x] **Step 3: Agregar `HasFactory` a los modelos `ubicacion` y `reportes`**
 
 Verificar que `app/Models/ubicacion.php` ya tiene `use HasFactory` — lo tiene (ya está en el modelo).
 Verificar que `app/Models/reportes.php` ya tiene `use HasFactory` — lo tiene.
 
 No hay cambios necesarios en los modelos.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add database/factories/UbicacionFactory.php database/factories/ReportesFactory.php
@@ -215,7 +215,7 @@ git commit -m "feat: agregar factories para ubicacion y reportes"
 **Files:**
 - Create: `tests/Feature/Mapa/MapaIndexTest.php`
 
-- [ ] **Step 1: Generar el archivo de test**
+- [x] **Step 1: Generar el archivo de test**
 
 ```bash
 php artisan make:test --pest MapaIndexTest --no-interaction
@@ -228,7 +228,7 @@ mkdir -p tests/Feature/Mapa
 mv tests/Feature/MapaIndexTest.php tests/Feature/Mapa/MapaIndexTest.php
 ```
 
-- [ ] **Step 2: Reemplazar el contenido de `tests/Feature/Mapa/MapaIndexTest.php`**
+- [x] **Step 2: Reemplazar el contenido de `tests/Feature/Mapa/MapaIndexTest.php`**
 
 ```php
 <?php
@@ -423,7 +423,7 @@ test('filter by numero_orden reduces marcadores', function () {
 });
 ```
 
-- [ ] **Step 3: Verificar que los tests fallan**
+- [x] **Step 3: Verificar que los tests fallan**
 
 ```bash
 php artisan test --compact --filter=MapaIndexTest
@@ -431,7 +431,7 @@ php artisan test --compact --filter=MapaIndexTest
 
 Resultado esperado: todos fallan con `Route [mapa.index] not defined` o `Class not found`.
 
-- [ ] **Step 4: Commit (tests en rojo)**
+- [x] **Step 4: Commit (tests en rojo)**
 
 ```bash
 git add tests/Feature/Mapa/MapaIndexTest.php
@@ -446,7 +446,7 @@ git commit -m "test: agregar tests del módulo mapa (rojo)"
 - Create: `routes/mapa.php`
 - Modify: `routes/web.php`
 
-- [ ] **Step 1: Crear `routes/mapa.php`**
+- [x] **Step 1: Crear `routes/mapa.php`**
 
 ```php
 <?php
@@ -462,7 +462,7 @@ Route::middleware(['auth', 'verified', 'permission:mapa.ver'])
     });
 ```
 
-- [ ] **Step 2: Registrar el archivo de rutas en `routes/web.php`**
+- [x] **Step 2: Registrar el archivo de rutas en `routes/web.php`**
 
 Agregar al final de `routes/web.php` (antes de la última línea existente si hay comentarios, o después de las otras líneas `require`):
 
@@ -482,7 +482,7 @@ require __DIR__.'/settings.php';
 require __DIR__.'/mapa.php';
 ```
 
-- [ ] **Step 3: Verificar que la ruta existe**
+- [x] **Step 3: Verificar que la ruta existe**
 
 ```bash
 php artisan route:list --name=mapa --except-vendor
@@ -493,7 +493,7 @@ Resultado esperado:
 GET|HEAD  mapa  mapa.index  App\Livewire\Mapa\MapaIndex
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add routes/mapa.php routes/web.php
@@ -507,7 +507,7 @@ git commit -m "feat: agregar ruta mapa.index con middleware de permiso mapa.ver"
 **Files:**
 - Create: `app/Livewire/Mapa/MapaIndex.php`
 
-- [ ] **Step 1: Crear el componente**
+- [x] **Step 1: Crear el componente**
 
 ```bash
 php artisan make:livewire Mapa/MapaIndex --no-interaction
@@ -515,7 +515,7 @@ php artisan make:livewire Mapa/MapaIndex --no-interaction
 
 Esto crea `app/Livewire/Mapa/MapaIndex.php` y `resources/views/livewire/mapa/mapa-index.blade.php`.
 
-- [ ] **Step 2: Reemplazar el contenido de `app/Livewire/Mapa/MapaIndex.php`**
+- [x] **Step 2: Reemplazar el contenido de `app/Livewire/Mapa/MapaIndex.php`**
 
 ```php
 <?php
@@ -629,7 +629,7 @@ class MapaIndex extends Component
 }
 ```
 
-- [ ] **Step 3: Ejecutar tests para ver cuántos pasan ahora**
+- [x] **Step 3: Ejecutar tests para ver cuántos pasan ahora**
 
 ```bash
 php artisan test --compact --filter=MapaIndexTest
@@ -637,7 +637,7 @@ php artisan test --compact --filter=MapaIndexTest
 
 Los tests de acceso (guests, forbidden, coordinador, administrador) deben pasar. Los de filtros fallarán hasta que exista la vista.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/Livewire/Mapa/MapaIndex.php
@@ -651,7 +651,7 @@ git commit -m "feat: agregar componente Livewire MapaIndex con filtros y marcado
 **Files:**
 - Modify: `resources/views/livewire/mapa/mapa-index.blade.php`
 
-- [ ] **Step 1: Reemplazar el contenido de `resources/views/livewire/mapa/mapa-index.blade.php`**
+- [x] **Step 1: Reemplazar el contenido de `resources/views/livewire/mapa/mapa-index.blade.php`**
 
 ```blade
 @pushonce('styles')
@@ -832,13 +832,13 @@ git commit -m "feat: agregar componente Livewire MapaIndex con filtros y marcado
 @endscript
 ```
 
-- [ ] **Step 2: Verificar que la página carga**
+- [x] **Step 2: Verificar que la página carga**
 
 Abrir en el navegador: `https://alenaZentrix.test/mapa` (como coordinador o admin).
 
 Debe aparecer el panel de filtros, la leyenda de colores y el mapa centrado en Colombia.
 
-- [ ] **Step 3: Ejecutar todos los tests**
+- [x] **Step 3: Ejecutar todos los tests**
 
 ```bash
 php artisan test --compact --filter=MapaIndexTest
@@ -846,7 +846,7 @@ php artisan test --compact --filter=MapaIndexTest
 
 Resultado esperado: todos los tests pasan (verde).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add resources/views/livewire/mapa/mapa-index.blade.php
@@ -860,7 +860,7 @@ git commit -m "feat: agregar vista del mapa con Leaflet, MarkerCluster y panel d
 **Files:**
 - Modify: `resources/views/layouts/app/sidebar.blade.php`
 
-- [ ] **Step 1: Agregar el item del mapa al sidebar**
+- [x] **Step 1: Agregar el item del mapa al sidebar**
 
 Abrir `resources/views/layouts/app/sidebar.blade.php`. Localizar el bloque del grupo Informes:
 
@@ -892,11 +892,11 @@ Agregar el bloque del Mapa **después** de ese bloque:
             @endcan
 ```
 
-- [ ] **Step 2: Verificar visualmente**
+- [x] **Step 2: Verificar visualmente**
 
 Iniciar sesión como coordinador o administrador. El sidebar debe mostrar "Mapa de Ubicaciones" con el ícono de mapa. Iniciar sesión como técnico/auditor/lector: el ítem NO debe aparecer.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add resources/views/layouts/app/sidebar.blade.php
