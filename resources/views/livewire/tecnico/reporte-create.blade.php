@@ -1,4 +1,64 @@
-<div class="space-y-6">
+<div class="space-y-6"
+    x-data="{
+        draftKey: 'rpt_borrador_{{ $orden->id }}',
+        hasDraft: false,
+        savedAt: null,
+        saveTimer: null,
+
+        init() {
+            const raw = localStorage.getItem(this.draftKey);
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (parsed.data && Object.keys(parsed.data).length > 0) {
+                        this.hasDraft = true;
+                        this.savedAt = parsed.savedAt
+                            ? new Date(parsed.savedAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+                            : null;
+                    }
+                } catch(e) {
+                    localStorage.removeItem(this.draftKey);
+                }
+            }
+
+            this.$el.addEventListener('input', () => this.debouncedSave());
+            this.$el.addEventListener('change', () => this.debouncedSave());
+            setInterval(() => this.saveDraft(), 30000);
+        },
+
+        debouncedSave() {
+            clearTimeout(this.saveTimer);
+            this.saveTimer = setTimeout(() => this.saveDraft(), 2000);
+        },
+
+        saveDraft() {
+            const data = $wire.data;
+            if (!data || Object.keys(data).length === 0) return;
+            localStorage.setItem(this.draftKey, JSON.stringify({
+                data,
+                savedAt: new Date().toISOString()
+            }));
+        },
+
+        restoreDraft() {
+            const raw = localStorage.getItem(this.draftKey);
+            if (!raw) return;
+            try {
+                const { data } = JSON.parse(raw);
+                $wire.set('data', data);
+                this.hasDraft = false;
+            } catch(e) {
+                this.discardDraft();
+            }
+        },
+
+        discardDraft() {
+            localStorage.removeItem(this.draftKey);
+            this.hasDraft = false;
+        }
+    }"
+    @borrador-limpiar.window="discardDraft()">
+
     {{-- Header --}}
     <div class="flex items-center justify-between">
         <div>
@@ -12,6 +72,36 @@
         <flux:button href="{{ route('tecnico.mis-ordenes') }}" icon="arrow-left" variant="ghost" wire:navigate>
             Volver
         </flux:button>
+    </div>
+
+    {{-- Banner borrador --}}
+    <div x-show="hasDraft" x-transition style="display:none"
+        class="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-900/20">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm font-semibold text-amber-800 dark:text-amber-200">Borrador guardado</p>
+                    <p class="text-xs text-amber-600 dark:text-amber-400"
+                        x-text="savedAt ? 'Último guardado a las ' + savedAt + ' — tus datos están seguros' : 'Tienes datos sin enviar guardados en este dispositivo'">
+                    </p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button type="button" @click="restoreDraft()"
+                    class="rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-700">
+                    Restaurar borrador
+                </button>
+                <button type="button" @click="discardDraft()"
+                    class="rounded-lg border border-amber-300 px-4 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 dark:border-amber-600 dark:text-amber-400 dark:hover:bg-amber-900/30">
+                    Descartar
+                </button>
+            </div>
+        </div>
     </div>
 
     {{-- Datos del punto de servicio (solo lectura) --}}
@@ -58,7 +148,6 @@
             <p class="text-sm text-zinc-900 dark:text-white">{{ $orden->objetivo }}</p>
         </div>
     @endif
-
 
     {{-- GPS silencioso: captura en segundo plano, modal si está bloqueado --}}
     <div x-data="{

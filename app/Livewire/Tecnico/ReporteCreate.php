@@ -749,6 +749,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
 
         $this->notificarCoordinador();
 
+        $this->dispatch('borrador-limpiar');
+
         $bypassId = TipoAnomalia::where('activo', true)->where('nombre', 'Bypass')->value('id');
         $hasBypass = $bypassId
             && ! empty($data['anomalia'])
@@ -856,6 +858,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
 
         $this->notificarCoordinador();
 
+        $this->dispatch('borrador-limpiar');
+
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
 
@@ -877,6 +881,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
         ]);
 
         // Vigilancia permanece EnProgreso hasta que el investigador la cierre manualmente
+        $this->dispatch('borrador-limpiar');
+
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
 

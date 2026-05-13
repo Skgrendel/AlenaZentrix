@@ -668,6 +668,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
             $this->notificarIncidencias($data, $fotoDetectorFuga, $fotoDetectorData, $fotoDetectorMimeType);
         }
 
+        $this->dispatch('borrador-limpiar');
+
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
 
@@ -760,6 +762,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
 
         $this->notificarCoordinador();
+
+        $this->dispatch('borrador-limpiar');
 
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
