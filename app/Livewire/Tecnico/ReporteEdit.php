@@ -16,7 +16,6 @@ use App\Models\ResultadoReporte;
 use App\Models\TipoAnomalia;
 use App\Models\TipoComercio;
 use App\Models\TipoImposibilidad;
-use App\Models\TipologiaOrden;
 use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -419,17 +418,21 @@ class ReporteEdit extends Component implements HasActions, HasForms
                 ->icon('heroicon-o-clipboard-document-list')
                 ->columns(2)
                 ->schema([
-                    Forms\Components\Select::make('tipologia_orden_id')
-                        ->label('Tipología de Orden')
-                        ->options(
-                            TipologiaOrden::query()
-                                ->where('activo', true)
-                                ->orderBy('nombre')
-                                ->pluck('nombre', 'id')
-                        )
-                        ->searchable()
-                        ->required()
-                        ->placeholder('Seleccionar'),
+                    Forms\Components\TextInput::make('tipo_gestion_label')
+                        ->label('Tipo de Gestión Legal')
+                        ->default(function () {
+                            $subtipos = [
+                                'capturas' => 'Capturas Criminales',
+                                'bandas' => 'Desarticulación de Bandas',
+                                'querella' => 'Querella Penal',
+                                'seguimiento_denuncia' => 'Seguimiento a Denuncia',
+                                'diligencia_judicial' => 'Diligencia Judicial',
+                            ];
+
+                            return $subtipos[$this->orden->tipo_gestion_legal ?? ''] ?? ($this->orden->tipo_gestion_legal ?? '—');
+                        })
+                        ->disabled()
+                        ->dehydrated(false),
                     Forms\Components\DatePicker::make('fecha_ejecucion')
                         ->label('Fecha de Ejecución')
                         ->required()
