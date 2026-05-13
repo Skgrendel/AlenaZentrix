@@ -1,11 +1,14 @@
 <?php
 
 use App\Enums\TipoServicio;
+use App\Livewire\Mapa\MapaIndex;
+use App\Models\Company;
 use App\Models\OrdenJob;
 use App\Models\personals;
 use App\Models\reportes;
 use App\Models\ubicacion;
 use App\Models\User;
+use App\Services\TenantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -58,13 +61,17 @@ test('administrador with mapa.ver can access the map', function () {
 });
 
 test('only reportes with non-null lat and lng are returned as marcadores', function () {
-    $user = User::factory()->create();
+    $company = Company::factory()->create();
+    $user = User::factory()->create(['company_id' => $company->id]);
     $user->assignRole('Coordinador');
 
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value]);
+    app(TenantService::class)->set($company);
+
+    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value, 'company_id' => $company->id]);
 
     $reporteConCoordenadas = reportes::factory()->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
         'ubicacions_id' => ubicacion::factory()->create([
             'latitud' => '4.7110',
             'longitud' => '-74.0721',
@@ -74,14 +81,16 @@ test('only reportes with non-null lat and lng are returned as marcadores', funct
 
     $reporteSinUbicacion = reportes::factory()->sinUbicacion()->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
     ]);
 
     $reporteConCoordenadasNulas = reportes::factory()->conUbicacionSinCoordenadas()->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
     ]);
 
     $component = Livewire\Livewire::actingAs($user)
-        ->test(\App\Livewire\Mapa\MapaIndex::class);
+        ->test(MapaIndex::class);
 
     $marcadores = $component->instance()->marcadores;
 
@@ -90,25 +99,30 @@ test('only reportes with non-null lat and lng are returned as marcadores', funct
 });
 
 test('filter by fecha reduces marcadores', function () {
-    $user = User::factory()->create();
+    $company = Company::factory()->create();
+    $user = User::factory()->create(['company_id' => $company->id]);
     $user->assignRole('Coordinador');
 
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value]);
+    app(TenantService::class)->set($company);
+
+    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value, 'company_id' => $company->id]);
 
     reportes::factory()->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
         'ubicacions_id' => ubicacion::factory()->create(['latitud' => '4.71', 'longitud' => '-74.07'])->id,
         'created_at' => now()->subDays(5),
     ]);
 
     reportes::factory()->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
         'ubicacions_id' => ubicacion::factory()->create(['latitud' => '4.71', 'longitud' => '-74.07'])->id,
         'created_at' => now()->subDays(60),
     ]);
 
     $component = Livewire\Livewire::actingAs($user)
-        ->test(\App\Livewire\Mapa\MapaIndex::class)
+        ->test(MapaIndex::class)
         ->set('fechaDesde', now()->subDays(30)->toDateString())
         ->set('fechaHasta', now()->toDateString());
 
@@ -116,74 +130,89 @@ test('filter by fecha reduces marcadores', function () {
 });
 
 test('filter by tecnico reduces marcadores', function () {
-    $user = User::factory()->create();
+    $company = Company::factory()->create();
+    $user = User::factory()->create(['company_id' => $company->id]);
     $user->assignRole('Coordinador');
 
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value]);
-    $tecnico = personals::factory()->create();
+    app(TenantService::class)->set($company);
+
+    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value, 'company_id' => $company->id]);
+    $tecnico = personals::factory()->create(['company_id' => $company->id]);
 
     reportes::factory()->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
         'ubicacions_id' => ubicacion::factory()->create(['latitud' => '4.71', 'longitud' => '-74.07'])->id,
         'personals_id' => $tecnico->id,
     ]);
 
     reportes::factory()->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
         'ubicacions_id' => ubicacion::factory()->create(['latitud' => '5.00', 'longitud' => '-75.00'])->id,
         'personals_id' => null,
     ]);
 
     $component = Livewire\Livewire::actingAs($user)
-        ->test(\App\Livewire\Mapa\MapaIndex::class)
+        ->test(MapaIndex::class)
         ->set('tecnicoId', $tecnico->id);
 
     expect($component->instance()->marcadores)->toHaveCount(1);
 });
 
 test('filter by estado reduces marcadores', function () {
-    $user = User::factory()->create();
+    $company = Company::factory()->create();
+    $user = User::factory()->create(['company_id' => $company->id]);
     $user->assignRole('Coordinador');
 
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value]);
+    app(TenantService::class)->set($company);
+
+    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value, 'company_id' => $company->id]);
 
     reportes::factory()->estado('confirmado')->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
         'ubicacions_id' => ubicacion::factory()->create(['latitud' => '4.71', 'longitud' => '-74.07'])->id,
     ]);
 
     reportes::factory()->estado('pendiente')->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
         'ubicacions_id' => ubicacion::factory()->create(['latitud' => '5.00', 'longitud' => '-75.00'])->id,
     ]);
 
     $component = Livewire\Livewire::actingAs($user)
-        ->test(\App\Livewire\Mapa\MapaIndex::class)
+        ->test(MapaIndex::class)
         ->set('estadoReporte', 'confirmado');
 
     expect($component->instance()->marcadores)->toHaveCount(1);
 });
 
 test('filter by numero_orden reduces marcadores', function () {
-    $user = User::factory()->create();
+    $company = Company::factory()->create();
+    $user = User::factory()->create(['company_id' => $company->id]);
     $user->assignRole('Coordinador');
 
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value]);
+    app(TenantService::class)->set($company);
+
+    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value, 'company_id' => $company->id]);
 
     reportes::factory()->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
         'ubicacions_id' => ubicacion::factory()->create(['latitud' => '4.71', 'longitud' => '-74.07'])->id,
         'numero_orden' => 'ORD-0001',
     ]);
 
     reportes::factory()->create([
         'orden_job_id' => $orden->id,
+        'company_id' => $company->id,
         'ubicacions_id' => ubicacion::factory()->create(['latitud' => '5.00', 'longitud' => '-75.00'])->id,
         'numero_orden' => 'ORD-9999',
     ]);
 
     $component = Livewire\Livewire::actingAs($user)
-        ->test(\App\Livewire\Mapa\MapaIndex::class)
+        ->test(MapaIndex::class)
         ->set('ordenTrabajo', '0001');
 
     expect($component->instance()->marcadores)->toHaveCount(1);

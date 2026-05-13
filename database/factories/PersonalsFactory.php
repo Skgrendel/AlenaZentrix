@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\TipoDocumento;
+use App\Models\Company;
 use App\Models\personals;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -22,6 +23,7 @@ class PersonalsFactory extends Factory
             'apellidos' => fake()->lastName(),
             'telefono' => fake()->phoneNumber(),
             'cargo' => fake()->jobTitle(),
+            'company_id' => Company::factory(),
         ];
     }
 }

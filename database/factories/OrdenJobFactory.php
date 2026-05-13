@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
+use App\Models\Company;
 use App\Models\OrdenJob;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,6 +19,7 @@ class OrdenJobFactory extends Factory
     {
         return [
             'personals_id' => null,
+            'company_id' => Company::factory(),
             'contrato' => fake()->numerify('CONT-####'),
             'cliente' => fake()->name(),
             'direccion' => fake()->streetAddress(),

@@ -101,11 +101,13 @@ test('coordinador can download pdf for fraudes reporte', function () {
         'tipo_servicio' => TipoServicio::Fraudes->value,
         'estado' => EstadoOrden::EnRevision->value,
         'creado_por_id' => $user->id,
+        'company_id' => $user->company_id,
     ]);
 
     reportes::create([
         'orden_job_id' => $orden->id,
         'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
         'imagenes' => [],
         'observaciones' => 'Sin novedad.',
     ]);
