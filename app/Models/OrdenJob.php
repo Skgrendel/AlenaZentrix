@@ -7,6 +7,7 @@ use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
 use App\Enums\TipoServicio;
 use App\Models\Scopes\CompanyScope;
+use App\Services\TenantService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -70,6 +71,10 @@ class OrdenJob extends Model
         static::addGlobalScope(new CompanyScope);
 
         static::creating(function (self $model): void {
+            if (empty($model->company_id)) {
+                $model->company_id = app(TenantService::class)->id();
+            }
+
             if (empty($model->numero_orden)) {
                 $model->numero_orden = self::generateNumeroOrden();
             }

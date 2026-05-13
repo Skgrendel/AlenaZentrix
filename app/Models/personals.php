@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\TipoDocumento;
 use App\Models\Scopes\CompanyScope;
+use App\Services\TenantService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -43,6 +44,12 @@ class personals extends Model
     protected static function booted(): void
     {
         static::addGlobalScope(new CompanyScope);
+
+        static::creating(function (self $model): void {
+            if (empty($model->company_id)) {
+                $model->company_id = app(TenantService::class)->id();
+            }
+        });
     }
 
     public function company(): BelongsTo
