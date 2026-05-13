@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -21,6 +23,8 @@ class User extends Authenticatable
     protected $fillable = [
         'email',
         'personals_id',
+        'company_id',
+        'is_superadmin',
         'password',
         'estado',
     ];
@@ -33,11 +37,22 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'estado' => 'boolean',
+        'is_superadmin' => 'boolean',
     ];
 
-    public function personal()
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
+
+    public function personal(): BelongsTo
     {
         return $this->belongsTo(personals::class, 'personals_id');
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     /**

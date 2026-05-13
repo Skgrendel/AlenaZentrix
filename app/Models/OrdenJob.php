@@ -6,6 +6,7 @@ use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
 use App\Enums\TipoServicio;
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -26,6 +27,7 @@ class OrdenJob extends Model
     protected $fillable = [
         'personals_id',
         'creado_por_id',
+        'company_id',
         'tipo_servicio',
         'numero_orden',
         'contrato',
@@ -65,6 +67,8 @@ class OrdenJob extends Model
 
     protected static function booted(): void
     {
+        static::addGlobalScope(new CompanyScope);
+
         static::creating(function (self $model): void {
             if (empty($model->numero_orden)) {
                 $model->numero_orden = self::generateNumeroOrden();

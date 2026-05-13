@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\CompanyScope;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,7 @@ class reportes extends Model
 
     protected $fillable = [
         'ubicacions_id',
+        'company_id',
         'comercios_id',
         'orden_job_id',
         'personals_id',
@@ -42,6 +44,11 @@ class reportes extends Model
         'confirmado',
         'estado',
     ];
+
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new CompanyScope);
+    }
 
     protected $casts = [
         'anomalia' => 'array',
