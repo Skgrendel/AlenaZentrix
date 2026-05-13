@@ -27,4 +27,9 @@ class TenantService
     {
         return $this->current?->id;
     }
+
+    public function clear(): void
+    {
+        $this->current = null;
+    }
 }

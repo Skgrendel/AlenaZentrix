@@ -16,6 +16,10 @@ use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 
+afterEach(function () {
+    app(TenantService::class)->clear();
+});
+
 beforeEach(function () {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
 

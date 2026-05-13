@@ -6,14 +6,16 @@ use App\Services\TenantService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
+use Illuminate\Support\Facades\Auth;
 
 class CompanyScope implements Scope
 {
     public function apply(Builder $builder, Model $model): void
     {
-        $user = auth()->user();
-
-        if ($user && $user->is_superadmin) {
+        // Auth::hasUser() is a plain null-check — no DB call.
+        // Calling auth()->user() here without this guard triggers infinite recursion:
+        // session guard resolves user → User::find() → CompanyScope → auth()->user() → loop.
+        if (Auth::hasUser() && Auth::user()->is_superadmin) {
             return;
         }
 
