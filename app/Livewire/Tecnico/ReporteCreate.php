@@ -440,9 +440,9 @@ class ReporteCreate extends Component implements HasActions, HasForms
                 ->icon('heroicon-o-clipboard-document-list')
                 ->columns(2)
                 ->schema([
-                    Forms\Components\TextInput::make('tipo_gestion_label')
+                    Forms\Components\Placeholder::make('tipo_gestion_legal_display')
                         ->label('Tipo de Gestión Legal')
-                        ->default(function () {
+                        ->content(function (): string {
                             $subtipos = [
                                 'capturas' => 'Capturas Criminales',
                                 'bandas' => 'Desarticulación de Bandas',
@@ -452,9 +452,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                             ];
 
                             return $subtipos[$this->orden->tipo_gestion_legal ?? ''] ?? ($this->orden->tipo_gestion_legal ?? '—');
-                        })
-                        ->disabled()
-                        ->dehydrated(false),
+                        }),
                     Forms\Components\DatePicker::make('fecha_ejecucion')
                         ->label('Fecha de Ejecución')
                         ->required()
