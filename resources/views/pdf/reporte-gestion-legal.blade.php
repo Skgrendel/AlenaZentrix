@@ -122,7 +122,7 @@
                         <div class="info-value">{{ $datosOrden['estado'] }}</div>
                     </div>
                     <div class="info-row">
-                        <div class="info-label">Investigador:</div>
+                        <div class="info-label">Gestor de Riesgo:</div>
                         <div class="info-value">{{ $datosOrden['tecnico'] }}</div>
                     </div>
                     @if (($datosOrden['noticia_criminal'] ?? '—') !== '—')

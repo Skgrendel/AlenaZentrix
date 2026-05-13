@@ -455,12 +455,6 @@
                         <div class="info-label">Fecha de Inspección:</div>
                         <div class="info-value">{{ $reporte->created_at->format('d/m/Y') }}</div>
                     </div>
-                    @if ($orden->numero_noticia_criminal)
-                        <div class="info-row">
-                            <div class="info-label">N° Noticia Criminal:</div>
-                            <div class="info-value">{{ $orden->numero_noticia_criminal }}</div>
-                        </div>
-                    @endif
                 </div>
             </div>
         </div>
@@ -635,30 +629,6 @@
                     No se registraron evidencias fotográficas para esta inspección.
                 </div>
             @endif
-        </div>
-
-        {{-- ── 5. Observaciones ── --}}
-        <div class="section">
-            <div class="section-title">8. DESTINACIÓN DEL INFORME </div>
-            <div class="content-box">
-                El presente informe se presenta con fines exclusivamente informativos, en el marco de una investigación
-                interna desarrollada por la compañía, razón por la cual no debe ser entendido de manera inequívoca como
-                un medio de prueba autónomo, suficiente o exclusivo para sustentar la desvinculación de personas
-                naturales o jurídicas. La adopción de decisiones de tal alcance corresponde única y exclusivamente a la
-                empresa contratante Surtigas S.A. E.S.P., en ejercicio de sus competencias legales, contractuales y de
-                gobierno corporativo.
-
-                Se deja expresa constancia de que la información aquí consignada se obtuvo principalmente a través de
-                testimonios voluntarios de los entrevistados, con la observancia y en presencia de los funcionarios que
-                en el cuerpo del informe se mencionan, lo que asegura trazabilidad, transparencia y respeto por la buena
-                fe en la documentación de los hechos.
-
-                De igual forma, los registros audiovisuales descritos fueron recolectados respetando la voluntad de
-                quienes detentan la posesión de tales materiales, por lo que su utilización, difusión o destinación
-                ulterior deberá ser consultada, evaluada o legalizada mediante los mecanismos conducentes en derecho y
-                de acuerdo con los protocolos internos que resulten aplicables al caso.
-
-            </div>
         </div>
 
         {{-- ── Destinación del Informe ── --}}
