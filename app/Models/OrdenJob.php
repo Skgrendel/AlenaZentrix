@@ -40,6 +40,7 @@ class OrdenJob extends Model
         'actividades',
         'numero_noticia_criminal',
         'tipo_investigacion',
+        'tipo_gestion_legal',
         'documentos',
         'prioridad',
         'estado',

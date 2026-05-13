@@ -28,6 +28,7 @@ return new class extends Migration
             $table->string('ciclo')->nullable();
             $table->string('numero_noticia_criminal')->nullable();
             $table->string('tipo_investigacion')->nullable(); // 'interna' | 'contratista' (solo para Investigación)
+            $table->string('tipo_gestion_legal')->nullable(); // sub-tipo para GestionLegal
             $table->json('documentos')->nullable();
 
             // Gestión de la orden

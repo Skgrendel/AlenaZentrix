@@ -11,8 +11,7 @@ enum TipoServicio: string
 {
     case Fraudes = 'fraudes';
     case Investigacion = 'investigacion';
-    case Capturas = 'capturas';
-    case Bandas = 'bandas';
+    case GestionLegal = 'gestion_legal';
     case Vigilancia = 'vigilancia';
     case Gestion_Riesgo = 'Gestión de Riesgo';
 
@@ -21,8 +20,7 @@ enum TipoServicio: string
         return match ($this) {
             self::Fraudes => 'Fraudes',
             self::Investigacion => 'Investigación',
-            self::Capturas => 'Capturas Criminales',
-            self::Bandas => 'Desarticulación de Bandas',
+            self::GestionLegal => 'Gestión Legal',
             self::Vigilancia => 'Dispositivos de Vigilancia',
             self::Gestion_Riesgo => 'Gestión de Riesgo',
         };
@@ -33,8 +31,7 @@ enum TipoServicio: string
         return match ($this) {
             self::Fraudes => 'danger',
             self::Investigacion => 'warning',
-            self::Capturas => 'info',
-            self::Bandas => 'purple',
+            self::GestionLegal => 'info',
             self::Vigilancia => 'success',
             self::Gestion_Riesgo => 'primary',
         };
@@ -56,11 +53,5 @@ enum TipoServicio: string
     public function tieneMedidor(): bool
     {
         return $this === self::Fraudes;
-    }
-
-    /** @return bool Servicios que tienen número de noticia criminal */
-    public function tieneNoticiaCriminal(): bool
-    {
-        return in_array($this, [self::Capturas, self::Bandas]);
     }
 }
