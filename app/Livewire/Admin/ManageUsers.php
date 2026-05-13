@@ -6,6 +6,7 @@ use App\Enums\TipoDocumento;
 use App\Mail\WelcomeNewUser;
 use App\Models\personals;
 use App\Models\User;
+use App\Services\TenantService;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -79,6 +80,8 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                     ->modalHeading('Crear usuario')
                     ->form($this->formSchema(isCreating: true))
                     ->action(function (array $data): void {
+                        $tenantId = app(TenantService::class)->id();
+
                         $personal = personals::create([
                             'tipo_documento' => $data['tipo_documento'],
                             'numero_documento' => $data['numero_documento'],
@@ -86,6 +89,7 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                             'apellidos' => $data['apellidos'],
                             'telefono' => $data['telefono'] ?? null,
                             'cargo' => $data['cargo'] ?? null,
+                            'company_id' => $tenantId,
                         ]);
 
                         $plainPassword = $data['password'];
@@ -93,6 +97,7 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                             'personals_id' => $personal->id,
                             'email' => $data['email'],
                             'password' => Hash::make($plainPassword),
+                            'company_id' => $tenantId,
                             'estado' => $data['estado'] ?? true,
                         ]);
 
