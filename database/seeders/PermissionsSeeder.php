@@ -55,7 +55,6 @@ class PermissionsSeeder extends Seeder
             'legal.ver',
             'evidencias.ver',
             'usuarios.ver', 'usuarios.crear', 'usuarios.editar', 'usuarios.eliminar', 'usuarios.asignar-roles',
-            'roles.ver',
             'admin.configuracion',
             'empresa.admin',
         ],

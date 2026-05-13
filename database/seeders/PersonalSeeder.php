@@ -20,14 +20,5 @@ class PersonalSeeder extends Seeder
             'cargo' => 'Administrador del Sistema',
             'company_id' => $company->id,
         ]);
-
-        personals::create([
-            'tipo_documento' => 'CC',
-            'numero_documento' => '0001',
-            'nombres' => 'Auditor',
-            'apellidos' => 'Sistema',
-            'cargo' => 'Auditor',
-            'company_id' => $company->id,
-        ]);
     }
 }
