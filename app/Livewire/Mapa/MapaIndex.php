@@ -14,9 +14,9 @@ use Livewire\Component;
 #[Title('Mapa de Ubicaciones')]
 class MapaIndex extends Component
 {
-    public string $fechaDesde;
+    public string $fechaDesde = '';
 
-    public string $fechaHasta;
+    public string $fechaHasta = '';
 
     public ?string $tecnicoId = null;
 
@@ -87,7 +87,27 @@ class MapaIndex extends Component
             ->all();
     }
 
-    public function updated(): void
+    public function updatedFechaDesde(): void
+    {
+        $this->dispatch('markers-updated', marcadores: $this->marcadores);
+    }
+
+    public function updatedFechaHasta(): void
+    {
+        $this->dispatch('markers-updated', marcadores: $this->marcadores);
+    }
+
+    public function updatedTecnicoId(): void
+    {
+        $this->dispatch('markers-updated', marcadores: $this->marcadores);
+    }
+
+    public function updatedEstadoReporte(): void
+    {
+        $this->dispatch('markers-updated', marcadores: $this->marcadores);
+    }
+
+    public function updatedOrdenTrabajo(): void
     {
         $this->dispatch('markers-updated', marcadores: $this->marcadores);
     }
