@@ -88,7 +88,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
         $schema = match ($this->orden->tipo_servicio) {
             TipoServicio::Fraudes => $this->fraudesSchema(),
             TipoServicio::Investigacion => $this->investigacionSchema(),
-            TipoServicio::Capturas, TipoServicio::Bandas => $this->capturasSchema(),
+            TipoServicio::GestionLegal => $this->gestionLegalSchema(),
             TipoServicio::Vigilancia => $this->vigilanciaSchema(),
             TipoServicio::Gestion_Riesgo => $this->gestionRiesgoSchema(),
         };
@@ -434,7 +434,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
     }
 
     /** @return array<int, Section> */
-    private function capturasSchema(): array
+    private function gestionLegalSchema(): array
     {
         return [
             Section::make('1. Datos de la Actividad')
@@ -706,8 +706,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
         match ($this->orden->tipo_servicio) {
             TipoServicio::Fraudes => $this->submitFraudes($data),
             TipoServicio::Investigacion => $this->submitServicioGenerico($data),
-            TipoServicio::Capturas => $this->submitServicioGenerico($data),
-            TipoServicio::Bandas => $this->submitServicioGenerico($data),
+            TipoServicio::GestionLegal => $this->submitServicioGenerico($data),
             TipoServicio::Vigilancia => $this->submitVigilancia($data),
             TipoServicio::Gestion_Riesgo => $this->submitServicioGenerico($data),
         };
