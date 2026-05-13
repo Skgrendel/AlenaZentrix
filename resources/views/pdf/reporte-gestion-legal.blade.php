@@ -210,7 +210,7 @@
                                 </div>
                             @endif
                             <div class="info-row">
-                                <div class="info-label">Respuesta del investigador:</div>
+                                <div class="info-label">Respuesta del Gestor Legal:</div>
                                 <div class="info-value">{{ $actividad['actividades'] }}</div>
                             </div>
                         </div>
@@ -230,7 +230,7 @@
         {{-- ── Conclusión del Coordinador ── --}}
         @if (!empty($datosReporte['conclusion']))
             <div class="section">
-                <div class="section-title">CONCLUSIÓN DEL COORDINADOR</div>
+                <div class="section-title">CONCLUSIÓNES</div>
                 <div class="content-box">{{ $datosReporte['conclusion'] }}</div>
             </div>
         @endif
