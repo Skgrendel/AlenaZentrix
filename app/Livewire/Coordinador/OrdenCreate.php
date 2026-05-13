@@ -109,13 +109,6 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->label('Ciclo')
                             ->maxLength(255)
                             ->columnSpanFull(),
-                        Forms\Components\Textarea::make('actividades')
-                            ->label('Actividades a Realizar')
-                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Investigacion->value)
-                            ->columnSpanFull()
-                            ->rows(5)
-                            ->cols(10)
-                            ->maxLength(1000),
                     ]),
 
                 // ── Sección: Investigación ────────────────────────────────
@@ -167,15 +160,6 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->rows(5)
                             ->cols(5)
                             ->maxLength(1000),
-                        Forms\Components\Textarea::make('actividades')
-                            ->label('Actividades a Realizar')
-                            ->required(fn ($get) => in_array($get('tipo_servicio'), [
-                                TipoServicio::Capturas->value,
-                                TipoServicio::Bandas->value,
-                            ]))
-                            ->rows(5)
-                            ->cols(5)
-                            ->maxLength(1000),
                     ]),
 
                 // ── Sección: Vigilancia ───────────────────────────────────
@@ -204,17 +188,22 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->columnSpanFull()
                             ->cols(5)
                             ->maxLength(1000),
-                        Forms\Components\Textarea::make('actividades')
-                            ->label('Actividades a Realizar')
-                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Vigilancia->value)
-                            ->rows(5)
-                            ->columnSpanFull()
-                            ->cols(5)
-                            ->maxLength(1000)
                     ]),
-                // ── Sección: Actividad A Realizar ─────────────────────────────
-                 Section::make('Actividad A Realizar')
-                             ->icon('heroicon-o-check-badge')
+                // ── Sección: Gestión de Riesgo ─────────────────────────────
+                Section::make('Datos de Gestión de Riesgo')
+                    ->columns(1)
+                    ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::Gestion_Riesgo->value)
+                    ->schema([
+                        Forms\Components\Textarea::make('objetivo')
+                            ->label('Objetivos')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Gestion_Riesgo->value)
+                            ->rows(5)
+                            ->cols(5)
+                            ->maxLength(1000),
+                    ]),
+                // ── Sección: Actividad A Realizar ─────────────────────────
+                Section::make('Actividad A Realizar')
+                            ->icon('heroicon-o-check-badge')
                             ->schema([
                                     Repeater::make('actividades_investigacion')
                                     ->label('Actividades por realizar')
@@ -228,27 +217,9 @@ class OrdenCreate extends Component implements HasActions, HasForms
                                 ])
                                 ->columns(2)
                                 ->collapsible()
-                ]),
-                // ── Sección: Gestión de Riesgo ─────────────────────────────
-                Section::make('Datos de Gestión de Riesgo')
-                    ->columns(1)
-                    ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::Gestion_Riesgo->value)
-                    ->schema([
-                        Forms\Components\Textarea::make('objetivo')
-                            ->label('Objetivo de la Gestión de Riesgo')
-                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Gestion_Riesgo->value)
-                            ->rows(5)
-                            ->cols(5)
-                            ->maxLength(1000),
-                        Forms\Components\Textarea::make('actividades')
-                            ->label('Actividades a Realizar')
-                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::Gestion_Riesgo->value)
-                            ->rows(5)
-                            ->cols(5)
-                            ->maxLength(1000),
-                    ]),
-                // ── Fotos ─────────────────────────────────────────────────
-                Section::make('Gestion de la Orden')
+                                ->createItemButtonLabel('Agregar Actividad')]),
+                // ── Documentos  ──────────────────────────────────────────
+                Section::make('Gestion de Documentos')
                     ->schema([
                         Forms\Components\FileUpload::make('documentos')
                             ->label('Subir documentos')
