@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\EstadoAuditoria;
+use App\Enums\TipoServicio;
 use App\Models\auditoria;
 use App\Models\OrdenJob;
 use App\Models\reportes as Reporte;
@@ -38,11 +39,13 @@ class InformeController extends Controller
         $fechaInicio = $request->query('fecha_inicio');
         $fechaFin = $request->query('fecha_fin');
         $estado = $request->query('estado');
+        $servicio = $request->query('servicio');
+        $subTipo = $request->query('sub_tipo');
 
         [$headers, $rows, $filename] = match ($tipo) {
-            'ordenes' => $this->dataOrdenes($fechaInicio, $fechaFin, $estado),
-            'reportes' => $this->dataReportes($user, $fechaInicio, $fechaFin, $estado),
-            'auditorias' => $this->dataAuditorias($fechaInicio, $fechaFin, $estado),
+            'ordenes' => $this->dataOrdenes($fechaInicio, $fechaFin, $estado, $servicio, $subTipo),
+            'reportes' => $this->dataReportes($user, $fechaInicio, $fechaFin, $estado, $servicio, $subTipo),
+            'auditorias' => $this->dataAuditorias($fechaInicio, $fechaFin, $estado, $servicio, $subTipo),
         };
 
         return response()->streamDownload(function () use ($headers, $rows) {
@@ -63,28 +66,35 @@ class InformeController extends Controller
      *
      * @return array{0: array<int, string>, 1: array<int, array<int, mixed>>, 2: string}
      */
-    private function dataOrdenes(?string $fechaInicio, ?string $fechaFin, ?string $estado): array
+    private function dataOrdenes(?string $fechaInicio, ?string $fechaFin, ?string $estado, ?string $servicio = null, ?string $subTipo = null): array
     {
         $ordenes = OrdenJob::query()
             ->with('personal')
             ->when($fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $fechaInicio))
             ->when($fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $fechaFin))
             ->when($estado, fn ($q) => $q->where('estado', $estado))
+            ->when($servicio, fn ($q) => $q->where('tipo_servicio', $servicio))
+            ->when($subTipo && $servicio === TipoServicio::GestionLegal->value, fn ($q) => $q->where('tipo_gestion_legal', $subTipo))
+            ->when($subTipo && $servicio === TipoServicio::Investigacion->value, fn ($q) => $q->where('tipo_investigacion', $subTipo))
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $headers = ['N° Orden', 'Estado', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Prioridad', 'Técnico', 'Fecha Asignación', 'Fecha Límite', 'Fecha Completado'];
+        $headers = ['N° Orden', 'Servicio', 'Sub-tipo', 'Estado', 'Prioridad', 'Investigador', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Objetivo', 'N° Noticia Criminal', 'Fecha Asignación', 'Fecha Límite', 'Fecha Completado'];
 
         $rows = $ordenes->map(fn (OrdenJob $o) => [
             $o->numero_orden,
+            $o->tipo_servicio->label(),
+            $o->subtipoLabel(),
             $o->estado->label(),
-            $o->cliente,
-            $o->contrato,
-            $o->direccion,
-            $o->barrio,
-            $o->medidor,
             $o->prioridad->label(),
             $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '',
+            $o->cliente ?? '',
+            $o->contrato ?? '',
+            $o->direccion ?? '',
+            $o->barrio ?? '',
+            $o->medidor ?? '',
+            $o->objetivo ?? '',
+            $o->numero_noticia_criminal ?? '',
             $o->fecha_asignacion?->format('d/m/Y H:i') ?? '',
             $o->fecha_limite?->format('d/m/Y') ?? '',
             $o->fecha_completado?->format('d/m/Y H:i') ?? '',
@@ -99,7 +109,7 @@ class InformeController extends Controller
      *
      * @return array{0: array<int, string>, 1: array<int, array<int, mixed>>, 2: string}
      */
-    private function dataReportes($user, ?string $fechaInicio, ?string $fechaFin, ?string $estado): array
+    private function dataReportes($user, ?string $fechaInicio, ?string $fechaFin, ?string $estado, ?string $servicio = null, ?string $subTipo = null): array
     {
         $reportes = Reporte::query()
             ->with(['ordenJob.personal', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador'])
@@ -111,26 +121,39 @@ class InformeController extends Controller
             ->when($estado, fn ($q) => $q->whereHas(
                 'ordenJob', fn ($q2) => $q2->where('estado', $estado)
             ))
+            ->when($servicio, fn ($q) => $q->whereHas(
+                'ordenJob', fn ($q2) => $q2->where('tipo_servicio', $servicio)
+            ))
+            ->when($subTipo && $servicio === TipoServicio::GestionLegal->value, fn ($q) => $q->whereHas(
+                'ordenJob', fn ($q2) => $q2->where('tipo_gestion_legal', $subTipo)
+            ))
+            ->when($subTipo && $servicio === TipoServicio::Investigacion->value, fn ($q) => $q->whereHas(
+                'ordenJob', fn ($q2) => $q2->where('tipo_investigacion', $subTipo)
+            ))
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $headers = ['N° Orden', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Técnico', 'Lectura', 'N° Medidor', 'Comercio', 'Tipo Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Observaciones', 'Fecha Reporte'];
+        $headers = ['N° Orden', 'Servicio', 'Sub-tipo', 'Estado Orden', 'Investigador', 'Dirección', 'Barrio', 'Cliente', 'Contrato', 'Lectura', 'N° Medidor', 'Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Actividades', 'Observaciones', 'Conclusión', 'Fecha Reporte'];
 
         $rows = $reportes->map(fn (Reporte $r) => [
             $r->ordenJob?->numero_orden ?? '',
-            $r->ordenJob?->cliente ?? '',
-            $r->ordenJob?->contrato ?? '',
+            $r->ordenJob?->tipo_servicio?->label() ?? '',
+            $r->ordenJob?->subtipoLabel() ?? '—',
+            $r->ordenJob?->estado?->label() ?? '',
+            $r->ordenJob?->personal ? "{$r->ordenJob->personal->nombres} {$r->ordenJob->personal->apellidos}" : '',
             $r->ordenJob?->direccion ?? '',
             $r->ordenJob?->barrio ?? '',
-            $r->ordenJob?->personal ? "{$r->ordenJob->personal->nombres} {$r->ordenJob->personal->apellidos}" : '',
+            $r->ordenJob?->cliente ?? '',
+            $r->ordenJob?->contrato ?? '',
             $r->lectura ?? '',
             $r->numero_medidor ?? '',
             $r->comercio?->nombre_comercio ?? '',
-            $r->comercio?->tipoComercio?->nombre ?? '',
             $r->tipoImposibilidad?->nombre ?? '',
             $r->tipoRegulador?->nombre ?? '',
             $r->cau ?? '',
+            implode(' | ', array_column($r->actividades ?? [], 'actividades')),
             $r->observaciones ?? '',
+            $r->conclusion ?? '',
             $r->created_at?->format('d/m/Y H:i') ?? '',
         ])->all();
 
@@ -142,7 +165,7 @@ class InformeController extends Controller
      *
      * @return array{0: array<int, string>, 1: array<int, array<int, mixed>>, 2: string}
      */
-    private function dataAuditorias(?string $fechaInicio, ?string $fechaFin, ?string $estado): array
+    private function dataAuditorias(?string $fechaInicio, ?string $fechaFin, ?string $estado, ?string $servicio = null, ?string $subTipo = null): array
     {
         $auditorias = auditoria::query()
             ->with(['reporte.ordenJob.personal'])

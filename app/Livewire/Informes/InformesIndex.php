@@ -34,6 +34,8 @@ class InformesIndex extends Component
 
     public string $servicio = '';
 
+    public string $subTipo = '';
+
     public bool $previewGenerado = false;
 
     public array $preview = [];
@@ -54,13 +56,13 @@ class InformesIndex extends Component
         $tipos = [];
 
         if ($user->can('informes.ordenes')) {
-            $tipos['ordenes'] = 'Órdenes Asignadas';
+            $tipos['ordenes'] = 'Órdenes de Trabajo';
         }
         if ($user->can('informes.tecnico')) {
-            $tipos['reportes'] = 'Respuestas del Investigador';
+            $tipos['reportes'] = 'Reportes de Campo';
         }
         if ($user->can('informes.auditorias')) {
-            $tipos['auditorias'] = 'Respuestas del Auditor';
+            $tipos['auditorias'] = 'Auditorías de Calidad';
         }
 
         return $tipos;
@@ -111,10 +113,37 @@ class InformesIndex extends Component
             ->all();
     }
 
+    public function subTipoOptions(): array
+    {
+        return match ($this->servicio) {
+            TipoServicio::GestionLegal->value => [
+                'capturas' => 'Capturas Criminales',
+                'bandas' => 'Desarticulación de Bandas',
+                'querella' => 'Querella Penal',
+                'seguimiento_denuncia' => 'Seguimiento a Denuncia',
+                'diligencia_judicial' => 'Diligencia Judicial',
+            ],
+            TipoServicio::Investigacion->value => [
+                'interna' => 'Interna',
+                'contratista' => 'Contratista',
+                'Terceros' => 'Terceros',
+            ],
+            default => [],
+        };
+    }
+
     public function updatedTipoInforme(): void
     {
         $this->estado = '';
         $this->servicio = '';
+        $this->subTipo = '';
+        $this->preview = [];
+        $this->previewGenerado = false;
+    }
+
+    public function updatedServicio(): void
+    {
+        $this->subTipo = '';
         $this->preview = [];
         $this->previewGenerado = false;
     }
@@ -161,19 +190,29 @@ class InformesIndex extends Component
             ->when($this->fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaFin))
             ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
             ->when($this->servicio, fn ($q) => $q->where('tipo_servicio', $this->servicio))
+            ->when($this->subTipo, function ($q) {
+                match ($this->servicio) {
+                    TipoServicio::GestionLegal->value => $q->where('tipo_gestion_legal', $this->subTipo),
+                    TipoServicio::Investigacion->value => $q->where('tipo_investigacion', $this->subTipo),
+                    default => null,
+                };
+            })
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn (OrdenJob $o) => [
                 $o->numero_orden,
                 $o->tipo_servicio->label(),
+                $o->subtipoLabel(),
                 $o->estado->label(),
-                $o->cliente,
-                $o->contrato,
-                $o->direccion,
-                $o->barrio,
-                $o->medidor,
                 $o->prioridad->label(),
                 $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '',
+                $o->cliente ?? '',
+                $o->contrato ?? '',
+                $o->direccion ?? '',
+                $o->barrio ?? '',
+                $o->medidor ?? '',
+                $o->objetivo ?? '',
+                $o->numero_noticia_criminal ?? '',
                 $o->fecha_asignacion?->format('d/m/Y H:i') ?? '',
                 $o->fecha_limite?->format('d/m/Y') ?? '',
                 $o->fecha_completado?->format('d/m/Y H:i') ?? '',
@@ -181,7 +220,7 @@ class InformesIndex extends Component
             ->all();
 
         return [
-            ['N° Orden', 'Servicio', 'Estado', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Prioridad', 'Investigador', 'Fecha Asignación', 'Fecha Límite', 'Fecha Completado'],
+            ['N° Orden', 'Servicio', 'Sub-tipo', 'Estado', 'Prioridad', 'Investigador', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Objetivo', 'N° Noticia Criminal', 'Fecha Asignación', 'Fecha Límite', 'Fecha Completado'],
             $rows,
             'ordenes-asignadas-'.now()->format('Y-m-d'),
         ];
@@ -202,31 +241,40 @@ class InformesIndex extends Component
             ->when($this->servicio, fn ($q) => $q->whereHas(
                 'ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
             ))
+            ->when($this->subTipo, fn ($q) => $q->whereHas('ordenJob', function ($inner) {
+                match ($this->servicio) {
+                    TipoServicio::GestionLegal->value => $inner->where('tipo_gestion_legal', $this->subTipo),
+                    TipoServicio::Investigacion->value => $inner->where('tipo_investigacion', $this->subTipo),
+                    default => null,
+                };
+            }))
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn (Reporte $r) => [
                 $r->ordenJob?->numero_orden ?? '',
                 $r->ordenJob?->tipo_servicio?->label() ?? '',
+                $r->ordenJob?->subtipoLabel() ?? '—',
                 $r->ordenJob?->estado?->label() ?? '',
-                $r->ordenJob?->cliente ?? '',
-                $r->ordenJob?->contrato ?? '',
+                $r->ordenJob?->personal ? "{$r->ordenJob->personal->nombres} {$r->ordenJob->personal->apellidos}" : '',
                 $r->ordenJob?->direccion ?? '',
                 $r->ordenJob?->barrio ?? '',
-                $r->ordenJob?->personal ? "{$r->ordenJob->personal->nombres} {$r->ordenJob->personal->apellidos}" : '',
+                $r->ordenJob?->cliente ?? '',
+                $r->ordenJob?->contrato ?? '',
                 $r->lectura ?? '',
                 $r->numero_medidor ?? '',
                 $r->comercio?->nombre_comercio ?? '',
-                $r->comercio?->tipoComercio?->nombre ?? '',
                 $r->tipoImposibilidad?->nombre ?? '',
                 $r->tipoRegulador?->nombre ?? '',
                 $r->cau ?? '',
+                implode(' | ', array_column($r->actividades ?? [], 'actividades')),
                 $r->observaciones ?? '',
+                $r->conclusion ?? '',
                 $r->created_at?->format('d/m/Y H:i') ?? '',
             ])
             ->all();
 
         return [
-            ['N° Orden', 'Servicio', 'Estado Orden', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Investigador', 'Lectura', 'N° Medidor', 'Comercio', 'Tipo Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Observaciones', 'Fecha Reporte'],
+            ['N° Orden', 'Servicio', 'Sub-tipo', 'Estado Orden', 'Investigador', 'Dirección', 'Barrio', 'Cliente', 'Contrato', 'Lectura', 'N° Medidor', 'Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Actividades', 'Observaciones', 'Conclusión', 'Fecha Reporte'],
             $rows,
             'respuestas-tecnico-'.now()->format('Y-m-d'),
         ];
@@ -242,6 +290,13 @@ class InformesIndex extends Component
             ->when($this->servicio, fn ($q) => $q->whereHas(
                 'reporte.ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
             ))
+            ->when($this->subTipo, fn ($q) => $q->whereHas('reporte.ordenJob', function ($inner) {
+                match ($this->servicio) {
+                    TipoServicio::GestionLegal->value => $inner->where('tipo_gestion_legal', $this->subTipo),
+                    TipoServicio::Investigacion->value => $inner->where('tipo_investigacion', $this->subTipo),
+                    default => null,
+                };
+            }))
             ->orderBy('fecha_auditoria', 'desc')
             ->get()
             ->map(fn (auditoria $a) => [
@@ -281,19 +336,26 @@ class InformesIndex extends Component
                 ->when($this->fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaFin))
                 ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
                 ->when($this->servicio, fn ($q) => $q->where('tipo_servicio', $this->servicio))
+                ->when($this->subTipo, function ($q) {
+                    match ($this->servicio) {
+                        TipoServicio::GestionLegal->value => $q->where('tipo_gestion_legal', $this->subTipo),
+                        TipoServicio::Investigacion->value => $q->where('tipo_investigacion', $this->subTipo),
+                        default => null,
+                    };
+                })
                 ->orderBy('created_at', 'desc')
                 ->limit(50)
                 ->get()
                 ->map(fn (OrdenJob $o) => [
                     'N° Orden' => $o->numero_orden,
                     'Servicio' => $o->tipo_servicio->label(),
+                    'Sub-tipo' => $o->subtipoLabel(),
                     'Estado' => $o->estado->label(),
-                    'Cliente' => $o->cliente,
-                    'Contrato' => $o->contrato,
-                    'Medidor' => $o->medidor,
-                    'Barrio' => $o->barrio,
                     'Prioridad' => $o->prioridad->label(),
                     'Investigador' => $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '—',
+                    'Cliente' => $o->cliente ?? '—',
+                    'Objetivo' => $o->objetivo ?? '—',
+                    'N° Noticia Criminal' => $o->numero_noticia_criminal ?? '—',
                     'Fecha Límite' => $o->fecha_limite?->format('d/m/Y') ?? '—',
                     'Fecha Completado' => $o->fecha_completado?->format('d/m/Y') ?? '—',
                 ])
@@ -314,24 +376,29 @@ class InformesIndex extends Component
                 ->when($this->servicio, fn ($q) => $q->whereHas(
                     'ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
                 ))
+                ->when($this->subTipo, fn ($q) => $q->whereHas('ordenJob', function ($inner) {
+                    match ($this->servicio) {
+                        TipoServicio::GestionLegal->value => $inner->where('tipo_gestion_legal', $this->subTipo),
+                        TipoServicio::Investigacion->value => $inner->where('tipo_investigacion', $this->subTipo),
+                        default => null,
+                    };
+                }))
                 ->orderBy('created_at', 'desc')
                 ->limit(50)
                 ->get()
                 ->map(fn (Reporte $r) => [
                     'N° Orden' => $r->ordenJob?->numero_orden ?? '—',
                     'Servicio' => $r->ordenJob?->tipo_servicio?->label() ?? '—',
+                    'Sub-tipo' => $r->ordenJob?->subtipoLabel() ?? '—',
                     'Estado Orden' => $r->ordenJob?->estado?->label() ?? '—',
-                    'Cliente' => $r->ordenJob?->cliente ?? '—',
-                    'Contrato' => $r->ordenJob?->contrato ?? '—',
-                    'N° Medidor' => $r->numero_medidor ?? '—',
-                    'Barrio' => $r->ordenJob?->barrio ?? '—',
                     'Investigador' => $r->ordenJob?->personal
                         ? "{$r->ordenJob->personal->nombres} {$r->ordenJob->personal->apellidos}"
                         : '—',
-                    'Lectura' => $r->lectura ?? '—',
-                    'Comercio' => $r->comercio?->nombre_comercio ?? '—',
-                    'Imposibilidad' => $r->tipoImposibilidad?->nombre ?? '—',
-                    'CAU' => $r->cau ?? '—',
+                    'Cliente' => $r->ordenJob?->cliente ?? '—',
+                    'Barrio' => $r->ordenJob?->barrio ?? '—',
+                    'Actividades' => implode(' | ', array_column($r->actividades ?? [], 'actividades')) ?: '—',
+                    'Observaciones' => $r->observaciones ?? '—',
+                    'Conclusión' => $r->conclusion ?? '—',
                     'Fecha Reporte' => $r->created_at?->format('d/m/Y H:i') ?? '—',
                 ])
                 ->all();
@@ -346,6 +413,13 @@ class InformesIndex extends Component
                 ->when($this->servicio, fn ($q) => $q->whereHas(
                     'reporte.ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
                 ))
+                ->when($this->subTipo, fn ($q) => $q->whereHas('reporte.ordenJob', function ($inner) {
+                    match ($this->servicio) {
+                        TipoServicio::GestionLegal->value => $inner->where('tipo_gestion_legal', $this->subTipo),
+                        TipoServicio::Investigacion->value => $inner->where('tipo_investigacion', $this->subTipo),
+                        default => null,
+                    };
+                }))
                 ->orderBy('fecha_auditoria', 'desc')
                 ->limit(50)
                 ->get()
@@ -377,6 +451,7 @@ class InformesIndex extends Component
             'tiposDisponibles' => $this->tiposDisponibles(),
             'estadoOptions' => $this->estadoOptions(),
             'servicioOptions' => $this->servicioOptions(),
+            'subTipoOptions' => $this->subTipoOptions(),
             'tipoEfectivo' => $this->tipoEfectivo(),
         ]);
     }

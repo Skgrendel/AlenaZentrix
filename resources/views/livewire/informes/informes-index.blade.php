@@ -5,56 +5,81 @@
     </div>
 
     {{-- Panel de filtros --}}
-    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900">
-        <div class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900 space-y-5">
 
-            @if($puedeSeleccionarTipo)
-            <div class="sm:col-span-2 lg:col-span-4">
-                <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Tipo de Informe</label>
-                <select wire:model.live="tipoInforme"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
-                    @foreach($tiposDisponibles as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </select>
+        {{-- Tipo de Informe --}}
+        @if($puedeSeleccionarTipo)
+        <div>
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">Tipo de Informe</p>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                @foreach($tiposDisponibles as $value => $label)
+                <button wire:click="$set('tipoInforme', '{{ $value }}')"
+                    class="rounded-lg border px-4 py-3 text-sm font-medium transition
+                        {{ $tipoEfectivo === $value
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300'
+                            : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700' }}">
+                    {{ $label }}
+                </button>
+                @endforeach
             </div>
-            @endif
-
-            <div>
-                <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fecha Inicial</label>
-                <input type="date" wire:model="fechaInicio"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
-            </div>
-
-            <div>
-                <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fecha Final</label>
-                <input type="date" wire:model="fechaFin"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
-            </div>
-
-            <div>
-                <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Servicio</label>
-                <select wire:model="servicio"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
-                    <option value="">Todos</option>
-                    @foreach($servicioOptions as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Estado</label>
-                <select wire:model="estado"
-                    class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
-                    <option value="">Todos</option>
-                    @foreach($estadoOptions as $value => $label)
-                        <option value="{{ $value }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-
         </div>
+        @endif
+
+        {{-- Filtros + Periodo en una sola fila --}}
+        <div>
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">Filtros</p>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Servicio</label>
+                    <select wire:model.live="servicio"
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
+                        <option value="">Todos los servicios</option>
+                        @foreach($servicioOptions as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                @if(count($subTipoOptions) > 0)
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Sub-tipo</label>
+                    <select wire:model="subTipo"
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
+                        <option value="">Todos los sub-tipos</option>
+                        @foreach($subTipoOptions as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Estado</label>
+                    <select wire:model="estado"
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
+                        <option value="">Todos los estados</option>
+                        @foreach($estadoOptions as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fecha inicial</label>
+                    <input type="date" wire:model="fechaInicio"
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fecha final</label>
+                    <input type="date" wire:model="fechaFin"
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
+                </div>
+
+            </div>
+        </div>
+
     </div>
 
     {{-- Botones centrados --}}
@@ -65,7 +90,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            <span wire:loading.remove wire:target="generarVista">Generar Informe</span>
+            <span wire:loading.remove wire:target="generarVista">Generar Vista Previa</span>
             <span wire:loading wire:target="generarVista">Generando...</span>
         </button>
 
@@ -74,12 +99,12 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            <span wire:loading.remove wire:target="download">Descargar Informe</span>
+            <span wire:loading.remove wire:target="download">Descargar Excel</span>
             <span wire:loading wire:target="download">Preparando...</span>
         </button>
     </div>
 
-    {{-- Tabla --}}
+    {{-- Tabla de vista previa --}}
     <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -100,7 +125,7 @@
                     @if(! $previewGenerado)
                         <tr>
                             <td class="px-5 py-12 text-center text-sm text-zinc-400">
-                                Aplica los filtros y presiona <span class="font-medium text-zinc-500">Generar Informe</span> para ver los resultados.
+                                Aplica los filtros y presiona <span class="font-medium text-zinc-500">Generar Vista Previa</span> para ver los resultados.
                             </td>
                         </tr>
                     @elseif(count($preview) === 0)

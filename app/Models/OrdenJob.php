@@ -154,4 +154,21 @@ class OrdenJob extends Model
     {
         return $this->hasMany(reportes::class, 'orden_job_id');
     }
+
+    public function subtipoLabel(): string
+    {
+        $subtipos = [
+            'capturas' => 'Capturas Criminales',
+            'bandas' => 'Desarticulación de Bandas',
+            'querella' => 'Querella Penal',
+            'seguimiento_denuncia' => 'Seguimiento a Denuncia',
+            'diligencia_judicial' => 'Diligencia Judicial',
+        ];
+
+        return match ($this->tipo_servicio) {
+            TipoServicio::GestionLegal => $subtipos[$this->tipo_gestion_legal ?? ''] ?? ($this->tipo_gestion_legal ?? '—'),
+            TipoServicio::Investigacion => $this->tipo_investigacion ?? '—',
+            default => '—',
+        };
+    }
 }
