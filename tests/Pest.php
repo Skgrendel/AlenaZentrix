@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\TenantService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,6 +18,10 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
  // ->use(RefreshDatabase::class)
     ->in('Feature');
+
+afterEach(function () {
+    app(TenantService::class)->clear();
+})->in('Feature');
 
 /*
 |--------------------------------------------------------------------------
