@@ -24,16 +24,16 @@ use App\Models\ubicacion;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
-use Illuminate\Support\Str;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Forms\Components\Repeater;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use League\Flysystem\UnableToCheckExistence;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -70,7 +70,17 @@ class ReporteCreate extends Component implements HasActions, HasForms
         );
 
         $this->orden = $orden;
-        $this->form->fill();
+
+        $actividadesPredefinidas = collect($orden->actividades ?? [])
+            ->map(fn ($a) => [
+                'descripcion_orden' => $a['descripcion'] ?? '',
+                'actividades' => '',
+            ])
+            ->toArray();
+
+        $this->form->fill(
+            $actividadesPredefinidas ? ['actividades' => $actividadesPredefinidas] : []
+        );
     }
 
     public function form(Schema $form): Schema
@@ -80,6 +90,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
             TipoServicio::Investigacion => $this->investigacionSchema(),
             TipoServicio::Capturas, TipoServicio::Bandas => $this->capturasSchema(),
             TipoServicio::Vigilancia => $this->vigilanciaSchema(),
+            TipoServicio::Gestion_Riesgo => $this->gestionRiesgoSchema(),
         };
 
         return $form->schema($schema)->statePath('data');
@@ -355,15 +366,22 @@ class ReporteCreate extends Component implements HasActions, HasForms
                     Repeater::make('actividades')
                         ->label('Actividades Realizadas')
                         ->schema([
+                            Forms\Components\TextInput::make('descripcion_orden')
+                                ->label('Actividad asignada')
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->columnSpanFull()
+                                ->placeholder('—'),
                             Forms\Components\Textarea::make('actividades')
-                                    ->autosize()
-                                    ->label('Actividades')
-                                    ->columnSpanFull()
-                                    ->placeholder('Describe las actividades realizadas durante la investigación...')
-                                    ->required(),
-                                ])
-                ->columns(2)
-                ->collapsible()
+                                ->autosize()
+                                ->label('Respuesta del investigador')
+                                ->columnSpanFull()
+                                ->placeholder('Describe las actividades realizadas durante la investigación...')
+                                ->required(),
+                        ])
+                        ->columns(1)
+                        ->collapsible()
+                        ->addable(false),
                 ]),
             Section::make('4. Resultado')
                 ->icon('heroicon-o-check-badge')
@@ -453,17 +471,24 @@ class ReporteCreate extends Component implements HasActions, HasForms
                 ->icon('heroicon-o-check-badge')
                 ->schema([
                     Repeater::make('actividades')
-                        ->label('Actividades Realizadas')
+                        ->label('Actividades Por Realizar')
                         ->schema([
+                            Forms\Components\TextInput::make('descripcion_orden')
+                                ->label('Actividad asignada')
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->columnSpanFull()
+                                ->placeholder('—'),
                             Forms\Components\Textarea::make('actividades')
-                                    ->autosize()
-                                    ->label('Actividades')
-                                    ->columnSpanFull()
-                                    ->placeholder('Describe las actividades realizadas durante la investigación...')
-                                    ->required(),
-                                ])
-                ->columns(2)
-                ->collapsible()
+                                ->autosize()
+                                ->label('Respuesta del Investigador')
+                                ->columnSpanFull()
+                                ->placeholder('Describe las actividades realizadas...')
+                                ->required(),
+                        ])
+                        ->columns(1)
+                        ->collapsible()
+                        ->addable(false),
                 ]),
             Section::make('2. Observaciones')
                 ->icon('heroicon-o-pencil-square')
@@ -490,6 +515,77 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->reorderable()
                         ->panelLayout('grid')
                         ->extraInputAttributes(['capture' => 'environment'])
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('video')
+                        ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                ]),
+        ];
+    }
+
+    /** @return array<int, Section> */
+    private function gestionRiesgoSchema(): array
+    {
+        return [
+            Section::make('1. Actividad Realizada')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Repeater::make('actividades')
+                        ->label('Actividades Realizadas')
+                        ->schema([
+                            Forms\Components\TextInput::make('descripcion_orden')
+                                ->label('Actividad asignada')
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->columnSpanFull()
+                                ->placeholder('—'),
+                            Forms\Components\Textarea::make('actividades')
+                                ->autosize()
+                                ->label('Respuesta del técnico')
+                                ->columnSpanFull()
+                                ->placeholder('Describe las actividades realizadas...')
+                                ->required(),
+                        ])
+                        ->columns(1)
+                        ->collapsible()
+                        ->addable(false),
+                ]),
+
+            Section::make('2. Observaciones')
+                ->icon('heroicon-o-pencil-square')
+                ->schema([
+                    Forms\Components\Textarea::make('observaciones')
+                        ->label('Novedades / Observaciones')
+                        ->placeholder('Describe los hallazgos y novedades de la gestión de riesgo...')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('3. Evidencias')
+                ->icon('heroicon-o-paper-clip')
+                ->schema([
+                    Forms\Components\FileUpload::make('imagenes')
+                        ->label('Archivos / Evidencias')
+                        ->helperText('Acepta imágenes, PDF, Word, Excel y PowerPoint (máx. 10 MB por archivo)')
+                        ->disk('s3')
+                        ->directory('reportes/'.$this->orden->numero_orden)
+                        ->fetchFileInformation(false)
+                        ->multiple()
+                        ->acceptedFileTypes([
+                            'image/*',
+                            'application/pdf',
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/vnd.ms-powerpoint',
+                            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                        ])
+                        ->maxFiles(10)
+                        ->maxSize(10240)
+                        ->reorderable()
+                        ->panelLayout('grid')
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
@@ -599,7 +695,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
         $data = $this->form->getState();
 
         // Normalizar actividades con UUID
-        if (!empty($data['actividades']) && is_array($data['actividades'])) {
+        if (! empty($data['actividades']) && is_array($data['actividades'])) {
             foreach ($data['actividades'] as $i => $item) {
                 if (empty($item['uuid'])) {
                     $data['actividades'][$i]['uuid'] = (string) Str::uuid();
@@ -613,6 +709,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
             TipoServicio::Capturas => $this->submitServicioGenerico($data),
             TipoServicio::Bandas => $this->submitServicioGenerico($data),
             TipoServicio::Vigilancia => $this->submitVigilancia($data),
+            TipoServicio::Gestion_Riesgo => $this->submitServicioGenerico($data),
         };
     }
 

@@ -32,6 +32,7 @@ return new class extends Migration
             $table->boolean('excede_capacidad')->default(false);
             $table->text('observaciones')->nullable();
             $table->text('comentarios')->nullable();
+            $table->text('conclusion')->nullable();
             $table->boolean('revisado')->default(false);
             $table->boolean('confirmado')->default(false);
             $table->string('estado')->default('pendiente');

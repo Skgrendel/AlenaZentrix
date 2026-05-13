@@ -12,7 +12,6 @@ use App\Models\reportes;
 use App\Models\ResultadoReporte;
 use App\Models\TipoComercio;
 use App\Models\TipologiaOrden;
-use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -42,6 +41,8 @@ class ReporteRevisar extends Component implements HasActions, HasForms
 
     public string $comentarios = '';
 
+    public string $conclusion = '';
+
     public bool $mostrarFormRechazo = false;
 
     public function mount(OrdenJob $orden): void
@@ -67,26 +68,23 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             : $query->latest()->firstOrFail();
     }
 
-    public function completarAction(): Action
+    public function completar(): void
     {
-        return Action::make('completar')
-            ->label('Marcar como Completada')
-            ->icon('heroicon-o-check-circle')
-            ->color('success')
-            ->requiresConfirmation()
-            ->modalHeading('Confirmar completar orden')
-            ->modalDescription("¿Confirmas que el reporte de la orden {$this->orden->numero_orden} es correcto y el trabajo fue realizado?")
-            ->modalSubmitActionLabel('Sí, marcar como completada')
-            ->extraAttributes(['class' => 'w-full justify-center'])
-            ->action(function (): void {
-                $this->orden->update(['estado' => EstadoOrden::Completada]);
+        $this->validate([
+            'conclusion' => ['required', 'string', 'min:10'],
+        ], [
+            'conclusion.required' => 'Debe ingresar una conclusión.',
+            'conclusion.min' => 'La conclusión debe tener al menos 10 caracteres.',
+        ]);
 
-                $this->notificarTecnico(new OrdenCompletada($this->orden, $this->orden->personal));
+        $this->reporte->update(['conclusion' => $this->conclusion]);
+        $this->orden->update(['estado' => EstadoOrden::Completada]);
 
-                session()->flash('success', "Orden {$this->orden->numero_orden} marcada como completada.");
+        $this->notificarTecnico(new OrdenCompletada($this->orden, $this->orden->personal));
 
-                $this->redirect(route('operaciones.ordenes-trabajo'), navigate: true);
-            });
+        session()->flash('success', "Orden {$this->orden->numero_orden} marcada como completada.");
+
+        $this->redirect(route('operaciones.ordenes-trabajo'), navigate: true);
     }
 
     /**
@@ -138,6 +136,26 @@ class ReporteRevisar extends Component implements HasActions, HasForms
     {
         return collect($this->reporte->imagenes ?? [])
             ->map(fn (string $path) => route('operaciones.foto', ['path' => $path]))
+            ->all();
+    }
+
+    /**
+     * @return array<int, array{url: string, nombre: string, es_imagen: bool}>
+     */
+    public function archivosUrls(): array
+    {
+        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif'];
+
+        return collect($this->reporte->imagenes ?? [])
+            ->map(function (string $path) use ($imageExtensions): array {
+                $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+                return [
+                    'url' => route('operaciones.foto', ['path' => $path]),
+                    'nombre' => basename($path),
+                    'es_imagen' => in_array($extension, $imageExtensions, true),
+                ];
+            })
             ->all();
     }
 
@@ -206,6 +224,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
         return view('livewire.coordinador.reporte-revisar', [
             'imagenUrls' => $this->imagenUrls(),
             'datosServicio' => $this->datosServicioDisplay(),
+            'archivosUrls' => $this->archivosUrls(),
         ]);
     }
 }

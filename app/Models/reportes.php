@@ -36,6 +36,7 @@ class reportes extends Model
         'video',
         'observaciones',
         'comentarios',
+        'conclusion',
         'datos_servicio',
         'revisado',
         'confirmado',

@@ -205,7 +205,7 @@ class OrdenCreate extends Component implements HasActions, HasForms
                 Section::make('Actividad A Realizar')
                             ->icon('heroicon-o-check-badge')
                             ->schema([
-                                    Repeater::make('actividades_investigacion')
+                                    Repeater::make('actividades')
                                     ->label('Actividades por realizar')
                                     ->schema([
                                     Forms\Components\Textarea::make('descripcion')

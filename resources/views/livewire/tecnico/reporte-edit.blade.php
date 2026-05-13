@@ -68,11 +68,15 @@
             <p class="text-sm text-zinc-900 dark:text-white">{{ $orden->objetivo }}</p>
         </div>
     @endif
-    @if ($orden->actividades)
+    @if (!empty($orden->actividades))
         <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
             <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Actividades
             </h3>
-            <p class="text-sm text-zinc-900 dark:text-white">{{ $orden->actividades }}</p>
+            <ul class="list-disc space-y-1 pl-5">
+                @foreach ($orden->actividades as $actividad)
+                    <li class="text-sm text-zinc-900 dark:text-white">{{ $actividad['descripcion'] ?? '' }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 

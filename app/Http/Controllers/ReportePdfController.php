@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use App\Enums\TipoServicio;
 use App\Models\Convencion;
 use App\Models\OrdenJob;
-use App\Models\ResultadoReporte;
-use App\Models\TipoComercio;
-use App\Models\TipoAnomalia;
 use App\Models\reportes;
+use App\Models\ResultadoReporte;
+use App\Models\TipoAnomalia;
+use App\Models\TipoComercio;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
@@ -92,6 +92,7 @@ class ReportePdfController extends Controller
         $orden->load(['personal', 'creadoPor']);
 
         $query = $orden->reportes()->with([
+            'personal.usuario',
             'comercio.tipoComercio',
             'tipoImposibilidad',
             'tipoRegulador',
@@ -114,18 +115,16 @@ class ReportePdfController extends Controller
 
         $imagenes = $this->resolveImagenes($reporte->imagenes ?? []);
 
-        /** @var User $firmante */
-        $firmante = auth()->user();
+        $investigador = $reporte->personal;
 
         $firma = [
-            'nombre' => $firmante->fullName(),
-            'cargo' => $firmante->personal?->cargo,
-            'email' => $firmante->email,
+            'nombre' => trim(($investigador?->nombres ?? '').' '.($investigador?->apellidos ?? '')) ?: 'Sin nombre',
+            'cargo' => $investigador?->cargo,
+            'email' => $investigador?->usuario?->email ?? '—',
             'ip' => request()->ip(),
             'agente' => request()->userAgent() ?? 'No disponible',
-            'fecha' => now()->format('d/m/Y H:i:s'),
+            'fecha' => $reporte->created_at?->format('d/m/Y H:i:s') ?? now()->format('d/m/Y H:i:s'),
         ];
-
 
         $datosOrden = $this->buildDatosOrden($orden);
         $datosReporte = $this->buildDatosReporteInvestigacion($reporte);
@@ -168,7 +167,10 @@ class ReportePdfController extends Controller
             'tipo_investigacion' => $orden->tipo_investigacion,
             'antecedente' => $orden->antecedente ?: '—',
             'objetivo' => $orden->objetivo ?: '—',
-            'actividades' => $orden->actividades ?: '—',
+            'actividades' => collect($orden->actividades ?? [])
+                ->pluck('descripcion')
+                ->filter()
+                ->implode('; ') ?: '—',
             'noticia_criminal' => $orden->numero_noticia_criminal ?: '—',
             'fecha_asignacion' => $orden->fecha_asignacion?->format('d/m/Y H:i') ?? '—',
             'fecha_limite' => $orden->fecha_limite?->format('d/m/Y H:i') ?? '—',
@@ -197,26 +199,40 @@ class ReportePdfController extends Controller
             'nombre_comercio_inv' => $datos['nombre_comercio_inv'] ?? '—',
             'tipo_comercio_inv' => TipoComercio::find($datos['tipo_comercio_inv_id'] ?? null)?->nombre ?? '—',
             'resultado' => ResultadoReporte::find($datos['resultado_reporte_id'] ?? null)?->nombre ?? '—',
-            'actividades' => $this->normalizeActividades($reporte->actividades ?? []),
+            'actividades' => $this->normalizeActividades($reporte->actividades ?? '[]'),
             'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
+            'conclusion' => $reporte->conclusion ?: null,
         ];
     }
 
     /**
-     * @param array<int, mixed> $actividades
-     * @return array<int, string>
+     * @param  array<int, mixed>|string  $actividades
+     * @return array<int, array{descripcion_orden: string, actividades: string}>
      */
-    private function normalizeActividades(array $actividades): array
+    private function normalizeActividades(array|string $actividades): array
     {
-        return collect($actividades)
-            ->map(function (mixed $actividad): ?string {
-                if (is_array($actividad)) {
-                    $texto = $actividad['actividades'] ?? null;
+        if (is_string($actividades)) {
+            $actividades = json_decode($actividades, true) ?? [];
+        }
 
-                    return is_string($texto) ? trim($texto) : null;
+        return collect($actividades)
+            ->map(function (mixed $actividad): ?array {
+                if (is_array($actividad)) {
+                    $asignada = trim($actividad['descripcion_orden'] ?? '');
+                    $respuesta = trim($actividad['actividades'] ?? '');
+
+                    if (! $asignada && ! $respuesta) {
+                        return null;
+                    }
+
+                    return ['descripcion_orden' => $asignada, 'actividades' => $respuesta];
                 }
 
-                return is_string($actividad) ? trim($actividad) : null;
+                if (is_string($actividad) && trim($actividad) !== '') {
+                    return ['descripcion_orden' => '', 'actividades' => trim($actividad)];
+                }
+
+                return null;
             })
             ->filter()
             ->values()

@@ -414,15 +414,21 @@
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                         Actividades Realizadas</h3>
-                    <ul class="space-y-3">
+                    <ul class="space-y-4">
                         @foreach ($reporte->actividades as $actividad)
-                            <li
-                                class="flex items-start gap-3 pb-3 border-b border-zinc-100 last:border-b-0 dark:border-zinc-800 last:pb-0">
-                                <div
-                                    class="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-bold shrink-0 mt-0.5">
-                                    ✓
-                                </div>
-                                <div class="flex-1 min-w-0">
+                            <li class="pb-4 border-b border-zinc-100 last:border-b-0 last:pb-0 dark:border-zinc-800">
+                                @if (!empty($actividad['descripcion_orden']))
+                                    <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                                        Actividad asignada</p>
+                                    <p class="mb-2 text-sm text-zinc-500 dark:text-zinc-400">
+                                        {{ $actividad['descripcion_orden'] }}</p>
+                                    <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                                        Respuesta del investigador</p>
+                                @endif
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-bold shrink-0 mt-0.5">
+                                        ✓
+                                    </div>
                                     <p class="text-sm text-zinc-900 dark:text-white wrap-break-word">
                                         {{ $actividad['actividades'] }}</p>
                                 </div>
@@ -442,8 +448,75 @@
                 </div>
             @endif
 
-            {{-- ═══ Evidencias: Imágenes ═══ --}}
-            @if (!empty($imagenUrls))
+            {{-- ═══ Evidencias ═══ --}}
+            @if ($orden->tipo_servicio === \App\Enums\TipoServicio::Gestion_Riesgo)
+                @if (!empty($archivosUrls))
+                    @php
+                        $imgs = array_values(array_filter($archivosUrls, fn ($a) => $a['es_imagen']));
+                        $docs = array_values(array_filter($archivosUrls, fn ($a) => ! $a['es_imagen']));
+                    @endphp
+                    <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
+                        class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                            Evidencias ({{ count($archivosUrls) }} {{ count($archivosUrls) === 1 ? 'archivo' : 'archivos' }})</h3>
+
+                        @if (!empty($imgs))
+                            <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                @foreach ($imgs as $archivo)
+                                    <button type="button" @click="src = '{{ $archivo['url'] }}'; open = true"
+                                        class="block overflow-hidden rounded-lg border border-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                        <img src="{{ $archivo['url'] }}" alt="{{ $archivo['nombre'] }}"
+                                            class="h-40 w-full object-cover transition hover:opacity-80">
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if (!empty($docs))
+                            <ul class="space-y-2">
+                                @foreach ($docs as $archivo)
+                                    <li class="flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 text-zinc-400"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                        </svg>
+                                        <span
+                                            class="flex-1 truncate text-sm text-zinc-700 dark:text-zinc-300">{{ $archivo['nombre'] }}</span>
+                                        <a href="{{ $archivo['url'] }}" target="_blank" rel="noopener"
+                                            class="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                            </svg>
+                                            Abrir
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        {{-- Lightbox --}}
+                        <div x-show="open" x-transition.opacity @click.self="open = false"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+                            style="display: none">
+                            <div class="relative max-h-full max-w-4xl">
+                                <button type="button" @click="open = false"
+                                    class="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-800 shadow-lg hover:bg-zinc-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <img :src="src" alt="Foto ampliada"
+                                    class="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl">
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @elseif (!empty($imagenUrls))
                 <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
                     class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
@@ -582,23 +655,55 @@
                 </div>
             @endif
 
+            {{-- ═══ Conclusión del coordinador ═══ --}}
+            @if ($reporte->conclusion)
+                <div class="rounded-lg border border-green-200 bg-green-50 p-5 dark:border-green-800 dark:bg-green-950">
+                    <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">
+                        Conclusión</h3>
+                    <p class="text-sm text-zinc-900 dark:text-white">{{ $reporte->conclusion }}</p>
+                </div>
+            @endif
+
             {{-- ═══ Decisión (solo cuando está en revisión y no es Vigilancia — Vigilancia decide en el índice de reportes) ═══ --}}
             @if (
                 $orden->estado === \App\Enums\EstadoOrden::EnRevision &&
                     $orden->tipo_servicio !== \App\Enums\TipoServicio::Vigilancia)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900"
-                    x-data="{ rechazo: @entangle('mostrarFormRechazo') }">
+                    x-data="{ rechazo: @entangle('mostrarFormRechazo'), conclusion: false }">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                         Decisión</h3>
 
-                    <div x-show="!rechazo" class="flex flex-col items-stretch gap-3">
-                        <div class="[&>button]:w-full [&>button]:justify-center">
-                            {{ $this->completarAction }}
-                        </div>
+                    <div x-show="!rechazo && !conclusion" class="flex flex-col items-stretch gap-3">
+                        <button type="button" @click="conclusion = true"
+                            class="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600">
+                            <x-heroicon-o-check-circle class="h-5 w-5" />
+                            Marcar como Completada
+                        </button>
                         <flux:button variant="danger" icon="x-circle" class="w-full justify-center"
                             @click="rechazo = true">
                             Rechazar Reporte
                         </flux:button>
+                    </div>
+
+                    <div x-show="conclusion" x-cloak>
+                        <p class="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
+                            Escribe la conclusión de la orden. Quedará registrada en el reporte.
+                        </p>
+                        <textarea wire:model="conclusion" rows="4" placeholder="Escribe la conclusión del reporte..."
+                            class="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"></textarea>
+                        @error('conclusion')
+                            <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                        <div class="mt-3 flex gap-2">
+                            <button type="button" wire:click="completar" wire:loading.attr="disabled"
+                                class="flex flex-1 items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60 dark:bg-green-700 dark:hover:bg-green-600">
+                                <span wire:loading.remove wire:target="completar">Confirmar Completar</span>
+                                <span wire:loading wire:target="completar">Guardando...</span>
+                            </button>
+                            <flux:button variant="ghost" @click="conclusion = false; $wire.set('conclusion', '')">
+                                Cancelar
+                            </flux:button>
+                        </div>
                     </div>
 
                     <div x-show="rechazo" x-cloak>

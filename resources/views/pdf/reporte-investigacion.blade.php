@@ -369,12 +369,10 @@
         <table class="header-inner">
             <tr>
                 <td class="header-td-center">
-                    <h1>INFORME DE INSPECCIÓN TÉCNICA</h1>
+                    <h1>Informe de Investigación {{ $orden->tipo_investigacion }}</h1>
                     <h2>Control y Seguimiento de Investigación en Campo</h2>
                     <div class="header-meta">
                         Orden: <strong>{{ $orden->numero_orden }}</strong>
-                        &nbsp;&nbsp;|&nbsp;&nbsp;
-                        Contrato: <strong>{{ $orden->contrato ?? '—' }}</strong>
                         &nbsp;&nbsp;|&nbsp;&nbsp;
                         Fecha de generación: <strong>{{ $fechaGeneracion }}</strong>
                     </div>
@@ -391,7 +389,7 @@
 
     {{-- ── Footer fijo ── --}}
     <div class="footer">
-        <div class="footer-line">Informe de Inspección Técnica por Fraude — Uso Interno y Confidencial</div>
+        <div class="footer-line">Informe de Investigación — Uso Interno y Confidencial</div>
         <div>© {{ date('Y') }} AlenaZentrix / PRODERI S.A.S. — Todos los derechos reservados</div>
         <div>Este documento contiene información confidencial protegida por las leyes de propiedad intelectual</div>
     </div>
@@ -450,19 +448,6 @@
             </div>
         @endif
 
-        {{-- ── actividades ── --}}
-        @if ($datosOrden['actividades'])
-            <div class="section">
-                <div class="section-title">ACTIVIDADES</div>
-                <div class="objetivos-box">
-                    <div class="objetivo-grupo">
-                        <div class="objetivo-numero"></div>
-                        <div class="objetivo-item">{{ $datosOrden['actividades'] }}</div>
-                    </div>
-                </div>
-            </div>
-        @endif
-
         {{-- ── 1. Datos de la Orden ── --}}
         <div class="section">
             <div class="section-title">DATOS DE LA ORDEN</div>
@@ -481,7 +466,7 @@
                         <div class="info-value">{{ $datosOrden['estado'] ?? '—' }}</div>
                     </div>
                     <div class="info-row">
-                        <div class="info-label">Técnico Asignado:</div>
+                        <div class="info-label">Gestor de riesgos:</div>
                         <div class="info-value">{{ $datosOrden['tecnico'] ?? 'Sin asignar' }}</div>
                     </div>
                     <div class="info-row">
@@ -574,13 +559,22 @@
         <div class="section">
             <div class="section-title">ACTIVIDAD REALIZADA</div>
             @if (!empty($datosReporte['actividades']))
-                <div class="info-box">
-                    <ol class="activity-list">
-                        @foreach ($datosReporte['actividades'] as $actividad)
-                            <li>{{ $actividad }}</li>
-                        @endforeach
-                    </ol>
-                </div>
+                @foreach ($datosReporte['actividades'] as $i => $actividad)
+                    <div class="info-box" style="margin-bottom:6px;">
+                        <div class="info-grid">
+                            @if (!empty($actividad['descripcion_orden']))
+                                <div class="info-row">
+                                    <div class="info-label">Actividad asignada:</div>
+                                    <div class="info-value">{{ $actividad['descripcion_orden'] }}</div>
+                                </div>
+                            @endif
+                            <div class="info-row">
+                                <div class="info-label">Respuesta del investigador:</div>
+                                <div class="info-value">{{ $actividad['actividades'] }}</div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
             @else
                 <div class="content-box">Sin actividades registradas.</div>
             @endif
@@ -628,9 +622,17 @@
 
         {{-- ── 6. Observaciones ── --}}
         <div class="section">
-            <div class="section-title">CONCLUSIONES</div>
+            <div class="section-title">OBSERVACIONES</div>
             <div class="content-box">{{ $datosReporte['observaciones'] ?? 'Sin observaciones registradas.' }}</div>
         </div>
+
+        {{-- ── 6b. Conclusión del Coordinador ── --}}
+        @if (!empty($datosReporte['conclusion']))
+            <div class="section">
+                <div class="section-title">CONCLUSIÓN DEL COORDINADOR</div>
+                <div class="content-box">{{ $datosReporte['conclusion'] }}</div>
+            </div>
+        @endif
 
         {{-- ── 7. Resultado de la Auditoría ── --}}
         @php $auditoria = $reporte->auditoria; @endphp
@@ -709,12 +711,15 @@
             @endif
         </div>
 
-        {{-- ── 9. Firma Digital del Coordinador ── --}}
+        {{-- ── Destinación del Informe ── --}}
+        @include('pdf.partials.destinacion-informe')
+
+        {{-- ── 9. Firma Digital ── --}}
         <div class="firma-section">
-            <div class="section-title">FIRMA DIGITAL DEL COORDINADOR</div>
+            <div class="section-title">FIRMA DIGITAL</div>
             <p style="font-size:8pt; margin:5px 0 10px 0;">
-                El coordinador identificado a continuación ha generado y validado este informe mediante
-                firma digital, quedando registrado el acceso con los datos técnicos del dispositivo utilizado.
+                El investigador identificado a continuación registró este reporte mediante firma digital,
+                quedando constancia de los datos técnicos del dispositivo utilizado.
             </p>
             <div class="firma-box">
                 <div class="firma-badge">&#10003; FIRMADO DIGITALMENTE</div>

@@ -661,6 +661,9 @@
             </div>
         </div>
 
+        {{-- ── Destinación del Informe ── --}}
+        @include('pdf.partials.destinacion-informe')
+
         {{-- ── 8. Firma Digital del Coordinador ── --}}
         <div class="firma-section">
             <div class="section-title">9. FIRMA DIGITAL DEL COORDINADOR</div>
