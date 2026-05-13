@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Company;
+use App\Observers\CompanyObserver;
 use App\Services\TenantService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Company::observe(CompanyObserver::class);
         $this->configureDefaults();
         $this->configureS3TemporaryUrls();
     }
