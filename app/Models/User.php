@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Scopes\CompanyScope;
+use App\Services\TenantService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,6 +44,12 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::addGlobalScope(new CompanyScope);
+
+        static::creating(function (self $model): void {
+            if (empty($model->company_id) && ! $model->is_superadmin) {
+                $model->company_id = app(TenantService::class)->id();
+            }
+        });
     }
 
     public function personal(): BelongsTo
