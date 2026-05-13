@@ -1,7 +1,4 @@
 @pushonce('styles')
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <style>
         #mapa-container { z-index: 1; }
         .leaflet-popup-content { margin: 10px 14px; }
@@ -14,11 +11,6 @@
         .mapa-popup-table td { padding: 2px 8px 2px 0; font-size: 13px; vertical-align: top; }
         .mapa-popup-table td:first-child { color: #6b7280; white-space: nowrap; }
     </style>
-@endpushonce
-
-@pushonce('scripts')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 @endpushonce
 
 <div class="space-y-4">
