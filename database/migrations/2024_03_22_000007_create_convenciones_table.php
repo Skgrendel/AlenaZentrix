@@ -12,6 +12,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('nombre');
             $table->boolean('activo')->default(true);
+            $table->foreignUuid('company_id')->constrained('companies')->cascadeOnDelete();
             $table->softDeletes();
             $table->timestamps();
         });

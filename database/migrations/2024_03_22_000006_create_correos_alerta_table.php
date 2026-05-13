@@ -13,6 +13,7 @@ return new class extends Migration
             $table->string('nombre');
             $table->string('email');
             $table->boolean('activo')->default(true);
+            $table->foreignUuid('company_id')->constrained('companies')->cascadeOnDelete();
             $table->timestamps();
         });
     }
