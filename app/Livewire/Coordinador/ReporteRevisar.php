@@ -189,14 +189,26 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             ];
         }
 
-        if (in_array($tipo, [TipoServicio::Capturas, TipoServicio::Bandas])) {
+        if ($tipo === TipoServicio::GestionLegal) {
+            $subtipos = [
+                'capturas' => 'Capturas Criminales',
+                'bandas' => 'Desarticulación de Bandas',
+                'querella' => 'Querella Penal',
+                'seguimiento_denuncia' => 'Seguimiento a Denuncia',
+                'diligencia_judicial' => 'Diligencia Judicial',
+                'incautacion_equipos' => 'Incautación de Equipos',
+            ];
+
             return [
+                'tipo_gestion_label' => $subtipos[$this->orden->tipo_gestion_legal ?? ''] ?? ($this->orden->tipo_gestion_legal ?? '—'),
+                'numero_noticia_criminal' => $this->orden->numero_noticia_criminal,
                 'tipologia' => TipologiaOrden::find($datos['tipologia_orden_id'] ?? null)?->nombre,
                 'fecha_ejecucion' => $datos['fecha_ejecucion'] ?? null,
                 'departamento' => $datos['departamento'] ?? null,
                 'municipio' => $datos['municipio'] ?? null,
                 'radio_objetivo' => $datos['radio_objetivo'] ?? null,
                 'actividades' => $datos['actividades'] ?? null,
+                'resultado' => ResultadoReporte::find($datos['resultado_reporte_id'] ?? null)?->nombre,
             ];
         }
 
