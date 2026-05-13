@@ -148,6 +148,7 @@
         </flux:toast.group>
     @endpersist
 
+    @stack('scripts')
     @fluxScripts
     @filamentScripts
 </body>
