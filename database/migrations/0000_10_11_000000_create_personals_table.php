@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('apellidos');
             $table->string('telefono')->nullable();
             $table->string('cargo')->nullable();
+            $table->foreignUuid('company_id')->nullable()->constrained('companies')->nullOnDelete();
             $table->timestamps();
         });
     }

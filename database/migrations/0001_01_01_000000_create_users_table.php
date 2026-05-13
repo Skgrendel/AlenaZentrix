@@ -12,8 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-          $table->uuid('id')->primary();
-            $table->foreignUuid('personals_id')->constrained('personals')->cascadeOnDelete();
+            $table->uuid('id')->primary();
+            $table->foreignUuid('personals_id')->nullable()->constrained('personals')->nullOnDelete();
+            $table->foreignUuid('company_id')->nullable()->constrained('companies')->nullOnDelete();
+            $table->boolean('is_superadmin')->default(false);
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

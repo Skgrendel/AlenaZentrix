@@ -41,6 +41,7 @@ return new class extends Migration
             $table->timestamp('fecha_limite')->nullable();
             $table->timestamp('fecha_completado')->nullable();
 
+            $table->foreignUuid('company_id')->nullable()->constrained('companies')->nullOnDelete();
             $table->timestamps();
         });
     }

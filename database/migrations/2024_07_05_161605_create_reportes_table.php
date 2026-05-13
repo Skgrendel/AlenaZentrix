@@ -36,6 +36,7 @@ return new class extends Migration
             $table->boolean('revisado')->default(false);
             $table->boolean('confirmado')->default(false);
             $table->string('estado')->default('pendiente');
+            $table->foreignUuid('company_id')->nullable()->constrained('companies')->nullOnDelete();
             $table->timestamps();
         });
 
