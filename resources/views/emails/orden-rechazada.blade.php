@@ -20,21 +20,7 @@
         {{ $comentarios }}
     </div>
 
-    <div class="section">
-        <div class="section-title">Detalle de la Orden</div>
-        <div class="detail-row">
-            <span class="detail-label">Contrato</span>
-            <span class="detail-value">{{ $orden->contrato }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Cliente</span>
-            <span class="detail-value">{{ $orden->cliente }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Dirección</span>
-            <span class="detail-value">{{ $orden->direccion }}, {{ $orden->barrio }}</span>
-        </div>
-    </div>
+    @include('emails.partials.orden-datos')
 
     <p class="note">
         Ingresa a la aplicación, ve a <strong>Mis Órdenes</strong> y selecciona <em>Editar Reporte</em>

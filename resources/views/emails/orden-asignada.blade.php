@@ -10,82 +10,18 @@
         A continuación encontrarás todos los detalles para atenderla.
     </div>
 
-    <div class="section">
-        <div class="section-title">Datos del Punto de Servicio</div>
-        <div class="detail-row">
-            <span class="detail-label">Contrato</span>
-            <span class="detail-value">{{ $orden->contrato }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Cliente</span>
-            <span class="detail-value">{{ $orden->cliente }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Dirección</span>
-            <span class="detail-value">{{ $orden->direccion }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Barrio</span>
-            <span class="detail-value">{{ $orden->barrio }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">N° Medidor</span>
-            <span class="detail-value">{{ $orden->medidor }}</span>
-        </div>
-        @if($orden->tipo_medidor)
-        <div class="detail-row">
-            <span class="detail-label">Tipo Medidor</span>
-            <span class="detail-value">{{ $orden->tipo_medidor }}</span>
-        </div>
-        @endif
-        <div class="detail-row">
-            <span class="detail-label">Ciclo</span>
-            <span class="detail-value">{{ $orden->ciclo }}</span>
-        </div>
-    </div>
+    @include('emails.partials.orden-datos')
 
-    <div class="section">
-        <div class="section-title">Gestión de la Orden</div>
-        <div class="detail-row">
-            <span class="detail-label">Prioridad</span>
-            <span class="detail-value">{{ $orden->prioridad->label() }}</span>
+    @if ($orden->actividades)
+        <div class="section">
+            <div class="section-title">Actividades a Realizar</div>
+            @foreach ($orden->actividades as $actividad)
+                <div class="detail-row">
+                    <span style="margin-right: 8px; color: #17222e;">&#8226;</span>
+                    <span class="detail-value">{{ $actividad['descripcion'] ?? $actividad }}</span>
+                </div>
+            @endforeach
         </div>
-        <div class="detail-row">
-            <span class="detail-label">Estado</span>
-            <span class="detail-value">{{ $orden->estado->label() }}</span>
-        </div>
-        @if($orden->fecha_limite)
-        <div class="detail-row">
-            <span class="detail-label">Fecha Límite</span>
-            <span class="detail-value" style="color: #c0392b; font-weight: 700;">
-                {{ $orden->fecha_limite->format('d/m/Y H:i') }}
-            </span>
-        </div>
-        @endif
-        @if($orden->fecha_asignacion)
-        <div class="detail-row">
-            <span class="detail-label">Fecha Asignación</span>
-            <span class="detail-value">{{ $orden->fecha_asignacion->format('d/m/Y H:i') }}</span>
-        </div>
-        @endif
-    </div>
-
-    @if($orden->titulo || $orden->descripcion)
-    <div class="section">
-        <div class="section-title">Descripción</div>
-        @if($orden->titulo)
-        <div class="detail-row">
-            <span class="detail-label">Título</span>
-            <span class="detail-value">{{ $orden->titulo }}</span>
-        </div>
-        @endif
-        @if($orden->descripcion)
-        <div class="detail-row">
-            <span class="detail-label">Detalle</span>
-            <span class="detail-value">{{ $orden->descripcion }}</span>
-        </div>
-        @endif
-    </div>
     @endif
 
     <p class="note">Si tienes dudas o inconvenientes con esta orden, por favor comunícate con el coordinador del sistema.</p>
