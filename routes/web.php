@@ -46,3 +46,4 @@ require __DIR__.'/auditor.php';
 require __DIR__.'/informes.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/settings.php';
+require __DIR__.'/mapa.php';
