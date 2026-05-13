@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\personals;
 use App\Models\reportes;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ReportesSeeder extends Seeder

@@ -71,6 +71,11 @@ class CompaniesIndex extends Component implements HasActions, HasForms, HasTable
                 ->label('Nombre')
                 ->required()
                 ->maxLength(150),
+            Forms\Components\TextInput::make('logo')
+                ->label('URL del logo')
+                ->url()
+                ->maxLength(500)
+                ->placeholder('https://ejemplo.com/logo.png'),
             Forms\Components\Toggle::make('activo')
                 ->label('Activa')
                 ->default(true),

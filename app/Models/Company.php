@@ -20,4 +20,9 @@ class Company extends Model
     {
         return $this->hasMany(User::class, 'company_id');
     }
+
+    public function ordenJobs(): HasMany
+    {
+        return $this->hasMany(OrdenJob::class, 'company_id');
+    }
 }

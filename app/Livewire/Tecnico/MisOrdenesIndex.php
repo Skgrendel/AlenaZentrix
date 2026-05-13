@@ -79,12 +79,12 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                 Tables\Columns\TextColumn::make('cliente')
                     ->label('Cliente / Referencia')
                     ->searchable()
-                     ->visible(fn (): bool => $this->tableColumnHasData('cliente'))
+                    ->visible(fn (): bool => $this->tableColumnHasData('cliente'))
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('direccion')
                     ->label('Dirección')
                     ->searchable()
-                     ->visible(fn (): bool => $this->tableColumnHasData('direccion'))
+                    ->visible(fn (): bool => $this->tableColumnHasData('direccion'))
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')

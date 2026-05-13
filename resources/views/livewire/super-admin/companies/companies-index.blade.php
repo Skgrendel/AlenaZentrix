@@ -1,8 +1,12 @@
-<div class="flex h-full w-full flex-1 flex-col gap-4 rounded-xl p-6">
+<div class="space-y-4">
     <div class="flex items-center justify-between">
         <flux:heading size="xl">Empresas</flux:heading>
         {{ $this->createAction }}
     </div>
-    {{ $this->table }}
+
+    <div class="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+        {{ $this->table }}
+    </div>
+
     <x-filament-actions::modals />
 </div>

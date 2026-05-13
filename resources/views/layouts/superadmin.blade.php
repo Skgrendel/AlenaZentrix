@@ -15,20 +15,20 @@
 
         <flux:sidebar.nav>
             <flux:sidebar.group :heading="__('Superadmin')" class="grid">
-                <flux:sidebar.item icon="home" :href="route('superadmin.dashboard')" :current="request()->routeIs('superadmin.dashboard')"
-                    wire:navigate>
-                    {{ __('Dashboard') }}
+                <flux:sidebar.item icon="home" :href="route('superadmin.dashboard')"
+                    :current="request()->routeIs('superadmin.dashboard')" wire:navigate>
+                    {{ __('Panel') }}
                 </flux:sidebar.item>
-                <flux:sidebar.item icon="building-office" :href="route('superadmin.companies')" :current="request()->routeIs('superadmin.companies')"
-                    wire:navigate>
+                <flux:sidebar.item icon="building-office" :href="route('superadmin.companies')"
+                    :current="request()->routeIs('superadmin.companies')" wire:navigate>
                     {{ __('Empresas') }}
                 </flux:sidebar.item>
-                <flux:sidebar.item icon="users" :href="route('superadmin.users')" :current="request()->routeIs('superadmin.users')"
-                    wire:navigate>
+                <flux:sidebar.item icon="users" :href="route('superadmin.users')"
+                    :current="request()->routeIs('superadmin.users')" wire:navigate>
                     {{ __('Usuarios') }}
                 </flux:sidebar.item>
-                <flux:sidebar.item icon="shield-check" :href="route('superadmin.roles')" :current="request()->routeIs('superadmin.roles')"
-                    wire:navigate>
+                <flux:sidebar.item icon="shield-check" :href="route('superadmin.roles')"
+                    :current="request()->routeIs('superadmin.roles')" wire:navigate>
                     {{ __('Roles y Permisos') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
@@ -36,42 +36,7 @@
 
         <flux:spacer />
 
-        <flux:dropdown position="bottom" align="start" class="hidden lg:block">
-            <flux:sidebar.profile
-                :name="auth()->user()->fullName()"
-                :initials="auth()->user()->initials()"
-                icon:trailing="chevrons-up-down"
-                data-test="sidebar-menu-button"
-            />
-
-            <flux:menu>
-                <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
-                    <flux:avatar
-                        :name="auth()->user()->fullName()"
-                        :initials="auth()->user()->initials()"
-                    />
-                    <div class="grid flex-1 text-start text-sm leading-tight">
-                        <flux:heading class="truncate">{{ auth()->user()->fullName() }}</flux:heading>
-                        <flux:text class="truncate text-zinc-400">{{ auth()->user()->email }}</flux:text>
-                    </div>
-                </div>
-                <flux:menu.separator />
-                <flux:menu.radio.group>
-                    <form method="POST" action="{{ route('logout') }}" class="w-full">
-                        @csrf
-                        <flux:menu.item
-                            as="button"
-                            type="submit"
-                            icon="arrow-right-start-on-rectangle"
-                            class="w-full cursor-pointer"
-                            data-test="logout-button"
-                        >
-                            {{ __('Cerrar sesión') }}
-                        </flux:menu.item>
-                    </form>
-                </flux:menu.radio.group>
-            </flux:menu>
-        </flux:dropdown>
+        <x-desktop-user-menu class="hidden lg:block" />
     </flux:sidebar>
 
     <!-- Mobile User Menu -->
@@ -110,7 +75,9 @@
         </flux:dropdown>
     </flux:header>
 
-    {{ $slot }}
+    <flux:main>
+        {{ $slot }}
+    </flux:main>
 
     @persist('toast')
         <flux:toast.group>

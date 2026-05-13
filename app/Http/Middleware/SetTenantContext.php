@@ -21,7 +21,13 @@ class SetTenantContext
         }
 
         if ($user->is_superadmin) {
-            if (! $request->routeIs('superadmin.*') && ! $request->routeIs('logout') && ! $request->routeIs('profile.*')) {
+            $isLivewireRequest = $request->hasHeader('X-Livewire');
+            $allowed = $request->routeIs('superadmin.*')
+                || $request->routeIs('logout')
+                || $request->routeIs('profile.*')
+                || $isLivewireRequest;
+
+            if (! $allowed) {
                 return redirect()->route('superadmin.dashboard');
             }
 
