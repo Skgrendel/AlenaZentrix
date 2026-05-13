@@ -23,6 +23,13 @@
                     Descargar PDF
                 </flux:button>
             @endif
+            @if ($orden->tipo_servicio === \App\Enums\TipoServicio::GestionLegal && auth()->user()->can('informes'))
+                <flux:button
+                    href="{{ route('operaciones.ordenes-trabajo.reporte-gestion-legal', [$orden, 'reporte' => $reporte->id]) }}"
+                    icon="arrow-down-tray" variant="filled" target="_blank">
+                    Descargar PDF
+                </flux:button>
+            @endif
             <flux:button
                 href="{{ $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia ? route('operaciones.ordenes-trabajo.reportes', $orden) : route('operaciones.ordenes-trabajo') }}"
                 icon="arrow-left" variant="ghost" wire:navigate>
@@ -303,27 +310,39 @@
                     </div>
                 @endif
 
-                {{-- ═══ CAPTURAS / BANDAS ═══ --}}
-            @elseif(in_array($orden->tipo_servicio, [\App\Enums\TipoServicio::Capturas, \App\Enums\TipoServicio::Bandas]))
+                {{-- ═══ GESTIÓN LEGAL ═══ --}}
+            @elseif($orden->tipo_servicio === \App\Enums\TipoServicio::GestionLegal)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                        Datos de la Actividad</h3>
+                        Gestión Legal</h3>
                     <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+                        @if ($datosServicio['tipo_gestion_label'] ?? null)
+                            <div class="sm:col-span-2">
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Gestión</dt>
+                                <dd class="mt-0.5">
+                                    <flux:badge color="blue" size="sm">{{ $datosServicio['tipo_gestion_label'] }}</flux:badge>
+                                </dd>
+                            </div>
+                        @endif
+                        @if ($datosServicio['numero_noticia_criminal'] ?? null)
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">N° Noticia Criminal</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ $datosServicio['numero_noticia_criminal'] }}</dd>
+                            </div>
+                        @endif
                         @if ($datosServicio['tipologia'] ?? null)
                             <div>
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipología de
-                                    Orden</dt>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipología</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
                                     {{ $datosServicio['tipologia'] }}</dd>
                             </div>
                         @endif
                         @if ($datosServicio['fecha_ejecucion'] ?? null)
                             <div>
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha de
-                                    Ejecución</dt>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha de Ejecución</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                    {{ \Illuminate\Support\Carbon::parse($datosServicio['fecha_ejecucion'])->format('d/m/Y') }}
-                                </dd>
+                                    {{ \Illuminate\Support\Carbon::parse($datosServicio['fecha_ejecucion'])->format('d/m/Y') }}</dd>
                             </div>
                         @endif
                         @if ($datosServicio['departamento'] ?? null)
@@ -342,10 +361,17 @@
                         @endif
                         @if ($datosServicio['radio_objetivo'] ?? null)
                             <div class="sm:col-span-2">
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Radio del
-                                    Objetivo</dt>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Radio del Objetivo</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
                                     {{ $datosServicio['radio_objetivo'] }}</dd>
+                            </div>
+                        @endif
+                        @if ($datosServicio['resultado'] ?? null)
+                            <div class="sm:col-span-2">
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Resultado</dt>
+                                <dd class="mt-0.5">
+                                    <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] }}</flux:badge>
+                                </dd>
                             </div>
                         @endif
                     </dl>
