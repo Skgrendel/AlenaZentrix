@@ -64,6 +64,17 @@
                 </flux:sidebar.item>
             </flux:sidebar.group>
             @endcanany
+
+            @can('mapa.ver')
+            <flux:sidebar.group :heading="__('Mapa')" class="grid">
+                <flux:sidebar.item icon="map"
+                    :href="route('mapa.index')"
+                    :current="request()->routeIs('mapa.*')"
+                    wire:navigate>
+                    {{ __('Mapa de Ubicaciones') }}
+                </flux:sidebar.item>
+            </flux:sidebar.group>
+            @endcan
         </flux:sidebar.nav>
 
         <flux:spacer />
