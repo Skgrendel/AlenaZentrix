@@ -6,3 +6,6 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 
 // Exponer L globalmente para usarlo en @script de Blade
 window.L = L;
+
+import SignaturePad from 'signature_pad';
+window.SignaturePad = SignaturePad;
