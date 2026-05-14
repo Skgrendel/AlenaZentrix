@@ -33,6 +33,9 @@ class OrdenJob extends Model
         'numero_orden',
         'contrato',
         'cliente',
+        'comentario_usuario',
+        'comentario_tecnico',
+        'tecnico',
         'direccion',
         'barrio',
         'medidor',
@@ -52,6 +55,7 @@ class OrdenJob extends Model
         'fecha_asignacion',
         'fecha_limite',
         'fecha_completado',
+        'resultado',
     ];
 
     protected $casts = [
@@ -65,6 +69,7 @@ class OrdenJob extends Model
         'fecha_asignacion' => 'datetime',
         'fecha_limite' => 'datetime',
         'fecha_completado' => 'datetime',
+        'resultado' => 'string',
     ];
 
     protected static function booted(): void

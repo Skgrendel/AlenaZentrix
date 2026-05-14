@@ -17,32 +17,54 @@
         <div class="space-y-6 lg:col-span-2">
 
             {{-- Datos del punto de servicio --}}
-            @if ($orden->contrato || $orden->cliente || $orden->direccion || $orden->barrio || $orden->medidor)
+            @if (
+                $orden->contrato ||
+                    $orden->cliente ||
+                    $orden->direccion ||
+                    $orden->barrio ||
+                    $orden->medidor ||
+                    $orden->tipo_medidor ||
+                    $orden->ciclo)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                        Datos
-                        del Punto de Servicio</h3>
+                        Datos del Punto de Servicio</h3>
                     <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                        <div>
-                            <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Contrato</dt>
-                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->contrato }}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Cliente</dt>
-                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->cliente }}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Dirección</dt>
-                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->direccion }}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Barrio</dt>
-                            <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">{{ $orden->barrio }}
-                            </dd>
-                        </div>
+
+                        @if ($orden->contrato)
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Contrato</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ $orden->contrato }}</dd>
+                            </div>
+                        @endif
+
+                        @if ($orden->cliente)
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Cliente</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ $orden->cliente }}
+                                </dd>
+                            </div>
+                        @endif
+
+                        @if ($orden->direccion)
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Dirección</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ $orden->direccion }}
+                                </dd>
+                            </div>
+                        @endif
+
+                        @if ($orden->barrio)
+                            <div>
+                                <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Barrio</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ $orden->barrio }}
+                                </dd>
+                            </div>
+                        @endif
+
                         @if ($orden->medidor)
                             <div>
                                 <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">N° Medidor</dt>
@@ -60,6 +82,7 @@
                                     {{ $orden->tipo_medidor }}</dd>
                             </div>
                         @endif
+
                         @if ($orden->ciclo)
                             <div class="sm:col-span-2">
                                 <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Ciclo</dt>
@@ -72,6 +95,43 @@
                 </div>
             @endif
 
+            {{-- Datos del tecnico --}}
+            @if ($orden->tecnico)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    </h3>
+                    Datos del Técnico</h3>
+                    <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2"></dl>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Nombre del Técnico</dt>
+                        <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                            {{ $orden->tecnico }}
+                        </dd>
+                    </div>
+                    </dl>
+                </div>
+            @endif
+
+            {{-- comentarios usuario --}}
+            @if ($orden->comentario_usuario)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    </h3>
+                    Comentarios del Usuario</h3>
+                    <p class="mb-2 font-semibold text-zinc-900 dark:text-white">{{ $orden->comentario_usuario }}</p>
+                </div>
+            @endif
+
+            {{-- comentarios tecnico --}}
+            @if ($orden->comentario_tecnico)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    </h3>
+                    Comentarios del Técnico en la Solicitud</h3>
+                    <p class="mb-2 font-semibold text-zinc-900 dark:text-white">{{ $orden->comentario_tecnico }}</p>
+                </div>
+            @endif
+
             {{-- Descripción --}}
             @if ($orden->antecedente)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
@@ -81,6 +141,7 @@
                 </div>
             @endif
 
+            {{-- Objetivo --}}
             @if ($orden->objetivo)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
@@ -89,13 +150,15 @@
                 </div>
             @endif
 
+            {{-- Actividades --}}
             @if (!empty($orden->actividades))
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                         Actividades a Realizar</h3>
                     <ul class="list-disc space-y-1 pl-5">
                         @foreach ($orden->actividades as $actividad)
-                            <li class="mb-2 font-semibold text-zinc-900 dark:text-white">{{ $actividad['descripcion'] ?? '' }}</li>
+                            <li class="mb-2 font-semibold text-zinc-900 dark:text-white">
+                                {{ $actividad['descripcion'] ?? '' }}</li>
                         @endforeach
                     </ul>
                 </div>
@@ -170,13 +233,13 @@
                         <dd class="mt-1">
                             <flux:badge
                                 :color="match($orden->tipo_servicio->value) {
-                                    'fraudes'           => 'zinc',
-                                    'investigacion'     => 'blue',
-                                    'gestion_legal'     => 'info',
-                                    'vigilancia'        => 'green',
-                                    'Gestión de Riesgo' => 'purple',
-                                    default             => 'zinc',
-                                }">
+                                                                                                                                    'fraudes'           => 'zinc',
+                                                                                                                                    'investigacion'     => 'blue',
+                                                                                                                                    'gestion_legal'     => 'info',
+                                                                                                                                    'vigilancia'        => 'green',
+                                                                                                                                    'Gestión de Riesgo' => 'purple',
+                                                                                                                                    default             => 'zinc',
+                                                                                                                                }">
                                 {{ $orden->tipo_servicio->label() }}
                             </flux:badge>
                         </dd>
@@ -186,12 +249,12 @@
                         <dd class="mt-1">
                             <flux:badge
                                 :color="match($orden->prioridad->value) {
-                                                                                                                                                                'baja'    => 'zinc',
-                                                                                                                                                                'media'   => 'blue',
-                                                                                                                                                                'alta'    => 'yellow',
-                                                                                                                                                                'urgente' => 'red',
-                                                                                                                                                                default   => 'zinc',
-                                                                                                                                                            }">
+                                                                                                                                                                                                                                                                'baja'    => 'zinc',
+                                                                                                                                                                                                                                                                'media'   => 'blue',
+                                                                                                                                                                                                                                                                'alta'    => 'yellow',
+                                                                                                                                                                                                                                                                'urgente' => 'red',
+                                                                                                                                                                                                                                                                default   => 'zinc',
+                                                                                                                                                                                                                                                            }">
                                 {{ $orden->prioridad->label() }}
                             </flux:badge>
                         </dd>
@@ -201,15 +264,15 @@
                         <dd class="mt-1">
                             <flux:badge
                                 :color="match($orden->estado->value) {
-                                                                                                                                                                'pendiente'   => 'zinc',
-                                                                                                                                                                'asignada'    => 'blue',
-                                                                                                                                                                'en_progreso' => 'yellow',
-                                                                                                                                                                'en_revision' => 'purple',
-                                                                                                                                                                'completada'  => 'green',
-                                                                                                                                                                'rechazada'   => 'red',
-                                                                                                                                                                'cancelada'   => 'zinc',
-                                                                                                                                                                default       => 'zinc',
-                                                                                                                                                            }">
+                                                                                                                                                                                                                                                                'pendiente'   => 'zinc',
+                                                                                                                                                                                                                                                                'asignada'    => 'blue',
+                                                                                                                                                                                                                                                                'en_progreso' => 'yellow',
+                                                                                                                                                                                                                                                                'en_revision' => 'purple',
+                                                                                                                                                                                                                                                                'completada'  => 'green',
+                                                                                                                                                                                                                                                                'rechazada'   => 'red',
+                                                                                                                                                                                                                                                                'cancelada'   => 'zinc',
+                                                                                                                                                                                                                                                                default       => 'zinc',
+                                                                                                                                                                                                                                                            }">
                                 {{ $orden->estado->label() }}
                             </flux:badge>
                         </dd>
@@ -223,7 +286,8 @@
                         </dd>
                     </div>
                     <div>
-                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Investigador Asignado</dt>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Investigador Asignado
+                        </dt>
                         <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
                             {{ $orden->personal ? "{$orden->personal->nombres} {$orden->personal->apellidos}" : '—' }}
                         </dd>

@@ -699,14 +699,13 @@ class ReporteCreate extends Component implements HasActions, HasForms
         };
 
         return [
-            Section::make('1. Información General')
+            Section::make('Información General')
                 ->icon('heroicon-o-document-text')
                 ->columns(2)
                 ->schema([
                     Forms\Components\Placeholder::make('subtipo_display')
                         ->label('Subtipo')
-                        ->content($subtipo)
-                        ->columnSpanFull(),
+                        ->content($subtipo),
                     Forms\Components\Placeholder::make('ot_display')
                         ->label('OT')
                         ->content($this->orden->numero_orden),
@@ -719,29 +718,19 @@ class ReporteCreate extends Component implements HasActions, HasForms
                     Forms\Components\Placeholder::make('direccion_display')
                         ->label('Dirección')
                         ->content($this->orden->direccion ?? '—'),
-                    Forms\Components\DateTimePicker::make('fecha_hora_atencion')
-                        ->label('Fecha y Hora de Atención')
-                        ->required()
-                        ->displayFormat('d/m/Y H:i')
-                        ->columnSpanFull(),
-                    Forms\Components\TextInput::make('ciudad')
-                        ->label('Ciudad')
-                        ->maxLength(255),
-                    Forms\Components\TextInput::make('celular_usuario')
-                        ->label('Celular del Usuario')
-                        ->tel()
-                        ->maxLength(20),
-                    Forms\Components\Textarea::make('comentario_usuario')
-                        ->label('Comentario Usuario / Solicitud')
-                        ->rows(3)
-                        ->columnSpanFull(),
-                    Forms\Components\Textarea::make('comentario_tecnico')
-                        ->label('Comentario del Técnico')
-                        ->rows(3)
-                        ->columnSpanFull(),
+                    Forms\Components\Placeholder::make('barrio_display')
+                        ->label('Barrio')
+                        ->content($this->orden->barrio ?? '—'),
+                    Forms\Components\Placeholder::make('comentario_tecnico_display')
+                        ->label('Comentario Técnico')
+                        ->content($this->orden->comentario_tecnico ?? '—'),
+                    Forms\Components\Placeholder::make('comentario_usuario_display')
+                        ->label('Comentario del Usuario')
+                        ->content($this->orden->comentario_usuario ?? '—'),
+
                 ]),
 
-            Section::make('2. Datos de Quién Atiende la Visita')
+            Section::make('Datos de Quién Atiende la Visita')
                 ->icon('heroicon-o-user-circle')
                 ->columns(2)
                 ->schema([
@@ -762,9 +751,13 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->label('Celular')
                         ->tel()
                         ->maxLength(20),
+                    Forms\Components\DateTimePicker::make('fecha_hora_atencion')
+                        ->label('Fecha y Hora de Atención')
+                        ->required()
+                        ->displayFormat('d/m/Y H:i'),
                 ]),
 
-            Section::make('3. Validación de la Atención y Ejecución')
+            Section::make('Validación de la Atención y Ejecución')
                 ->icon('heroicon-o-check-circle')
                 ->columns(2)
                 ->schema([
@@ -789,7 +782,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('4. Hallazgos Técnicos y Validación Física')
+            Section::make('Hallazgos Técnicos y Validación Física')
                 ->icon('heroicon-o-magnifying-glass')
                 ->columns(2)
                 ->schema([
@@ -818,7 +811,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('5. Materiales y Cobros')
+            Section::make('Materiales y Cobros')
                 ->icon('heroicon-o-currency-dollar')
                 ->columns(2)
                 ->schema([
@@ -860,7 +853,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('6. Trazabilidad y Contradicción')
+            Section::make('Trazabilidad y Contradicción')
                 ->icon('heroicon-o-document-check')
                 ->columns(2)
                 ->schema([
@@ -873,7 +866,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->default(false),
                 ]),
 
-            Section::make('7. Autorización y Firmas')
+            Section::make('Autorización y Firmas')
                 ->icon('heroicon-o-pencil')
                 ->columns(2)
                 ->schema([
@@ -898,7 +891,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('8. Observaciones')
+            Section::make('Observaciones')
                 ->icon('heroicon-o-pencil-square')
                 ->schema([
                     Forms\Components\Textarea::make('observaciones')
@@ -908,7 +901,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('9. Soporte Fotográfico y Evidencias')
+            Section::make('Soporte Fotográfico y Evidencias')
                 ->icon('heroicon-o-camera')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
@@ -964,24 +957,28 @@ class ReporteCreate extends Component implements HasActions, HasForms
     /** @param array<string, mixed> $data */
     private function submitFraudes(array $data): void
     {
+        // Crear comercio si el tipo de investigado es comercio
         $comercioRecord = comercio::create([
             'nombre_comercio' => $data['nombre_comercio'],
             'tipo_comercio_id' => $data['tipo_comercio_id'],
         ]);
-
+        // Normalizar imágenes para guardarlas en el reporte
         $imagenes = $this->normalizarImagenes($data);
+        // Extraer foto de detector de fuga para posibles notificaciones e incidencias, pero no guardarla directamente en el reporte (se guarda en imágenes si viene en el formulario)
         $fotoDetectorFuga = $this->extraerFotoDetectorFuga($data);
+        // Cargar contenido y mime type de la foto del detector de fuga para usar en notificaciones e incidencias si es necesario
         $fotoDetectorData = $this->cargarFotoDetectorData($fotoDetectorFuga);
+        // Cargar mime type de la foto del detector de fuga para usar en notificaciones e incidencias si es necesario
         $fotoDetectorMimeType = $this->cargarFotoDetectorMimeType($fotoDetectorFuga);
-
+        // Eliminar campos específicos de comercio e imagen del detector de fuga para no guardarlos directamente en el reporte (comercio se relaciona por ID, foto_detector_fuga se normaliza en imágenes)
         unset($data['nombre_comercio'], $data['tipo_comercio_id'], $data['foto_detector_fuga']);
-
+        // Crear ubicación con latitud, longitud y dirección de la orden
         $ubicacionRecord = ubicacion::create([
             'latitud' => $this->latitud,
             'longitud' => $this->longitud,
             'direccion' => $this->orden->direccion,
         ]);
-
+        // Crear el reporte con los datos del formulario, las imágenes normalizadas, y las relaciones con orden, personal, ubicación y comercio
         $reporte = reportes::create([
             ...$data,
             'imagenes' => $imagenes,
@@ -992,23 +989,24 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'comercios_id' => $comercioRecord->id,
             'actividades' => $data['actividades'] ?? null,
         ]);
-
+        // Actualizar estado de la orden a EnRevision para que el coordinador pueda revisarla
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
-
+        // Notificar al coordinador que hay un nuevo reporte para revisar
         $this->notificarCoordinador();
-
+        // Si hay fuga de gas, exceso de capacidad o bypass, notificar incidencias a los correos activos
         $this->dispatch('borrador-limpiar');
-
+        // Verificar si el reporte tiene anomalia de tipo bypass para incluirlo en las condiciones de notificación de incidencias
         $bypassId = TipoAnomalia::where('activo', true)->where('nombre', 'Bypass')->value('id');
+        // Verificar si el reporte tiene la anomalia de bypass seleccionada
         $hasBypass = $bypassId
             && ! empty($data['anomalia'])
             && is_array($data['anomalia'])
             && in_array($bypassId, $data['anomalia'], true);
-
+        // Notificar incidencias si hay fuga de gas, exceso de capacidad o bypass
         if ($data['hay_fuga_gas'] || $data['excede_capacidad'] || $hasBypass) {
             $this->notificarIncidencias($reporte, $data, $fotoDetectorFuga, $fotoDetectorData, $fotoDetectorMimeType);
         }
-
+        // Limpiar borrador del formulario
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
 
@@ -1020,6 +1018,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
     {
         $imagenes = [];
 
+        // Si vienen imágenes desde el formulario, agregarlas al arreglo de imágenes normalizadas
         if (! empty($data['imagenes']) && is_array($data['imagenes'])) {
             $imagenes = array_values($data['imagenes']);
         }
@@ -1042,6 +1041,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
      */
     private function extraerFotoDetectorFuga(array $data): ?string
     {
+        // Si no viene el campo de foto del detector de fuga, retornar null
         if (empty($data['foto_detector_fuga'])) {
             return null;
         }
@@ -1057,6 +1057,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
 
     private function cargarFotoDetectorData(?string $fotoDetectorFuga): ?string
     {
+
+    // Si no hay foto del detector de fuga, retornar null
         if (! $fotoDetectorFuga) {
             return null;
         }
@@ -1072,6 +1074,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
 
     private function cargarFotoDetectorMimeType(?string $fotoDetectorFuga): ?string
     {
+        // Si no hay foto del detector de fuga, retornar null
         if (! $fotoDetectorFuga) {
             return null;
         }
@@ -1088,9 +1091,11 @@ class ReporteCreate extends Component implements HasActions, HasForms
     /** @param array<string, mixed> $data */
     private function submitServicioGenerico(array $data): void
     {
+        // Para servicios de Investigación, Gestión Legal y Gestión de Riesgo, el proceso de guardado es similar sin lógica específica de comercio o ubicación
         $datosServicio = $data;
+        // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
         unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
-
+        // Crear el reporte con los datos del formulario y las relaciones con orden y personal
         reportes::create([
             'orden_job_id' => $this->orden->id,
             'personals_id' => auth()->user()->personals_id,
@@ -1101,22 +1106,24 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'datos_servicio' => $datosServicio,
             'actividades' => $data['actividades'] ?? null,
         ]);
-
+        // Actualizar estado de la orden a EnRevision para que el coordinador pueda revisarla
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
-
+        // Notificar al coordinador que hay un nuevo reporte para revisar
         $this->notificarCoordinador();
-
+        // Limpiar borrador del formulario
         $this->dispatch('borrador-limpiar');
-
+        // Redirigir al técnico a sus órdenes después de enviar el reporte
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
 
     /** @param array<string, mixed> $data */
     private function submitVigilancia(array $data): void
     {
+        // Para el servicio de Vigilancia, el proceso de guardado es similar a los servicios genéricos pero sin actualizar el estado de la orden (permanece EnProgreso) y sin notificar al coordinador
         $datosServicio = $data;
+        // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
         unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
-
+        // Crear el reporte con los datos del formulario y las relaciones con orden y personal
         reportes::create([
             'orden_job_id' => $this->orden->id,
             'personals_id' => auth()->user()->personals_id,
@@ -1130,16 +1137,17 @@ class ReporteCreate extends Component implements HasActions, HasForms
 
         // Vigilancia permanece EnProgreso hasta que el investigador la cierre manualmente
         $this->dispatch('borrador-limpiar');
-
+        // Redirigir al técnico a sus órdenes después de enviar el reporte
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
 
     /** @param array<string, mixed> $data */
     private function submitAuditoriaCampo(array $data): void
-    {
+    {   // Para el servicio de Auditoría de Campo, el proceso de guardado es similar a los servicios genéricos pero con un esquema específico para auditoría y sin lógica de comercio o ubicación
         $datosServicio = $data;
+        // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
         unset($datosServicio['observaciones'], $datosServicio['imagenes']);
-
+        // Crear el reporte con los datos del formulario y las relaciones con orden y personal
         reportes::create([
             'orden_job_id' => $this->orden->id,
             'personals_id' => auth()->user()->personals_id,
@@ -1148,26 +1156,28 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'imagenes' => $data['imagenes'] ?? null,
             'datos_servicio' => $datosServicio,
         ]);
-
+        // Actualizar estado de la orden a EnRevision para que el coordinador pueda revisarla
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
-
+        // Notificar al coordinador que hay un nuevo reporte para revisar
         $this->notificarCoordinador();
-
+        // Limpiar borrador del formulario
         $this->dispatch('borrador-limpiar');
-
+        // Redirigir al técnico a sus órdenes después de enviar el reporte
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
     }
 
     /** Avisa al coordinador que el técnico envió el reporte para revisión. */
     protected function notificarCoordinador(): void
     {
+        // Obtener el correo del coordinador a partir del usuario que creó la orden y el técnico asignado a la orden para incluir su nombre en la notificación
         $email = $this->orden->creadoPor?->email;
         $tecnico = $this->orden->personal;
-
+        // Si no se encuentra el correo del coordinador o el técnico asignado, no se puede enviar la notificación
         if (! $email || ! $tecnico) {
             return;
         }
 
+        // Enviar correo al coordinador notificando que hay un nuevo reporte para revisar, incluyendo el número de orden y el nombre del técnico en el asunto y cuerpo del correo
         try {
             Mail::to($email)->send(new ReporteEnRevision($this->orden, $tecnico));
         } catch (\Exception $e) {
@@ -1235,6 +1245,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
             }
         }
     }
+
+    // Renderiza la vista del componente Livewire para crear el reporte, pasando la orden y el esquema de formulario correspondiente según el tipo de servicio.
 
     public function render(): View
     {

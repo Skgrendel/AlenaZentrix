@@ -45,6 +45,8 @@ class ReporteRevisar extends Component implements HasActions, HasForms
 
     public bool $mostrarFormRechazo = false;
 
+    public $resultado = ''; // En tu clase Livewire
+
     public function mount(OrdenJob $orden): void
     {
         $estadosPermitidos = [EstadoOrden::EnRevision, EstadoOrden::Completada];
@@ -72,18 +74,23 @@ class ReporteRevisar extends Component implements HasActions, HasForms
     {
         $this->validate([
             'conclusion' => ['required', 'string', 'min:10'],
+            'resultado'  => ['required', 'string'], // Agrega esta línea
         ], [
             'conclusion.required' => 'Debe ingresar una conclusión.',
             'conclusion.min' => 'La conclusión debe tener al menos 10 caracteres.',
+            'resultado.required' => 'Debe seleccionar un resultado.',
         ]);
 
+        // Actualizar el reporte con la conclusión y resultado, y marcar la orden como completada
         $this->reporte->update(['conclusion' => $this->conclusion]);
-        $this->orden->update(['estado' => EstadoOrden::Completada]);
-
+        // Guardar el resultado seleccionado en el reporte
+        $this->orden->update(['estado' => EstadoOrden::Completada, 'resultado' => $this->resultado]);
+        // Enviar notificación al técnico con la conclusión y resultado
         $this->notificarTecnico(new OrdenCompletada($this->orden, $this->orden->personal));
 
+        // Mostrar mensaje de éxito y redirigir al listado de órdenes
         session()->flash('success', "Orden {$this->orden->numero_orden} marcada como completada.");
-
+        // Redirigir al listado de órdenes después de completar la revisión
         $this->redirect(route('operaciones.ordenes-trabajo'), navigate: true);
     }
 
@@ -100,13 +107,15 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             'comentarios.min' => 'El motivo debe tener al menos 10 caracteres.',
         ]);
 
+        // Actualizar el reporte con los comentarios del rechazo y marcar la orden como rechazada
         $this->reporte->update(['comentarios' => $this->comentarios]);
+        // Guardar el motivo del rechazo en el reporte y actualizar el estado de la orden a Rechazada
         $this->orden->update(['estado' => EstadoOrden::Rechazada]);
-
+        // Enviar notificación al técnico con el motivo del rechazo
         $this->notificarTecnico(new OrdenRechazada($this->orden, $this->orden->personal, $this->comentarios));
-
+        // Mostrar mensaje de éxito y redirigir al listado de órdenes
         session()->flash('success', "Orden {$this->orden->numero_orden} rechazada. El técnico podrá corregir y reenviar el reporte.");
-
+        // Redirigir al listado de órdenes después de rechazar la revisión
         $this->redirect(route('operaciones.ordenes-trabajo'), navigate: true);
     }
 

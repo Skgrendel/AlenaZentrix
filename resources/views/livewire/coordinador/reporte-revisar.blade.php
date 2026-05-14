@@ -265,7 +265,8 @@
 
                 @if ($datosServicio['tipo_investigado'] ?? null)
                     <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        <h3
+                            class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                             {{ $datosServicio['tipo_investigado'] === 'persona' ? 'Persona Investigada' : 'Comercio Investigado' }}
                         </h3>
                         <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
@@ -325,15 +326,18 @@
                     <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                         @if ($datosServicio['tipo_gestion_label'] ?? null)
                             <div class="sm:col-span-2">
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Gestión</dt>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Gestión
+                                </dt>
                                 <dd class="mt-0.5">
-                                    <flux:badge color="blue" size="sm">{{ $datosServicio['tipo_gestion_label'] }}</flux:badge>
+                                    <flux:badge color="blue" size="sm">
+                                        {{ $datosServicio['tipo_gestion_label'] }}</flux:badge>
                                 </dd>
                             </div>
                         @endif
                         @if ($datosServicio['numero_noticia_criminal'] ?? null)
                             <div>
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">N° Noticia Criminal</dt>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">N° Noticia
+                                    Criminal</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
                                     {{ $datosServicio['numero_noticia_criminal'] }}</dd>
                             </div>
@@ -347,9 +351,11 @@
                         @endif
                         @if ($datosServicio['fecha_ejecucion'] ?? null)
                             <div>
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha de Ejecución</dt>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha de
+                                    Ejecución</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                    {{ \Illuminate\Support\Carbon::parse($datosServicio['fecha_ejecucion'])->format('d/m/Y') }}</dd>
+                                    {{ \Illuminate\Support\Carbon::parse($datosServicio['fecha_ejecucion'])->format('d/m/Y') }}
+                                </dd>
                             </div>
                         @endif
                         @if ($datosServicio['departamento'] ?? null)
@@ -368,7 +374,8 @@
                         @endif
                         @if ($datosServicio['radio_objetivo'] ?? null)
                             <div class="sm:col-span-2">
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Radio del Objetivo</dt>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Radio del
+                                    Objetivo</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
                                     {{ $datosServicio['radio_objetivo'] }}</dd>
                             </div>
@@ -377,7 +384,8 @@
                             <div class="sm:col-span-2">
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Resultado</dt>
                                 <dd class="mt-0.5">
-                                    <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] }}</flux:badge>
+                                    <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] }}
+                                    </flux:badge>
                                 </dd>
                             </div>
                         @endif
@@ -443,109 +451,242 @@
             @elseif($orden->tipo_servicio === \App\Enums\TipoServicio::AuditoriaCampo)
                 {{-- Subtipo --}}
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">Auditoría de Campo</h3>
-                    <p class="text-sm font-medium text-zinc-900 dark:text-white">{{ $datosServicio['subtipo'] ?? '—' }}</p>
-                </div>
+                    <div class="grid grid-cols-2 gap-4">
 
+                        <!-- Columna 1 -->
+                        <div>
+                            <h3 class="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+                                Auditoría de Campo
+                            </h3>
+                            <p class="text-sm font-medium text-zinc-900 dark:text-white">
+                                {{ $datosServicio['subtipo'] ?? '—' }}
+                            </p>
+                        </div>
+
+                        <!-- Columna 2 -->
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Fecha y Hora de Atención</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white text-sm">
+                                {{ $datosServicio['fecha_hora_atencion'] ?? '—' }}
+                            </dd>
+                        </div>
+
+                    </div>
+                </div>
                 {{-- Sección 1: Información General --}}
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">1. Información General</h3>
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">1. Información General
+                    </h3>
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">OT</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $orden->numero_orden }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Contrato</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $orden->contrato ?? '—' }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Usuario</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $orden->cliente ?? '—' }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Dirección</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $orden->direccion ?? '—' }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Ciudad</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['ciudad'] ?? '—' }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Celular</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['celular_usuario'] ?? '—' }}</dd></div>
-                        <div class="col-span-full"><dt class="text-xs font-medium uppercase text-zinc-400">Fecha y Hora de Atención</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['fecha_hora_atencion'] ?? '—' }}</dd></div>
-                        @if($datosServicio['comentario_usuario'] ?? null)
-                        <div class="col-span-full"><dt class="text-xs font-medium uppercase text-zinc-400">Solicitud del Usuario</dt><dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['comentario_usuario'] }}</dd></div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">OT</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $orden->numero_orden }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Contrato</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $orden->contrato ?? '—' }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Usuario</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $orden->cliente ?? '—' }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Nombre del Técnico</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $orden->tecnico ?? '—' }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Dirección</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $orden->direccion ?? '—' }}</dd>
+                        </div>
+                        @if ($datosServicio['ciudad'] ?? null)
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Ciudad</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                    {{ $datosServicio['ciudad'] ?? '—' }}</dd>
+                            </div>
                         @endif
-                        @if($datosServicio['comentario_tecnico'] ?? null)
-                        <div class="col-span-full"><dt class="text-xs font-medium uppercase text-zinc-400">Comentario Técnico</dt><dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['comentario_tecnico'] }}</dd></div>
+
+                        @if ($datosServicio['comentario_usuario'] ?? null)
+                            <div class="col-span-full">
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Solicitud del Usuario</dt>
+                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">
+                                    {{ $datosServicio['comentario_usuario'] }}</dd>
+                            </div>
+                        @endif
+                        @if ($datosServicio['comentario_tecnico'] ?? null)
+                            <div class="col-span-full">
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Comentario Técnico</dt>
+                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">
+                                    {{ $datosServicio['comentario_tecnico'] }}</dd>
+                            </div>
                         @endif
                     </dl>
                 </div>
 
                 {{-- Sección 2: Quién Atiende --}}
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">2. Quién Atendió la Visita</h3>
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">2. Quién Atendió la
+                        Visita</h3>
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Nombre</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['nombre_atiende'] ?? '—' }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Vínculo</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['vinculo_usuario'] ?? '—' }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Celular</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['celular_atiende'] ?? '—' }}</dd></div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Nombre</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $datosServicio['nombre_atiende'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Vínculo</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $datosServicio['vinculo_usuario'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Celular</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $datosServicio['celular_atiende'] ?? '—' }}</dd>
+                        </div>
                     </dl>
                 </div>
 
                 {{-- Secciones 3–6: Validación, Hallazgos, Materiales, Trazabilidad --}}
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">3–6. Validación y Hallazgos</h3>
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">3–6. Validación y
+                        Hallazgos</h3>
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
                         @php $yesno = fn($v) => $v ? 'Sí' : 'No'; @endphp
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Recibió visita</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['recibio_visita']) }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Se realizó revisión</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['se_realizo_revision']) }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Fecha ejecución</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['fecha_ejecucion'] ?? '—' }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Tiempo ejecución</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['tiempo_ejecucion'] ?? '—' }}</dd></div>
-                        @if($datosServicio['descripcion_trabajo'] ?? null)
-                        <div class="col-span-full"><dt class="text-xs font-medium uppercase text-zinc-400">Trabajo realizado</dt><dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['descripcion_trabajo'] }}</dd></div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Recibió visita</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $yesno($datosServicio['recibio_visita']) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Se realizó revisión</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $yesno($datosServicio['se_realizo_revision']) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Fecha ejecución</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $datosServicio['fecha_ejecucion'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Tiempo ejecución</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $datosServicio['tiempo_ejecucion'] ?? '—' }}</dd>
+                        </div>
+                        @if ($datosServicio['descripcion_trabajo'] ?? null)
+                            <div class="col-span-full">
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Trabajo realizado</dt>
+                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">
+                                    {{ $datosServicio['descripcion_trabajo'] }}</dd>
+                            </div>
                         @endif
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Fuga / falla detectada</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['se_detecto_fuga']) }}{{ ($datosServicio['ppm'] ?? null) ? ' · PPM: '.$datosServicio['ppm'] : '' }}{{ ($datosServicio['vol_porcentaje'] ?? null) ? ' · VOL%: '.$datosServicio['vol_porcentaje'] : '' }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Problema persiste</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['problema_persiste']) }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Evidencia reparación</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['evidencia_reparacion']) }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Servicio correcto</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['servicio_correcto']) }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Se usaron materiales</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['se_usaron_materiales']) }}{{ ($datosServicio['quien_suministro_materiales'] ?? null) ? ' · '.$datosServicio['quien_suministro_materiales'] : '' }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Usuario asumió costo</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['usuario_asumio_costo']) }}{{ ($datosServicio['valor_pagado'] ?? null) ? ' · $'.$datosServicio['valor_pagado'].' ('.($datosServicio['medio_pago'] ?? '—').')' : '' }}</dd></div>
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Entregó factura/IVT</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['entrego_factura']) }}</dd></div>
-                        @if($datosServicio['tecnico_dejo_documento'] ?? null)
-                        <div class="col-span-full"><dt class="text-xs font-medium uppercase text-zinc-400">Documento dejado</dt><dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['tecnico_dejo_documento'] }}</dd></div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Fuga / falla detectada</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $yesno($datosServicio['se_detecto_fuga']) }}{{ $datosServicio['ppm'] ?? null ? ' · PPM: ' . $datosServicio['ppm'] : '' }}{{ $datosServicio['vol_porcentaje'] ?? null ? ' · VOL%: ' . $datosServicio['vol_porcentaje'] : '' }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Problema persiste</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $yesno($datosServicio['problema_persiste']) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Evidencia reparación</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $yesno($datosServicio['evidencia_reparacion']) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Servicio correcto</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $yesno($datosServicio['servicio_correcto']) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Se usaron materiales</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $yesno($datosServicio['se_usaron_materiales']) }}{{ $datosServicio['quien_suministro_materiales'] ?? null ? ' · ' . $datosServicio['quien_suministro_materiales'] : '' }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Usuario asumió costo</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $yesno($datosServicio['usuario_asumio_costo']) }}{{ $datosServicio['valor_pagado'] ?? null ? ' · $' . $datosServicio['valor_pagado'] . ' (' . ($datosServicio['medio_pago'] ?? '—') . ')' : '' }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Entregó factura/IVT</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $yesno($datosServicio['entrego_factura']) }}</dd>
+                        </div>
+                        @if ($datosServicio['tecnico_dejo_documento'] ?? null)
+                            <div class="col-span-full">
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Documento dejado</dt>
+                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">
+                                    {{ $datosServicio['tecnico_dejo_documento'] }}</dd>
+                            </div>
                         @endif
-                        <div><dt class="text-xs font-medium uppercase text-zinc-400">Informaron que no estaba</dt><dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['informaron_no_estaba']) }}</dd></div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Informaron que no estaba</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $yesno($datosServicio['informaron_no_estaba']) }}</dd>
+                        </div>
                     </dl>
                 </div>
 
                 {{-- Sección 7: Autorización y Firmas --}}
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">7. Autorización y Firmas</h3>
-                    <p class="mb-4 text-sm"><span class="font-medium">Autoriza:</span> {{ ($datosServicio['autoriza'] ?? false) ? 'SÍ' : 'NO' }}</p>
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">7. Autorización y
+                        Firmas</h3>
+                    <p class="mb-4 text-sm"><span class="font-medium">Autoriza:</span>
+                        {{ $datosServicio['autoriza'] ?? false ? 'SÍ' : 'NO' }}</p>
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <p class="mb-1 text-xs font-medium uppercase text-zinc-400">Firma del Usuario</p>
-                            @if($datosServicio['firma_usuario'] ?? null)
+                            @if ($datosServicio['firma_usuario'] ?? null)
                                 <img src="{{ $datosServicio['firma_usuario'] }}" alt="Firma usuario"
-                                     class="rounded border border-zinc-200 bg-white dark:border-zinc-600" style="max-height:120px;">
+                                    class="rounded border border-zinc-200 bg-white dark:border-zinc-600"
+                                    style="max-height:120px;">
                             @else
                                 <p class="text-sm text-zinc-400">Sin firma</p>
                             @endif
-                            <p class="mt-1 text-xs text-zinc-500">Cédula: {{ $datosServicio['cedula_usuario'] ?? '—' }}</p>
+                            <p class="mt-1 text-xs text-zinc-500">Cédula:
+                                {{ $datosServicio['cedula_usuario'] ?? '—' }}</p>
                         </div>
                         <div>
                             <p class="mb-1 text-xs font-medium uppercase text-zinc-400">Firma del Auditor</p>
-                            @if($datosServicio['firma_auditor'] ?? null)
+                            @if ($datosServicio['firma_auditor'] ?? null)
                                 <img src="{{ $datosServicio['firma_auditor'] }}" alt="Firma auditor"
-                                     class="rounded border border-zinc-200 bg-white dark:border-zinc-600" style="max-height:120px;">
+                                    class="rounded border border-zinc-200 bg-white dark:border-zinc-600"
+                                    style="max-height:120px;">
                             @else
                                 <p class="text-sm text-zinc-400">Sin firma</p>
                             @endif
-                            <p class="mt-1 text-xs text-zinc-500">Cédula: {{ $datosServicio['cedula_auditor'] ?? '—' }}</p>
+                            <p class="mt-1 text-xs text-zinc-500">Cédula:
+                                {{ $datosServicio['cedula_auditor'] ?? '—' }}</p>
                         </div>
                     </div>
                 </div>
 
-            @if (!empty($datosServicio['urls_evidencia']))
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">URLs de Evidencia / Documentos</h3>
-                    <ul class="space-y-1">
-                        @foreach ($datosServicio['urls_evidencia'] as $url)
-                            <li>
-                                <a href="{{ $url }}" target="_blank" rel="noopener"
-                                   class="break-all text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
-                                    {{ $url }}
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
+                @if (!empty($datosServicio['urls_evidencia']))
+                    <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">URLs de Evidencia
+                            / Documentos</h3>
+                        <ul class="space-y-1">
+                            @foreach ($datosServicio['urls_evidencia'] as $url)
+                                <li>
+                                    <a href="{{ $url }}" target="_blank" rel="noopener"
+                                        class="break-all text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
+                                        {{ $url }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
             @endif
             {{-- ═══ FIN secciones por servicio ═══ --}}
@@ -559,15 +700,18 @@
                         @foreach ($reporte->actividades as $actividad)
                             <li class="pb-4 border-b border-zinc-100 last:border-b-0 last:pb-0 dark:border-zinc-800">
                                 @if (!empty($actividad['descripcion_orden']))
-                                    <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                                    <p
+                                        class="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
                                         Actividad asignada</p>
                                     <p class="mb-2 text-sm text-zinc-500 dark:text-zinc-400">
                                         {{ $actividad['descripcion_orden'] }}</p>
-                                    <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                                    <p
+                                        class="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
                                         Respuesta del investigador</p>
                                 @endif
                                 <div class="flex items-start gap-3">
-                                    <div class="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-bold shrink-0 mt-0.5">
+                                    <div
+                                        class="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-bold shrink-0 mt-0.5">
                                         ✓
                                     </div>
                                     <p class="text-sm text-zinc-900 dark:text-white wrap-break-word">
@@ -593,13 +737,15 @@
             @if ($orden->tipo_servicio === \App\Enums\TipoServicio::Gestion_Riesgo)
                 @if (!empty($archivosUrls))
                     @php
-                        $imgs = array_values(array_filter($archivosUrls, fn ($a) => $a['es_imagen']));
-                        $docs = array_values(array_filter($archivosUrls, fn ($a) => ! $a['es_imagen']));
+                        $imgs = array_values(array_filter($archivosUrls, fn($a) => $a['es_imagen']));
+                        $docs = array_values(array_filter($archivosUrls, fn($a) => !$a['es_imagen']));
                     @endphp
                     <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
                         class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                            Evidencias ({{ count($archivosUrls) }} {{ count($archivosUrls) === 1 ? 'archivo' : 'archivos' }})</h3>
+                        <h3
+                            class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                            Evidencias ({{ count($archivosUrls) }}
+                            {{ count($archivosUrls) === 1 ? 'archivo' : 'archivos' }})</h3>
 
                         @if (!empty($imgs))
                             <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -616,9 +762,11 @@
                         @if (!empty($docs))
                             <ul class="space-y-2">
                                 @foreach ($docs as $archivo)
-                                    <li class="flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                    <li
+                                        class="flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 text-zinc-400"
-                                            fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="1.5">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                                         </svg>
@@ -626,8 +774,9 @@
                                             class="flex-1 truncate text-sm text-zinc-700 dark:text-zinc-300">{{ $archivo['nombre'] }}</span>
                                         <a href="{{ $archivo['url'] }}" target="_blank" rel="noopener"
                                             class="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round"
                                                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                             </svg>
@@ -798,7 +947,8 @@
 
             {{-- ═══ Conclusión del coordinador ═══ --}}
             @if ($reporte->conclusion)
-                <div class="rounded-lg border border-green-200 bg-green-50 p-5 dark:border-green-800 dark:bg-green-950">
+                <div
+                    class="rounded-lg border border-green-200 bg-green-50 p-5 dark:border-green-800 dark:bg-green-950">
                     <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">
                         Conclusión</h3>
                     <p class="text-sm text-zinc-900 dark:text-white">{{ $reporte->conclusion }}</p>
@@ -820,6 +970,7 @@
                             <x-heroicon-o-check-circle class="h-5 w-5" />
                             Marcar como Completada
                         </button>
+
                         <flux:button variant="danger" icon="x-circle" class="w-full justify-center"
                             @click="rechazo = true">
                             Rechazar Reporte
@@ -830,18 +981,41 @@
                         <p class="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
                             Escribe la conclusión de la orden. Quedará registrada en el reporte.
                         </p>
+
+                        <!-- Nuevo Campo de Resultado -->
+                        <div class="mb-3">
+                            <label for="resultado"
+                                class="block mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                                Resultado del Reporte
+                            </label>
+                            <select wire:model="resultado" id="resultado"
+                                class="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
+                                <option value="">Selecciona un resultado...</option>
+                                <option value="positivo">Positivo</option>
+                                <option value="negativo">Negativo</option>
+                                <option value="pendiente">Pendiente</option>
+                            </select>
+                            @error('resultado')
+                                <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                        </div>
+
                         <textarea wire:model="conclusion" rows="4" placeholder="Escribe la conclusión del reporte..."
                             class="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"></textarea>
+
                         @error('conclusion')
                             <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                         @enderror
+
+                        <!-- Botones -->
                         <div class="mt-3 flex gap-2">
                             <button type="button" wire:click="completar" wire:loading.attr="disabled"
                                 class="flex flex-1 items-center justify-center rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:opacity-60 dark:bg-green-700 dark:hover:bg-green-600">
                                 <span wire:loading.remove wire:target="completar">Confirmar Completar</span>
                                 <span wire:loading wire:target="completar">Guardando...</span>
                             </button>
-                            <flux:button variant="ghost" @click="conclusion = false; $wire.set('conclusion', '')">
+                            <flux:button variant="ghost"
+                                @click="conclusion = false; $wire.set('conclusion', ''); $wire.set('resultado', '')">
                                 Cancelar
                             </flux:button>
                         </div>

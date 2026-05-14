@@ -185,12 +185,30 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->label('Nombre del Usuario')
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
                             ->maxLength(255),
+                            Forms\Components\TextInput::make('tecnico')
+                            ->label('Nombre del Técnico que realizó la visita')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
+                            ->maxLength(255),
                         Forms\Components\TextInput::make('contrato')
                             ->label('Contrato')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('barrio')
+                            ->label('Barrio / Municipio')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
                             ->maxLength(255),
                         Forms\Components\TextInput::make('direccion')
                             ->label('Dirección')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
                             ->maxLength(255)
+                            ->columnSpanFull(),
+                        Forms\Components\Textarea::make('comentario_usuario')
+                            ->label('Comentario Usuario / Solicitud')
+                            ->rows(3)
+                            ->columnSpanFull(),
+                        Forms\Components\Textarea::make('comentario_tecnico')
+                            ->label('Comentario del Técnico en la Solicitud')
+                            ->rows(3)
                             ->columnSpanFull(),
                     ]),
 

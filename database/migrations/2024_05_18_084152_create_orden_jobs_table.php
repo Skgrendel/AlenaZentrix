@@ -18,6 +18,9 @@ return new class extends Migration
             $table->string('numero_orden');
             $table->string('contrato')->nullable();
             $table->string('cliente')->nullable();
+            $table->text('comentario_usuario')->nullable();
+            $table->text('comentario_tecnico')->nullable();
+            $table->string('tecnico')->nullable();
             $table->string('direccion')->nullable();
             $table->string('barrio')->nullable();
             $table->string('medidor')->nullable();
@@ -35,6 +38,7 @@ return new class extends Migration
             // Gestión de la orden
             $table->enum('prioridad', ['baja', 'media', 'alta', 'urgente'])->default('media'); // baja | media | alta | urgente
             $table->enum('estado', ['pendiente', 'asignada', 'en_progreso', 'en_revision', 'completada', 'rechazada', 'cancelada'])->default('pendiente');
+            $table->enum('resultado', ['positivo', 'negativo', 'pendiente'])->default('pendiente');
             $table->boolean('estado_servicio')->default(true);
 
             // Fechas de seguimiento
