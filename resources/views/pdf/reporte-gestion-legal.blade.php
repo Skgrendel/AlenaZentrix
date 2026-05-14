@@ -531,7 +531,7 @@
         </div>
 
         {{-- ── Destinación ── --}}
-        @include('pdf.partials.destinacion-informe')
+        {{-- @include('pdf.partials.destinacion-informe') --}}
 
         {{-- ── Firma Digital ── --}}
         <div class="firma-section">
