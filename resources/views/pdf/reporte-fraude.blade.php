@@ -413,21 +413,7 @@
         </p>
 
         {{-- ── Objetivos ── --}}
-        @if (count($objetivos) > 0)
-            <div class="section">
-                <div class="section-title">OBJETIVOS</div>
-                <div class="objetivos-box">
-                    @foreach ($objetivos as $grupo)
-                        <div class="objetivo-grupo">
-                            <div class="objetivo-numero"></div>
-                            @foreach ($grupo['items'] as $item)
-                                <div class="objetivo-item">{{ $item }}</div>
-                            @endforeach
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
+        @include('pdf.partials.objetivo-informe')
 
         {{-- ── 1. Información de la Orden ── --}}
         <div class="section">
@@ -448,7 +434,8 @@
                     </div>
                     <div class="info-row">
                         <div class="info-label">Dirección:</div>
-                        <div class="info-value">{{ $orden->direccion }}{{ $orden->barrio ? ', ' . $orden->barrio : '' }}
+                        <div class="info-value">
+                            {{ $orden->direccion }}{{ $orden->barrio ? ', ' . $orden->barrio : '' }}
                         </div>
                     </div>
                     <div class="info-row">
@@ -636,10 +623,11 @@
 
         {{-- ── 8. Firma Digital del Coordinador ── --}}
         <div class="firma-section">
-            <div class="section-title">9. FIRMA DIGITAL DEL COORDINADOR</div>
+            <div class="section-title">9. FIRMA DIGITAL</div>
             <p style="font-size:8pt; margin:5px 0 10px 0;">
-                El coordinador identificado a continuación ha generado y validado este informe mediante
-                firma digital, quedando registrado el acceso con los datos técnicos del dispositivo utilizado.
+                El investigador responsable identificado a continuación ha generado y validado este informe mediante
+                firma digital, quedando registrado el acceso con los datos técnicos del dispositivo utilizado para la
+                inspección.
             </p>
             <div class="firma-box">
                 <div class="firma-badge">&#10003; FIRMADO DIGITALMENTE</div>

@@ -422,7 +422,7 @@
             presentada es fundamental para la evaluación operativa y documental del caso.
         </p>
 
-         {{-- ── antecedentes ── --}}
+        {{-- ── antecedentes ── --}}
         @if ($datosOrden['antecedente'])
             <div class="section">
                 <div class="section-title">ANTECEDENTES</div>
@@ -718,11 +718,12 @@
         <div class="firma-section">
             <div class="section-title">FIRMA DIGITAL</div>
             <p style="font-size:8pt; margin:5px 0 10px 0;">
-                El investigador identificado a continuación registró este reporte mediante firma digital,
-                quedando constancia de los datos técnicos del dispositivo utilizado.
+                El investigador responsable identificado a continuación ha generado y validado este informe mediante
+                firma digital en cumplimiento de los protocolos de seguridad establecidos para garantizar la integridad
+                y autenticidad del documento.
             </p>
             <div class="firma-box">
-                <div class="firma-badge">&#10003; FIRMADO DIGITALMENTE</div>
+                <div class="firma-badge">&#10003; FIRMA DIGITAL</div>
 
                 <div class="firma-linea"></div>
 
