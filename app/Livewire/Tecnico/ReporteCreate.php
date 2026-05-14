@@ -4,6 +4,7 @@ namespace App\Livewire\Tecnico;
 
 use App\Enums\EstadoOrden;
 use App\Enums\TipoServicio;
+use App\Filament\Forms\Components\SignaturePad;
 use App\Mail\IncidenciaDetectada;
 use App\Mail\ReporteEnRevision;
 use App\Models\comercio;
@@ -90,6 +91,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
             TipoServicio::GestionLegal => $this->gestionLegalSchema(),
             TipoServicio::Vigilancia => $this->vigilanciaSchema(),
             TipoServicio::Gestion_Riesgo => $this->gestionRiesgoSchema(),
+            TipoServicio::AuditoriaCampo => $this->auditoriaCampoSchema(),
         };
 
         return $form->schema($schema)->statePath('data');
@@ -687,6 +689,240 @@ class ReporteCreate extends Component implements HasActions, HasForms
         ];
     }
 
+    /** @return array<int, Section> */
+    private function auditoriaCampoSchema(): array
+    {
+        $subtipo = match ($this->orden->tipo_auditoria_campo) {
+            'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
+            'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+            default => 'Auditoría de Campo',
+        };
+
+        return [
+            Section::make('1. Información General')
+                ->icon('heroicon-o-document-text')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Placeholder::make('subtipo_display')
+                        ->label('Subtipo')
+                        ->content($subtipo)
+                        ->columnSpanFull(),
+                    Forms\Components\Placeholder::make('ot_display')
+                        ->label('OT')
+                        ->content($this->orden->numero_orden),
+                    Forms\Components\Placeholder::make('contrato_display')
+                        ->label('Contrato')
+                        ->content($this->orden->contrato ?? '—'),
+                    Forms\Components\Placeholder::make('cliente_display')
+                        ->label('Nombre del Usuario')
+                        ->content($this->orden->cliente ?? '—'),
+                    Forms\Components\Placeholder::make('direccion_display')
+                        ->label('Dirección')
+                        ->content($this->orden->direccion ?? '—'),
+                    Forms\Components\DateTimePicker::make('fecha_hora_atencion')
+                        ->label('Fecha y Hora de Atención')
+                        ->required()
+                        ->displayFormat('d/m/Y H:i')
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('ciudad')
+                        ->label('Ciudad')
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('celular_usuario')
+                        ->label('Celular del Usuario')
+                        ->tel()
+                        ->maxLength(20),
+                    Forms\Components\Textarea::make('comentario_usuario')
+                        ->label('Comentario Usuario / Solicitud')
+                        ->rows(3)
+                        ->columnSpanFull(),
+                    Forms\Components\Textarea::make('comentario_tecnico')
+                        ->label('Comentario del Técnico')
+                        ->rows(3)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('2. Datos de Quién Atiende la Visita')
+                ->icon('heroicon-o-user-circle')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\TextInput::make('nombre_atiende')
+                        ->label('Nombre')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\Select::make('vinculo_usuario')
+                        ->label('Vínculo con el usuario')
+                        ->options([
+                            'titular' => 'Titular',
+                            'familiar' => 'Familiar',
+                            'vecino' => 'Vecino',
+                            'otro' => 'Otro',
+                        ])
+                        ->placeholder('Seleccionar'),
+                    Forms\Components\TextInput::make('celular_atiende')
+                        ->label('Celular')
+                        ->tel()
+                        ->maxLength(20),
+                ]),
+
+            Section::make('3. Validación de la Atención y Ejecución')
+                ->icon('heroicon-o-check-circle')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Toggle::make('recibio_visita')
+                        ->label('¿Recibió la visita del técnico?')
+                        ->required()
+                        ->default(false),
+                    Forms\Components\Toggle::make('se_realizo_revision')
+                        ->label('¿Se realizó revisión técnica o trabajos?')
+                        ->required()
+                        ->default(false),
+                    Forms\Components\DatePicker::make('fecha_ejecucion')
+                        ->label('Fecha de ejecución')
+                        ->displayFormat('d/m/Y'),
+                    Forms\Components\TextInput::make('tiempo_ejecucion')
+                        ->label('Tiempo aproximado de ejecución')
+                        ->placeholder('Ej: 2 horas')
+                        ->maxLength(100),
+                    Forms\Components\Textarea::make('descripcion_trabajo')
+                        ->label('Descripción del trabajo / reparación realizada')
+                        ->rows(3)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('4. Hallazgos Técnicos y Validación Física')
+                ->icon('heroicon-o-magnifying-glass')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Toggle::make('se_detecto_fuga')
+                        ->label('¿Se detectó fuga o falla?')
+                        ->default(false)
+                        ->live(),
+                    Forms\Components\TextInput::make('ppm')
+                        ->label('Medición PPM')
+                        ->maxLength(50)
+                        ->visible(fn ($get) => (bool) $get('se_detecto_fuga')),
+                    Forms\Components\TextInput::make('vol_porcentaje')
+                        ->label('VOL %')
+                        ->maxLength(50)
+                        ->visible(fn ($get) => (bool) $get('se_detecto_fuga')),
+                    Forms\Components\Toggle::make('problema_persiste')
+                        ->label('¿Actualmente el problema persiste?')
+                        ->default(false),
+                    Forms\Components\Toggle::make('evidencia_reparacion')
+                        ->label('¿Se evidencia la reparación en el punto?')
+                        ->default(false),
+                    Forms\Components\Toggle::make('servicio_correcto')
+                        ->label('¿El servicio funciona correctamente?')
+                        ->default(false),
+                ]),
+
+            Section::make('5. Materiales y Cobros')
+                ->icon('heroicon-o-currency-dollar')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Toggle::make('se_usaron_materiales')
+                        ->label('¿Se utilizaron materiales?')
+                        ->default(false)
+                        ->live(),
+                    Forms\Components\Select::make('quien_suministro_materiales')
+                        ->label('¿Quién suministró los materiales?')
+                        ->options([
+                            'tecnico' => 'Técnico',
+                            'usuario' => 'Usuario',
+                            'empresa' => 'Empresa',
+                        ])
+                        ->placeholder('Seleccionar')
+                        ->visible(fn ($get) => (bool) $get('se_usaron_materiales')),
+                    Forms\Components\Toggle::make('usuario_asumio_costo')
+                        ->label('¿El usuario asumió algún costo?')
+                        ->default(false)
+                        ->live(),
+                    Forms\Components\TextInput::make('valor_pagado')
+                        ->label('Valor pagado')
+                        ->maxLength(100)
+                        ->visible(fn ($get) => (bool) $get('usuario_asumio_costo')),
+                    Forms\Components\Select::make('medio_pago')
+                        ->label('Medio de pago')
+                        ->options([
+                            'efectivo' => 'Efectivo',
+                            'transferencia' => 'Transferencia',
+                        ])
+                        ->placeholder('Seleccionar')
+                        ->visible(fn ($get) => (bool) $get('usuario_asumio_costo')),
+                    Forms\Components\Toggle::make('entrego_factura')
+                        ->label('¿Se entregó factura, IVT o soporte de cobro?')
+                        ->default(false),
+                ]),
+
+            Section::make('6. Trazabilidad y Contradicción')
+                ->icon('heroicon-o-document-check')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\TextInput::make('tecnico_dejo_documento')
+                        ->label('¿El técnico dejó algún documento (IVT, certificado)?')
+                        ->maxLength(255)
+                        ->columnSpanFull(),
+                    Forms\Components\Toggle::make('informaron_no_estaba')
+                        ->label('¿Le informaron erróneamente que no estaba en la vivienda?')
+                        ->default(false),
+                ]),
+
+            Section::make('7. Autorización y Firmas')
+                ->icon('heroicon-o-pencil')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Toggle::make('autoriza')
+                        ->label('¿El usuario autoriza la recolección de esta información?')
+                        ->required()
+                        ->default(false)
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('cedula_usuario')
+                        ->label('Cédula del Usuario')
+                        ->required()
+                        ->maxLength(20),
+                    Forms\Components\TextInput::make('cedula_auditor')
+                        ->label('Cédula del Auditor')
+                        ->required()
+                        ->maxLength(20),
+                    SignaturePad::make('firma_usuario')
+                        ->label('Firma del Usuario')
+                        ->columnSpanFull(),
+                    SignaturePad::make('firma_auditor')
+                        ->label('Firma del Auditor')
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('8. Observaciones')
+                ->icon('heroicon-o-pencil-square')
+                ->schema([
+                    Forms\Components\Textarea::make('observaciones')
+                        ->label('Observaciones')
+                        ->placeholder('Observaciones adicionales...')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('9. Soporte Fotográfico')
+                ->icon('heroicon-o-camera')
+                ->schema([
+                    Forms\Components\FileUpload::make('imagenes')
+                        ->label('Fotos')
+                        ->disk('s3')
+                        ->directory('reportes/'.$this->orden->numero_orden)
+                        ->fetchFileInformation(false)
+                        ->multiple()
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->maxFiles(10)
+                        ->maxSize(5120)
+                        ->reorderable()
+                        ->panelLayout('grid')
+                        ->extraInputAttributes(['capture' => 'environment'])
+                        ->columnSpanFull(),
+                ]),
+        ];
+    }
+
     /**
      * Despacha al método de guardado específico según el tipo de servicio.
      * Fraudes tiene lógica propia por el comercio y la ubicación; Vigilancia no cierra la orden.
@@ -710,6 +946,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
             TipoServicio::GestionLegal => $this->submitServicioGenerico($data),
             TipoServicio::Vigilancia => $this->submitVigilancia($data),
             TipoServicio::Gestion_Riesgo => $this->submitServicioGenerico($data),
+            TipoServicio::AuditoriaCampo => $this->submitAuditoriaCampo($data),
         };
     }
 
@@ -881,6 +1118,30 @@ class ReporteCreate extends Component implements HasActions, HasForms
         ]);
 
         // Vigilancia permanece EnProgreso hasta que el investigador la cierre manualmente
+        $this->dispatch('borrador-limpiar');
+
+        $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function submitAuditoriaCampo(array $data): void
+    {
+        $datosServicio = $data;
+        unset($datosServicio['observaciones'], $datosServicio['imagenes']);
+
+        reportes::create([
+            'orden_job_id' => $this->orden->id,
+            'personals_id' => auth()->user()->personals_id,
+            'numero_orden' => $this->orden->numero_orden,
+            'observaciones' => $data['observaciones'] ?? null,
+            'imagenes' => $data['imagenes'] ?? null,
+            'datos_servicio' => $datosServicio,
+        ]);
+
+        $this->orden->update(['estado' => EstadoOrden::EnRevision]);
+
+        $this->notificarCoordinador();
+
         $this->dispatch('borrador-limpiar');
 
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
