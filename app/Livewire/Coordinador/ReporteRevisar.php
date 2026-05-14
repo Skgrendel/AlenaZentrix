@@ -224,6 +224,50 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             ];
         }
 
+        if ($tipo === TipoServicio::AuditoriaCampo) {
+            $subtipo = match ($this->orden->tipo_auditoria_campo) {
+                'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
+                'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+                default => 'Auditoría de Campo',
+            };
+
+            return [
+                'subtipo' => $subtipo,
+                'fecha_hora_atencion' => $datos['fecha_hora_atencion'] ?? null,
+                'ciudad' => $datos['ciudad'] ?? null,
+                'celular_usuario' => $datos['celular_usuario'] ?? null,
+                'comentario_usuario' => $datos['comentario_usuario'] ?? null,
+                'comentario_tecnico' => $datos['comentario_tecnico'] ?? null,
+                'nombre_atiende' => $datos['nombre_atiende'] ?? null,
+                'vinculo_usuario' => $datos['vinculo_usuario'] ?? null,
+                'celular_atiende' => $datos['celular_atiende'] ?? null,
+                'recibio_visita' => $datos['recibio_visita'] ?? false,
+                'se_realizo_revision' => $datos['se_realizo_revision'] ?? false,
+                'fecha_ejecucion' => $datos['fecha_ejecucion'] ?? null,
+                'tiempo_ejecucion' => $datos['tiempo_ejecucion'] ?? null,
+                'descripcion_trabajo' => $datos['descripcion_trabajo'] ?? null,
+                'se_detecto_fuga' => $datos['se_detecto_fuga'] ?? false,
+                'ppm' => $datos['ppm'] ?? null,
+                'vol_porcentaje' => $datos['vol_porcentaje'] ?? null,
+                'problema_persiste' => $datos['problema_persiste'] ?? false,
+                'evidencia_reparacion' => $datos['evidencia_reparacion'] ?? false,
+                'servicio_correcto' => $datos['servicio_correcto'] ?? false,
+                'se_usaron_materiales' => $datos['se_usaron_materiales'] ?? false,
+                'quien_suministro_materiales' => $datos['quien_suministro_materiales'] ?? null,
+                'usuario_asumio_costo' => $datos['usuario_asumio_costo'] ?? false,
+                'valor_pagado' => $datos['valor_pagado'] ?? null,
+                'medio_pago' => $datos['medio_pago'] ?? null,
+                'entrego_factura' => $datos['entrego_factura'] ?? false,
+                'tecnico_dejo_documento' => $datos['tecnico_dejo_documento'] ?? null,
+                'informaron_no_estaba' => $datos['informaron_no_estaba'] ?? false,
+                'autoriza' => $datos['autoriza'] ?? false,
+                'firma_usuario' => $datos['firma_usuario'] ?? null,
+                'cedula_usuario' => $datos['cedula_usuario'] ?? null,
+                'firma_auditor' => $datos['firma_auditor'] ?? null,
+                'cedula_auditor' => $datos['cedula_auditor'] ?? null,
+            ];
+        }
+
         return [];
     }
 
