@@ -389,4 +389,110 @@ class ReportePdfController extends Controller
     {
         return 'data:'.$mimeType.';base64,'.base64_encode(file_get_contents($path));
     }
+
+    public function DownLoadInformeAuditoriaCampo(OrdenJob $orden): Response
+    {
+        abort_unless($orden->tipo_servicio === TipoServicio::AuditoriaCampo, 403);
+        abort_unless(auth()->user()->can('informes'), 403);
+
+        ini_set('memory_limit', '256M');
+
+        $reporteId = request()->query('reporte');
+
+        $orden->load(['personal', 'creadoPor']);
+
+        $query = $orden->reportes()->with([
+            'personal.usuario',
+            'auditoria.auditadoPor.personal',
+        ]);
+
+        $reporte = $reporteId
+            ? $query->where('id', $reporteId)->firstOrFail()
+            : $query->latest()->firstOrFail();
+
+        $logoProderi = $this->fileToBase64(public_path('assets/image/LOGO PRODERI CON SLOGAN.png'), 'image/png');
+
+        $imagenes = $this->resolveImagenes($reporte->imagenes ?? []);
+
+        /** @var User $firmante */
+        $firmante = auth()->user();
+
+        $firma = [
+            'nombre' => $firmante->fullName(),
+            'cargo' => $firmante->personal?->cargo,
+            'email' => $firmante->email,
+            'ip' => request()->ip(),
+            'agente' => request()->userAgent() ?? 'No disponible',
+            'fecha' => now()->format('d/m/Y H:i:s'),
+        ];
+
+        $subtipos = [
+            'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
+            'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+        ];
+
+        $datosOrden = $this->buildDatosOrden($orden);
+        $datosOrden['subtipo'] = $subtipos[$orden->tipo_auditoria_campo ?? ''] ?? ($orden->tipo_auditoria_campo ?? '—');
+
+        $datosReporte = $this->buildDatosReporteAuditoriaCampo($reporte);
+
+        $pdf = Pdf::loadView('pdf.reporte-auditoria-campo', [
+            'orden' => $orden,
+            'reporte' => $reporte,
+            'logoProderi' => $logoProderi,
+            'imagenes' => $imagenes,
+            'fechaGeneracion' => now()->format('d-m-Y'),
+            'firma' => $firma,
+            'datosOrden' => $datosOrden,
+            'datosReporte' => $datosReporte,
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download("reporte-auditoria-campo-{$orden->numero_orden}.pdf");
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildDatosReporteAuditoriaCampo(reportes $reporte): array
+    {
+        $datos = $reporte->datos_servicio ?? [];
+
+        return [
+            'fecha_hora_atencion' => $datos['fecha_hora_atencion'] ?? null,
+            'ciudad' => $datos['ciudad'] ?? null,
+            'celular_usuario' => $datos['celular_usuario'] ?? null,
+            'comentario_usuario' => $datos['comentario_usuario'] ?? null,
+            'comentario_tecnico' => $datos['comentario_tecnico'] ?? null,
+            'nombre_atiende' => $datos['nombre_atiende'] ?? null,
+            'vinculo_usuario' => $datos['vinculo_usuario'] ?? null,
+            'celular_atiende' => $datos['celular_atiende'] ?? null,
+            'recibio_visita' => (bool) ($datos['recibio_visita'] ?? false),
+            'se_realizo_revision' => (bool) ($datos['se_realizo_revision'] ?? false),
+            'fecha_ejecucion' => $datos['fecha_ejecucion'] ?? null,
+            'tiempo_ejecucion' => $datos['tiempo_ejecucion'] ?? null,
+            'descripcion_trabajo' => $datos['descripcion_trabajo'] ?? null,
+            'se_detecto_fuga' => (bool) ($datos['se_detecto_fuga'] ?? false),
+            'ppm' => $datos['ppm'] ?? null,
+            'vol_porcentaje' => $datos['vol_porcentaje'] ?? null,
+            'problema_persiste' => (bool) ($datos['problema_persiste'] ?? false),
+            'evidencia_reparacion' => (bool) ($datos['evidencia_reparacion'] ?? false),
+            'servicio_correcto' => (bool) ($datos['servicio_correcto'] ?? false),
+            'se_usaron_materiales' => (bool) ($datos['se_usaron_materiales'] ?? false),
+            'quien_suministro_materiales' => $datos['quien_suministro_materiales'] ?? null,
+            'usuario_asumio_costo' => (bool) ($datos['usuario_asumio_costo'] ?? false),
+            'valor_pagado' => $datos['valor_pagado'] ?? null,
+            'medio_pago' => $datos['medio_pago'] ?? null,
+            'entrego_factura' => (bool) ($datos['entrego_factura'] ?? false),
+            'tecnico_dejo_documento' => $datos['tecnico_dejo_documento'] ?? null,
+            'informaron_no_estaba' => (bool) ($datos['informaron_no_estaba'] ?? false),
+            'autoriza' => (bool) ($datos['autoriza'] ?? false),
+            'firma_usuario' => $datos['firma_usuario'] ?? null,
+            'cedula_usuario' => $datos['cedula_usuario'] ?? null,
+            'firma_auditor' => $datos['firma_auditor'] ?? null,
+            'cedula_auditor' => $datos['cedula_auditor'] ?? null,
+            'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
+        ];
+    }
 }
