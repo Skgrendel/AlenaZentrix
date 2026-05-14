@@ -358,6 +358,31 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     Forms\Components\TextInput::make('barrio')->label('Municipio')->maxLength(255),
                 ]),
 
+            // ── Auditoría de Campo ────────────────────────────────────────
+            Section::make('Datos de Auditoría de Campo')
+                ->columns(2)
+                ->visible($tipoServicio === TipoServicio::AuditoriaCampo)
+                ->schema([
+                    Forms\Components\Select::make('tipo_auditoria_campo')
+                        ->label('Subtipo de Auditoría')
+                        ->options([
+                            'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
+                            'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+                        ])
+                        ->placeholder('Seleccionar')
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('cliente')
+                        ->label('Nombre del Usuario')
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('contrato')
+                        ->label('Contrato')
+                        ->maxLength(255),
+                    Forms\Components\TextInput::make('direccion')
+                        ->label('Dirección')
+                        ->maxLength(255)
+                        ->columnSpanFull(),
+                ]),
+
             // ── Vigilancia ────────────────────────────────────────────────
             Section::make('Datos del Punto Vigilado')
                 ->columns(2)
