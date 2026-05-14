@@ -343,6 +343,18 @@
             @endif
         </div>
 
+        {{-- ── URLs de Evidencia ── --}}
+        @if (!empty($datosReporte['urls_evidencia']))
+            <div class="section">
+                <div class="section-title">URLS DE EVIDENCIA / DOCUMENTOS</div>
+                <div class="info-box">
+                    @foreach ($datosReporte['urls_evidencia'] as $url)
+                        <div style="font-size:8pt; margin:2px 0; word-wrap:break-word;">{{ $url }}</div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         {{-- ── Destinación ── --}}
         @include('pdf.partials.destinacion-informe')
 

@@ -265,6 +265,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
                 'cedula_usuario' => $datos['cedula_usuario'] ?? null,
                 'firma_auditor' => $datos['firma_auditor'] ?? null,
                 'cedula_auditor' => $datos['cedula_auditor'] ?? null,
+                'urls_evidencia' => $datos['urls_evidencia'] ?? [],
             ];
         }
 

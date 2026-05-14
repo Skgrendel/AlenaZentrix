@@ -531,6 +531,22 @@
                     </div>
                 </div>
 
+            @if (!empty($datosServicio['urls_evidencia']))
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">URLs de Evidencia / Documentos</h3>
+                    <ul class="space-y-1">
+                        @foreach ($datosServicio['urls_evidencia'] as $url)
+                            <li>
+                                <a href="{{ $url }}" target="_blank" rel="noopener"
+                                   class="break-all text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
+                                    {{ $url }}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             @endif
             {{-- ═══ FIN secciones por servicio ═══ --}}
 

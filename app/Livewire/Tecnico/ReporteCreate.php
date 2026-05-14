@@ -902,7 +902,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('9. Soporte Fotográfico')
+            Section::make('9. Soporte Fotográfico y Evidencias')
                 ->icon('heroicon-o-camera')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
@@ -918,6 +918,11 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->reorderable()
                         ->panelLayout('grid')
                         ->extraInputAttributes(['capture' => 'environment'])
+                        ->columnSpanFull(),
+                    Forms\Components\TagsInput::make('urls_evidencia')
+                        ->label('URLs de evidencia / documentos')
+                        ->placeholder('Pega una URL y presiona Enter')
+                        ->hint('Agrega links a documentos, Google Drive, etc.')
                         ->columnSpanFull(),
                 ]),
         ];
