@@ -14,6 +14,7 @@ enum TipoServicio: string
     case GestionLegal = 'gestion_legal';
     case Vigilancia = 'vigilancia';
     case Gestion_Riesgo = 'Gestión de Riesgo';
+    case AuditoriaCampo = 'auditoria_campo';
 
     public function label(): string
     {
@@ -23,6 +24,7 @@ enum TipoServicio: string
             self::GestionLegal => 'Gestión Legal',
             self::Vigilancia => 'Dispositivos de Vigilancia',
             self::Gestion_Riesgo => 'Gestión de Riesgo',
+            self::AuditoriaCampo => 'Auditorías de Campo',
         };
     }
 
@@ -34,6 +36,7 @@ enum TipoServicio: string
             self::GestionLegal => 'info',
             self::Vigilancia => 'success',
             self::Gestion_Riesgo => 'primary',
+            self::AuditoriaCampo => 'purple',
         };
     }
 

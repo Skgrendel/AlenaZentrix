@@ -44,6 +44,7 @@ class OrdenJob extends Model
         'numero_noticia_criminal',
         'tipo_investigacion',
         'tipo_gestion_legal',
+        'tipo_auditoria_campo',
         'documentos',
         'prioridad',
         'estado',
