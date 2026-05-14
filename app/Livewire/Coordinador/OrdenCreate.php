@@ -167,6 +167,33 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->maxLength(1000),
                     ]),
 
+                // ── Sección: Auditoría de Campo ───────────────────────────────
+                Section::make('Datos de Auditoría de Campo')
+                    ->columns(2)
+                    ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
+                    ->schema([
+                        Forms\Components\Select::make('tipo_auditoria_campo')
+                            ->label('Subtipo de Auditoría')
+                            ->options([
+                                'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
+                                'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+                            ])
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
+                            ->placeholder('Seleccionar')
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('cliente')
+                            ->label('Nombre del Usuario')
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('contrato')
+                            ->label('Contrato')
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('direccion')
+                            ->label('Dirección')
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+                    ]),
+
                 // ── Sección: Vigilancia ───────────────────────────────────
                 Section::make('Datos del Punto Vigilado')
                     ->columns(2)
