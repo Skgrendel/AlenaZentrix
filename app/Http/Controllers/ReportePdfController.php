@@ -455,6 +455,81 @@ class ReportePdfController extends Controller
     /**
      * @return array<string, mixed>
      */
+    public function DownLoadInformeGestionRiesgo(OrdenJob $orden): Response
+    {
+        abort_unless($orden->tipo_servicio === TipoServicio::Gestion_Riesgo, 403);
+        abort_unless(auth()->user()->can('informes'), 403);
+
+        ini_set('memory_limit', '256M');
+
+        $reporteId = request()->query('reporte');
+
+        $orden->load(['personal', 'creadoPor']);
+
+        $query = $orden->reportes()->with([
+            'personal.usuario',
+            'auditoria.auditadoPor.personal',
+        ]);
+
+        $reporte = $reporteId
+            ? $query->where('id', $reporteId)->firstOrFail()
+            : $query->latest()->firstOrFail();
+
+        $logoProderi = $this->fileToBase64(public_path('assets/image/LOGO PRODERI CON SLOGAN.png'), 'image/png');
+
+        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif'];
+        $imagePaths = collect($reporte->imagenes ?? [])
+            ->filter(fn (string $path) => in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), $imageExtensions, true))
+            ->values()
+            ->all();
+
+        $imagenes = $this->resolveImagenes($imagePaths);
+
+        $investigador = $reporte->personal;
+
+        $firma = [
+            'nombre' => trim(($investigador?->nombres ?? '').' '.($investigador?->apellidos ?? '')) ?: 'Sin nombre',
+            'cargo' => $investigador?->cargo,
+            'email' => $investigador?->usuario?->email ?? '—',
+            'ip' => request()->ip(),
+            'agente' => request()->userAgent() ?? 'No disponible',
+            'fecha' => $reporte->created_at?->format('d/m/Y H:i:s') ?? now()->format('d/m/Y H:i:s'),
+        ];
+
+        $datosOrden = $this->buildDatosOrden($orden);
+        $datosReporte = $this->buildDatosReporteGestionRiesgo($reporte);
+
+        $pdf = Pdf::loadView('pdf.reporte-gestion-riesgo', [
+            'orden' => $orden,
+            'reporte' => $reporte,
+            'logoProderi' => $logoProderi,
+            'imagenes' => $imagenes,
+            'fechaGeneracion' => now()->format('d-m-Y'),
+            'firma' => $firma,
+            'datosOrden' => $datosOrden,
+            'datosReporte' => $datosReporte,
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download("reporte-gestion-riesgo-{$orden->numero_orden}.pdf");
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildDatosReporteGestionRiesgo(reportes $reporte): array
+    {
+        return [
+            'actividades' => $this->normalizeActividades($reporte->actividades ?? '[]'),
+            'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
+            'video' => $reporte->video ?? null,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private function buildDatosReporteAuditoriaCampo(reportes $reporte): array
     {
         $datos = $reporte->datos_servicio ?? [];
