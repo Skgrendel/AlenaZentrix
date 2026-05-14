@@ -796,7 +796,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
                     Forms\Components\Toggle::make('se_detecto_fuga')
                         ->label('¿Se detectó fuga o falla?')
                         ->default(false)
-                        ->live(),
+                        ->live()
+                        ->columnSpanFull(),
                     Forms\Components\TextInput::make('ppm')
                         ->label('Medición PPM')
                         ->maxLength(50)
@@ -813,7 +814,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->default(false),
                     Forms\Components\Toggle::make('servicio_correcto')
                         ->label('¿El servicio funciona correctamente?')
-                        ->default(false),
+                        ->default(false)
+                        ->columnSpanFull(),
                 ]),
 
             Section::make('5. Materiales y Cobros')
@@ -823,7 +825,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
                     Forms\Components\Toggle::make('se_usaron_materiales')
                         ->label('¿Se utilizaron materiales?')
                         ->default(false)
-                        ->live(),
+                        ->live()
+                        ->columnSpanFull(),
                     Forms\Components\Select::make('quien_suministro_materiales')
                         ->label('¿Quién suministró los materiales?')
                         ->options([
@@ -832,11 +835,13 @@ class ReporteCreate extends Component implements HasActions, HasForms
                             'empresa' => 'Empresa',
                         ])
                         ->placeholder('Seleccionar')
-                        ->visible(fn ($get) => (bool) $get('se_usaron_materiales')),
+                        ->visible(fn ($get) => (bool) $get('se_usaron_materiales'))
+                        ->columnSpanFull(),
                     Forms\Components\Toggle::make('usuario_asumio_costo')
                         ->label('¿El usuario asumió algún costo?')
                         ->default(false)
-                        ->live(),
+                        ->live()
+                        ->columnSpanFull(),
                     Forms\Components\TextInput::make('valor_pagado')
                         ->label('Valor pagado')
                         ->maxLength(100)
@@ -851,7 +856,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->visible(fn ($get) => (bool) $get('usuario_asumio_costo')),
                     Forms\Components\Toggle::make('entrego_factura')
                         ->label('¿Se entregó factura, IVT o soporte de cobro?')
-                        ->default(false),
+                        ->default(false)
+                        ->columnSpanFull(),
                 ]),
 
             Section::make('6. Trazabilidad y Contradicción')

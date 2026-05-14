@@ -47,6 +47,12 @@
         .firma-canvas-img { max-width: 100%; max-height: 100px; border: 1px solid #003E72; border-radius: 4px; background: white; display: block; margin: 0 auto; }
         .firma-canvas-label { font-size: 8pt; font-weight: bold; color: #003E72; margin-bottom: 4px; }
         .firma-canvas-cedula { font-size: 7.5pt; color: #64748b; margin-top: 3px; }
+        .col2-tabla { width: 100%; border-collapse: collapse; }
+        .col2-lbl { font-weight: bold; color: #003E72; font-size: 8pt; vertical-align: top; padding: 3px 8px 3px 0; width: 140px; }
+        .col2-val { font-size: 8pt; vertical-align: top; padding: 3px 10px 3px 0; }
+        .col2-sep { width: 1px; border-left: 1px solid #e5e7eb; padding: 0; }
+        .col2-lbl-r { font-weight: bold; color: #003E72; font-size: 8pt; vertical-align: top; padding: 3px 8px 3px 10px; width: 140px; }
+        .col2-val-r { font-size: 8pt; vertical-align: top; padding: 3px 0; }
     </style>
 </head>
 <body>
@@ -183,38 +189,27 @@
         <div class="section">
             <div class="section-title">VALIDACIÓN DE LA ATENCIÓN Y EJECUCIÓN</div>
             <div class="info-box">
-                <div class="info-grid">
-                    <div class="info-row">
-                        <div class="info-label">¿Recibió la visita?</div>
-                        <div class="info-value">
-                            <span class="badge {{ $datosReporte['recibio_visita'] ? 'badge-green' : 'badge-red' }}">
-                                {{ $datosReporte['recibio_visita'] ? 'SÍ' : 'NO' }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">¿Se realizó revisión?</div>
-                        <div class="info-value">
-                            <span class="badge {{ $datosReporte['se_realizo_revision'] ? 'badge-green' : 'badge-red' }}">
-                                {{ $datosReporte['se_realizo_revision'] ? 'SÍ' : 'NO' }}
-                            </span>
-                        </div>
-                    </div>
-                    @if ($datosReporte['fecha_ejecucion'])
-                        <div class="info-row">
-                            <div class="info-label">Fecha de ejecución:</div>
-                            <div class="info-value">{{ \Illuminate\Support\Carbon::parse($datosReporte['fecha_ejecucion'])->format('d/m/Y') }}</div>
-                        </div>
+                <table class="col2-tabla">
+                    <tr>
+                        <td class="col2-lbl">¿Recibió la visita?</td>
+                        <td class="col2-val"><span class="badge {{ $datosReporte['recibio_visita'] ? 'badge-green' : 'badge-red' }}">{{ $datosReporte['recibio_visita'] ? 'SÍ' : 'NO' }}</span></td>
+                        <td class="col2-sep"></td>
+                        <td class="col2-lbl-r">¿Se realizó revisión?</td>
+                        <td class="col2-val-r"><span class="badge {{ $datosReporte['se_realizo_revision'] ? 'badge-green' : 'badge-red' }}">{{ $datosReporte['se_realizo_revision'] ? 'SÍ' : 'NO' }}</span></td>
+                    </tr>
+                    @if ($datosReporte['fecha_ejecucion'] || $datosReporte['tiempo_ejecucion'])
+                        <tr>
+                            <td class="col2-lbl">Fecha de ejecución:</td>
+                            <td class="col2-val">{{ $datosReporte['fecha_ejecucion'] ? \Illuminate\Support\Carbon::parse($datosReporte['fecha_ejecucion'])->format('d/m/Y') : '—' }}</td>
+                            <td class="col2-sep"></td>
+                            <td class="col2-lbl-r">Tiempo de ejecución:</td>
+                            <td class="col2-val-r">{{ $datosReporte['tiempo_ejecucion'] ?? '—' }}</td>
+                        </tr>
                     @endif
-                    @if ($datosReporte['tiempo_ejecucion'])
-                        <div class="info-row">
-                            <div class="info-label">Tiempo de ejecución:</div>
-                            <div class="info-value">{{ $datosReporte['tiempo_ejecucion'] }}</div>
-                        </div>
-                    @endif
-                </div>
+                </table>
             </div>
             @if ($datosReporte['descripcion_trabajo'])
+                <div style="font-size:8pt; font-weight:bold; color:#003E72; margin:6px 0 2px 0;">Descripción del trabajo realizado:</div>
                 <div class="content-box" style="margin-top:4px;">{{ $datosReporte['descripcion_trabajo'] }}</div>
             @endif
         </div>
@@ -223,44 +218,28 @@
         <div class="section">
             <div class="section-title">HALLAZGOS TÉCNICOS</div>
             <div class="info-box">
-                <div class="info-grid">
-                    <div class="info-row">
-                        <div class="info-label">¿Se detectó fuga/falla?</div>
-                        <div class="info-value">
-                            <span class="badge {{ $datosReporte['se_detecto_fuga'] ? 'badge-red' : 'badge-green' }}">
-                                {{ $datosReporte['se_detecto_fuga'] ? 'SÍ' : 'NO' }}
-                            </span>
+                <table class="col2-tabla">
+                    <tr>
+                        <td class="col2-lbl">¿Se detectó fuga/falla?</td>
+                        <td class="col2-val">
+                            <span class="badge {{ $datosReporte['se_detecto_fuga'] ? 'badge-red' : 'badge-green' }}">{{ $datosReporte['se_detecto_fuga'] ? 'SÍ' : 'NO' }}</span>
                             @if ($datosReporte['se_detecto_fuga'])
-                                @if ($datosReporte['ppm']) &nbsp; PPM: {{ $datosReporte['ppm'] }} @endif
-                                @if ($datosReporte['vol_porcentaje']) &nbsp; VOL%: {{ $datosReporte['vol_porcentaje'] }} @endif
+                                @if ($datosReporte['ppm']) &nbsp;PPM: {{ $datosReporte['ppm'] }} @endif
+                                @if ($datosReporte['vol_porcentaje']) &nbsp;VOL%: {{ $datosReporte['vol_porcentaje'] }} @endif
                             @endif
-                        </div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">¿Problema persiste?</div>
-                        <div class="info-value">
-                            <span class="badge {{ $datosReporte['problema_persiste'] ? 'badge-red' : 'badge-green' }}">
-                                {{ $datosReporte['problema_persiste'] ? 'SÍ' : 'NO' }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">¿Evidencia de reparación?</div>
-                        <div class="info-value">
-                            <span class="badge {{ $datosReporte['evidencia_reparacion'] ? 'badge-green' : 'badge-red' }}">
-                                {{ $datosReporte['evidencia_reparacion'] ? 'SÍ' : 'NO' }}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">¿Servicio correcto?</div>
-                        <div class="info-value">
-                            <span class="badge {{ $datosReporte['servicio_correcto'] ? 'badge-green' : 'badge-red' }}">
-                                {{ $datosReporte['servicio_correcto'] ? 'SÍ' : 'NO' }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                        </td>
+                        <td class="col2-sep"></td>
+                        <td class="col2-lbl-r">¿Problema persiste?</td>
+                        <td class="col2-val-r"><span class="badge {{ $datosReporte['problema_persiste'] ? 'badge-red' : 'badge-green' }}">{{ $datosReporte['problema_persiste'] ? 'SÍ' : 'NO' }}</span></td>
+                    </tr>
+                    <tr>
+                        <td class="col2-lbl">¿Evidencia de reparación?</td>
+                        <td class="col2-val"><span class="badge {{ $datosReporte['evidencia_reparacion'] ? 'badge-green' : 'badge-red' }}">{{ $datosReporte['evidencia_reparacion'] ? 'SÍ' : 'NO' }}</span></td>
+                        <td class="col2-sep"></td>
+                        <td class="col2-lbl-r">¿Servicio correcto?</td>
+                        <td class="col2-val-r"><span class="badge {{ $datosReporte['servicio_correcto'] ? 'badge-green' : 'badge-red' }}">{{ $datosReporte['servicio_correcto'] ? 'SÍ' : 'NO' }}</span></td>
+                    </tr>
+                </table>
             </div>
         </div>
 
@@ -268,30 +247,30 @@
         <div class="section">
             <div class="section-title">MATERIALES Y COBROS</div>
             <div class="info-box">
-                <div class="info-grid">
-                    <div class="info-row">
-                        <div class="info-label">¿Se usaron materiales?</div>
-                        <div class="info-value">{{ $datosReporte['se_usaron_materiales'] ? 'SÍ' : 'NO' }}{{ $datosReporte['quien_suministro_materiales'] ? ' — Suministrado por: '.ucfirst($datosReporte['quien_suministro_materiales']) : '' }}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">¿Usuario asumió costo?</div>
-                        <div class="info-value">{{ $datosReporte['usuario_asumio_costo'] ? 'SÍ' : 'NO' }}{{ $datosReporte['valor_pagado'] ? ' — $'.$datosReporte['valor_pagado'].' ('.($datosReporte['medio_pago'] ?? '—').')' : '' }}</div>
-                    </div>
-                    <div class="info-row">
-                        <div class="info-label">¿Entregó factura/IVT?</div>
-                        <div class="info-value">{{ $datosReporte['entrego_factura'] ? 'SÍ' : 'NO' }}</div>
-                    </div>
+                <table class="col2-tabla">
+                    <tr>
+                        <td class="col2-lbl">¿Se usaron materiales?</td>
+                        <td class="col2-val">{{ $datosReporte['se_usaron_materiales'] ? 'SÍ' : 'NO' }}{{ $datosReporte['quien_suministro_materiales'] ? ' — Suministrado por: '.ucfirst($datosReporte['quien_suministro_materiales']) : '' }}</td>
+                        <td class="col2-sep"></td>
+                        <td class="col2-lbl-r">¿Usuario asumió costo?</td>
+                        <td class="col2-val-r">{{ $datosReporte['usuario_asumio_costo'] ? 'SÍ' : 'NO' }}{{ $datosReporte['valor_pagado'] ? ' — $'.$datosReporte['valor_pagado'].' ('.($datosReporte['medio_pago'] ?? '—').')' : '' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="col2-lbl">¿Entregó factura/IVT?</td>
+                        <td class="col2-val">{{ $datosReporte['entrego_factura'] ? 'SÍ' : 'NO' }}</td>
+                        <td class="col2-sep"></td>
+                        <td class="col2-lbl-r">¿Informaron que no estaba?</td>
+                        <td class="col2-val-r">{{ $datosReporte['informaron_no_estaba'] ? 'SÍ' : 'NO' }}</td>
+                    </tr>
                     @if ($datosReporte['tecnico_dejo_documento'])
-                        <div class="info-row">
-                            <div class="info-label">Documento dejado:</div>
-                            <div class="info-value">{{ $datosReporte['tecnico_dejo_documento'] }}</div>
-                        </div>
+                        <tr>
+                            <td class="col2-lbl">Documento dejado:</td>
+                            <td class="col2-val">{{ $datosReporte['tecnico_dejo_documento'] }}</td>
+                            <td class="col2-sep"></td>
+                            <td colspan="2"></td>
+                        </tr>
                     @endif
-                    <div class="info-row">
-                        <div class="info-label">¿Informaron que no estaba?</div>
-                        <div class="info-value">{{ $datosReporte['informaron_no_estaba'] ? 'SÍ' : 'NO' }}</div>
-                    </div>
-                </div>
+                </table>
             </div>
         </div>
 
