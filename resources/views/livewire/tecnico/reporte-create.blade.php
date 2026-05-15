@@ -132,6 +132,23 @@
                         {{ $orden->barrio }}</dd>
                 </div>
             </dl>
+            @if ($orden->tipo_servicio === \App\Enums\TipoServicio::Fraudes)
+                <div class="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-700/50 flex items-center gap-3">
+                    <flux:button size="sm" icon="map-pin" wire:click="buscarUbicacionGis" wire:loading.attr="disabled" wire:target="buscarUbicacionGis">
+                        <span wire:loading.remove wire:target="buscarUbicacionGis">Consultar ubicación GIS</span>
+                        <span wire:loading wire:target="buscarUbicacionGis">Consultando...</span>
+                    </flux:button>
+                    @if ($mapaGisUrl)
+                        <a href="{{ $mapaGisUrl }}" target="_blank" rel="noopener noreferrer"
+                            class="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            Ver en Google Maps
+                        </a>
+                    @endif
+                </div>
+            @endif
         </div>
     @endif
     @if ($orden->antecedente)

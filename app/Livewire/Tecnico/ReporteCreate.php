@@ -21,12 +21,14 @@ use App\Models\TipoImposibilidad;
 use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
 use App\Models\ubicacion;
+use App\Services\coordinador\DataGisServices;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\View\View;
@@ -57,6 +59,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
 
     /** @var string|null Longitud capturada en el dispositivo del técnico; nullable si el navegador deniega la geolocalización. */
     public ?string $longitud = null;
+
+    public ?string $mapaGisUrl = null;
 
     /** @var array<string, mixed> */
     public array $data = [];
@@ -1058,7 +1062,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
     private function cargarFotoDetectorData(?string $fotoDetectorFuga): ?string
     {
 
-    // Si no hay foto del detector de fuga, retornar null
+        // Si no hay foto del detector de fuga, retornar null
         if (! $fotoDetectorFuga) {
             return null;
         }
@@ -1246,7 +1250,26 @@ class ReporteCreate extends Component implements HasActions, HasForms
         }
     }
 
-    // Renderiza la vista del componente Livewire para crear el reporte, pasando la orden y el esquema de formulario correspondiente según el tipo de servicio.
+    public function buscarUbicacionGis(): void
+    {
+        if (! $this->orden->contrato) {
+            return;
+        }
+
+        $resultado = (new DataGisServices)->DataGisubicacion($this->orden->contrato);
+
+        if (isset($resultado['error'])) {
+            Notification::make()
+                ->title('No se pudo obtener la ubicación')
+                ->body($resultado['error'])
+                ->warning()
+                ->send();
+
+            return;
+        }
+
+        $this->mapaGisUrl = $resultado['geometry']['link'];
+    }
 
     public function render(): View
     {
