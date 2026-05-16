@@ -25,17 +25,17 @@
 
             <div>
                 <flux:label>Desde</flux:label>
-                <flux:input type="date" wire:model.change="fechaDesde" />
+                <flux:input type="date" wire:model="fechaDesde" />
             </div>
 
             <div>
                 <flux:label>Hasta</flux:label>
-                <flux:input type="date" wire:model.change="fechaHasta" />
+                <flux:input type="date" wire:model="fechaHasta" />
             </div>
 
             <div>
                 <flux:label>Investigador</flux:label>
-                <flux:select wire:model.change="tecnicoId">
+                <flux:select wire:model="tecnicoId">
                     <flux:select.option value="">Todos</flux:select.option>
                     @foreach ($tecnicos as $id => $nombre)
                         <flux:select.option value="{{ $id }}">{{ $nombre }}</flux:select.option>
@@ -45,7 +45,7 @@
 
             <div>
                 <flux:label>Estado</flux:label>
-                <flux:select wire:model.change="estadoReporte">
+                <flux:select wire:model="estadoReporte">
                     <flux:select.option value="">Todos</flux:select.option>
                     <flux:select.option value="pendiente">Pendiente</flux:select.option>
                     <flux:select.option value="revisado">Revisado</flux:select.option>
@@ -55,7 +55,7 @@
 
             <div>
                 <flux:label>N° Orden</flux:label>
-                <flux:input type="text" wire:model.change="ordenTrabajo" placeholder="ORD-..." />
+                <flux:input type="text" wire:model="ordenTrabajo" placeholder="ORD-..." />
             </div>
         </div>
 
@@ -63,9 +63,14 @@
             <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
                 {{ count($marcadores) }} {{ count($marcadores) === 1 ? 'ubicación encontrada' : 'ubicaciones encontradas' }}
             </flux:text>
-            <flux:button wire:click="limpiarFiltros" variant="ghost" size="sm" icon="x-mark">
-                Limpiar filtros
-            </flux:button>
+            <div class="flex items-center gap-2">
+                <flux:button wire:click="limpiarFiltros" variant="ghost" size="sm" icon="x-mark">
+                    Limpiar filtros
+                </flux:button>
+                <flux:button wire:click="filtrar" variant="primary" size="sm" icon="magnifying-glass">
+                    Filtrar
+                </flux:button>
+            </div>
         </div>
     </div>
 

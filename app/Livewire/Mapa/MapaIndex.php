@@ -87,27 +87,7 @@ class MapaIndex extends Component
             ->all();
     }
 
-    public function updatedFechaDesde(): void
-    {
-        $this->dispatch('markers-updated', marcadores: $this->marcadores);
-    }
-
-    public function updatedFechaHasta(): void
-    {
-        $this->dispatch('markers-updated', marcadores: $this->marcadores);
-    }
-
-    public function updatedTecnicoId(): void
-    {
-        $this->dispatch('markers-updated', marcadores: $this->marcadores);
-    }
-
-    public function updatedEstadoReporte(): void
-    {
-        $this->dispatch('markers-updated', marcadores: $this->marcadores);
-    }
-
-    public function updatedOrdenTrabajo(): void
+    public function filtrar(): void
     {
         $this->dispatch('markers-updated', marcadores: $this->marcadores);
     }
