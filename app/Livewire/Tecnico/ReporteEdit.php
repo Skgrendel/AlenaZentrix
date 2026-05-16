@@ -19,6 +19,7 @@ use App\Models\TipoComercio;
 use App\Models\TipoImposibilidad;
 use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
+use App\Models\ubicacion;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
@@ -50,6 +51,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
     public OrdenJob $orden;
 
     public reportes $reporte;
+
+    public ?string $latitud = null;
+
+    public ?string $longitud = null;
 
     /** @var array<string, mixed> */
     public array $data = [];
@@ -887,6 +892,23 @@ class ReporteEdit extends Component implements HasActions, HasForms
         };
     }
 
+    private function actualizarUbicacion(): void
+    {
+        if ($this->reporte->ubicacion) {
+            $this->reporte->ubicacion->update([
+                'latitud' => $this->latitud,
+                'longitud' => $this->longitud,
+            ]);
+        } else {
+            $ubicacionRecord = ubicacion::create([
+                'latitud' => $this->latitud,
+                'longitud' => $this->longitud,
+                'direccion' => $this->orden->direccion,
+            ]);
+            $this->reporte->update(['ubicacions_id' => $ubicacionRecord->id]);
+        }
+    }
+
     /** @param array<string, mixed> $data */
     private function submitFraudes(array $data): void
     {
@@ -906,6 +928,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
             ...$data,
             'imagenes' => $imagenes,
         ]);
+
+        $this->actualizarUbicacion();
 
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
 
@@ -1005,6 +1029,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
             'video' => $data['video'] ?? null,
             'datos_servicio' => $datosServicio,
         ]);
+
+        $this->actualizarUbicacion();
 
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
 
