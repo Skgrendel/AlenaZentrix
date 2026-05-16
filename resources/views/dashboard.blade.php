@@ -9,11 +9,14 @@
         <h1 class="text-xl font-semibold text-zinc-800 dark:text-zinc-100">
             Bienvenido, {{ Auth::user()->fullName() }}
         </h1>
+       <p class="text-sm text-zinc-500 dark:text-zinc-400 capitalize">
+    Rol Asignado: {{ Auth::user()->getRoleNames()->first() ?? 'Sin Rol Asignado' }}
+</p>
         <p class="text-sm text-zinc-500 dark:text-zinc-400 capitalize">
             {{ now()->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
         </p>
          <p class="text-sm text-zinc-500 dark:text-zinc-400 capitalize">
-            {{ Auth::user()->company->nombre ?? 'Sin Empresa' }}
+           Empresa: {{ Auth::user()->company->nombre ?? 'Sin Empresa' }}
         </p>
     </div>
 
