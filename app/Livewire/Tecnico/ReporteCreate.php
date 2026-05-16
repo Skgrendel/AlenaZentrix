@@ -1099,6 +1099,13 @@ class ReporteCreate extends Component implements HasActions, HasForms
         $datosServicio = $data;
         // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
         unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
+        // Crear ubicación con latitud, longitud y dirección de la orden
+        $ubicacionRecord = ubicacion::create([
+            'latitud' => $this->latitud,
+            'longitud' => $this->longitud,
+            'direccion' => $this->orden->direccion ?? null,
+        ]);
+
         // Crear el reporte con los datos del formulario y las relaciones con orden y personal
         reportes::create([
             'orden_job_id' => $this->orden->id,
@@ -1108,8 +1115,11 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
             'datos_servicio' => $datosServicio,
+            'ubicacions_id' => $ubicacionRecord->id,
             'actividades' => $data['actividades'] ?? null,
         ]);
+
+        
         // Actualizar estado de la orden a EnRevision para que el coordinador pueda revisarla
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
         // Notificar al coordinador que hay un nuevo reporte para revisar
@@ -1127,6 +1137,12 @@ class ReporteCreate extends Component implements HasActions, HasForms
         $datosServicio = $data;
         // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
         unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
+        // Crear ubicación con latitud, longitud y dirección de la orden
+        $ubicacionRecord = ubicacion::create([
+            'latitud' => $this->latitud,
+            'longitud' => $this->longitud,
+            'direccion' => $this->orden->direccion ?? null,
+        ]);
         // Crear el reporte con los datos del formulario y las relaciones con orden y personal
         reportes::create([
             'orden_job_id' => $this->orden->id,
@@ -1136,6 +1152,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
             'datos_servicio' => $datosServicio,
+            'ubicacions_id' => $ubicacionRecord->id,
             'actividades' => $data['actividades'] ?? null,
         ]);
 
@@ -1151,6 +1168,12 @@ class ReporteCreate extends Component implements HasActions, HasForms
         $datosServicio = $data;
         // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
         unset($datosServicio['observaciones'], $datosServicio['imagenes']);
+        // Crear ubicación con latitud, longitud y dirección de la orden
+        $ubicacionRecord = ubicacion::create([
+            'latitud' => $this->latitud,
+            'longitud' => $this->longitud,
+            'direccion' => $this->orden->direccion ?? null,
+        ]);
         // Crear el reporte con los datos del formulario y las relaciones con orden y personal
         reportes::create([
             'orden_job_id' => $this->orden->id,
@@ -1158,6 +1181,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'numero_orden' => $this->orden->numero_orden,
             'observaciones' => $data['observaciones'] ?? null,
             'imagenes' => $data['imagenes'] ?? null,
+            'ubicacions_id' => $ubicacionRecord->id,
             'datos_servicio' => $datosServicio,
         ]);
         // Actualizar estado de la orden a EnRevision para que el coordinador pueda revisarla
