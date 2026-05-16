@@ -846,8 +846,14 @@
                     <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                         Video</h3>
                     <a href="{{ $reporte->video }}" target="_blank" rel="noopener"
-                        class="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
-                        {{ $reporte->video }}
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-all bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-offset-slate-900">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z">
+                            </path>
+                        </svg>
+                        Ver video
                     </a>
                 </div>
             @endif
