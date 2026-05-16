@@ -25,7 +25,7 @@ return new class extends Migration
             $table->uuid('marca_medidor_id')->nullable();
             $table->uuid('marca_regulador_id')->nullable();
             $table->json('imagenes')->nullable();
-            $table->string('video')->nullable();
+            $table->text('video')->nullable();
             $table->uuid('tipo_notificacion_alerta_id')->nullable();
             $table->boolean('coincide_medidor')->nullable();
             $table->boolean('hay_fuga_gas')->default(false);
