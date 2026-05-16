@@ -1,15 +1,36 @@
 <x-layouts::app :title="__('Dashboard')">
     <div class="flex flex-col gap-6">
 
-        {{-- Saludo --}}
-        <div>
-            <h1 class="text-xl font-semibold text-zinc-800 dark:text-zinc-100">
-                Bienvenido, {{ Auth::user()->fullName() }}
-            </h1>
-            <p class="text-sm text-zinc-500 dark:text-zinc-400">
-                {{ now()->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
-            </p>
-        </div>
+       {{-- Contenedor Principal en 2 Columnas --}}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
+
+    {{-- Columna Izquierda: Saludo y Fecha --}}
+    <div>
+        <h1 class="text-xl font-semibold text-zinc-800 dark:text-zinc-100">
+            Bienvenido, {{ Auth::user()->fullName() }}
+        </h1>
+        <p class="text-sm text-zinc-500 dark:text-zinc-400 capitalize">
+            {{ now()->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
+        </p>
+    </div>
+
+    {{-- Columna Derecha: Logo de la Empresa --}}
+    <div class="flex items-center">
+        @if(Auth::user()->company && Auth::user()->company->logo)
+            <img
+                src="Auth::user()->company->logo"
+                alt="Logo de {{ Auth::user()->company->nombre }}"
+                class="h-12 w-auto object-contain max-w-[150px] rounded-lg"
+            />
+        @else
+            {{-- Nombre de la empresa en texto si no hay logo --}}
+            <span class="text-lg font-bold text-zinc-700 dark:text-zinc-300">
+                {{ Auth::user()->company->nombre ?? 'Sin Empresa' }}
+            </span>
+        @endif
+    </div>
+
+</div>
 
         {{-- Stats Overview --}}
         @livewire(\App\Filament\Widgets\OrdenesStatsOverview::class)
