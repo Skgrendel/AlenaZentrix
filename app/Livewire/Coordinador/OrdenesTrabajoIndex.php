@@ -285,7 +285,16 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     DeleteBulkAction::make(),
                 ]),
             ])
-            ->defaultSort('created_at', 'desc');
+            ->emptyStateHeading('Sin órdenes de trabajo Asignadas')
+            ->emptyStateDescription('No hay órdenes de trabajo registradas en el sistema.')
+            ->emptyStateIcon('heroicon-o-clipboard-document-list')
+            ->defaultSort(function ($query) {
+                return $query
+                    // 1. Las órdenes con estado 'en_revision' irán primero
+                    ->orderByRaw("CASE WHEN estado = 'en_revision' THEN 1 ELSE 0 END DESC")
+                    // 2. El resto de las órdenes se ordenarán por fecha de creación descendente
+                    ->orderBy('created_at', 'desc');
+            });
     }
 
     protected function tableColumnHasData(string $column): bool
