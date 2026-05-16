@@ -40,11 +40,10 @@ test('dashboard shows company logo img when company has logo', function () {
     $response->assertSee('https://example.com/logo.svg');
 });
 
-test('dashboard does not show company section for superadmin without company', function () {
+test('superadmin is redirected from regular dashboard to superadmin dashboard', function () {
     $user = User::factory()->superadmin()->create();
     $this->actingAs($user);
 
     $response = $this->get(route('dashboard'));
-    $response->assertOk();
-    $response->assertDontSee('Gases del Caribe');
+    $response->assertRedirect(route('superadmin.dashboard'));
 });
