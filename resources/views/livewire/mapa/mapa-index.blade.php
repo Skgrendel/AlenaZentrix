@@ -91,7 +91,7 @@
     </div>
 
     {{-- Contenedor del mapa --}}
-    <div class="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700">
+    <div wire:ignore class="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-700">
         <div id="mapa-container" class="h-[calc(100vh-18rem)] w-full min-h-96"></div>
     </div>
 </div>
