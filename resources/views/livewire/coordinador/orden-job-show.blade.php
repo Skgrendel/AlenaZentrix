@@ -247,13 +247,7 @@
                     <div>
                         <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tipo de Investigación</dt>
                         <dd class="mt-1">
-                            <flux:badge
-                                :color="match($orden->tipo_investigacion) {
-                                        'interna'   => 'blue',
-                                        'terceros'  => 'orange',
-                                        default     => 'purple',
-                                    }">
-                                {{ $orden->tipo_investigacion === 'interna' ? 'Interna' : ($orden->tipo_investigacion === 'terceros' ? 'Terceros' : 'Contratista') }}
+                            <flux:badge size="m"> {{ $orden->tipo_investigacion  }}
                             </flux:badge>
                         </dd>
                     </div>
