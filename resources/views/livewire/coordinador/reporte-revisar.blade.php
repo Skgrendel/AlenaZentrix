@@ -192,9 +192,7 @@
                                     Investigación</dt>
                                 <dd class="mt-0.5">
                                     <flux:badge
-                                        color="{{ $orden->tipo_investigacion === 'interna' ? 'blue' : 'purple' }}"
-                                        size="sm">
-                                        {{ $orden->tipo_investigacion === 'interna' ? 'Interna' : 'Contratista' }}
+                                        color="{{ $orden->tipo_investigacion === 'interna' ? 'blue' : ($orden->tipo_investigacion === 'terceros' ? 'orange' : 'purple') }}" size="sm"> {{ $orden->tipo_investigacion === 'interna' ? 'Interna' : ($orden->tipo_investigacion === 'terceros' ? 'Terceros' : 'Contratista') }}
                                     </flux:badge>
                                 </dd>
                             </div>

@@ -244,6 +244,22 @@
                         </dd>
                     </div>
                     <div>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tipo de investigación</dt>
+                        <dd class="mt-1">
+                            <flux:badge
+                                :color="match($orden->tipo_servicio->value) {
+                                                                    'fraudes'           => 'zinc',
+                                                                    'investigacion'     => 'blue',
+                                                                    'gestion_legal'     => 'info',
+                                                                    'vigilancia'        => 'green',
+                                                                    'Gestión de Riesgo' => 'purple',
+                                                                    default             => 'zinc',
+                                                                }">
+                                {{ $orden->tipo_servicio->label() }}
+                            </flux:badge>
+                        </dd>
+                    </div>
+                    <div>
                         <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Prioridad</dt>
                         <dd class="mt-1">
                             <flux:badge
