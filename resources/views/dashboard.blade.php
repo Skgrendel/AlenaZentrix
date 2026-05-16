@@ -23,7 +23,7 @@
             <img
                 src="{!! Auth::user()->company->logo !!}"
                 alt="Logo de {{ Auth::user()->company->nombre }}"
-                class="h-12 w-auto object-contain max-w-[150px] rounded-lg"
+                class="h-12 w-auto object-contain rounded-lg"
             />
         @else
             {{-- Nombre de la empresa en texto si no hay logo --}}
