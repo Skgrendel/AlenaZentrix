@@ -12,13 +12,16 @@
         <p class="text-sm text-zinc-500 dark:text-zinc-400 capitalize">
             {{ now()->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
         </p>
+         <p class="text-sm text-zinc-500 dark:text-zinc-400 capitalize">
+            {{ Auth::user()->company->nombre ?? 'Sin Empresa' }}
+        </p>
     </div>
 
     {{-- Columna Derecha: Logo de la Empresa --}}
     <div class="flex items-center">
         @if(Auth::user()->company && Auth::user()->company->logo)
             <img
-                src="Auth::user()->company->logo"
+                src="{!! Auth::user()->company->logo !!}"
                 alt="Logo de {{ Auth::user()->company->nombre }}"
                 class="h-12 w-auto object-contain max-w-[150px] rounded-lg"
             />
