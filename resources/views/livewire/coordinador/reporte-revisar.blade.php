@@ -922,6 +922,33 @@
                     @endif
                 </dl>
             </div>
+               {{-- Fechas --}}
+            <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Fechas
+                </h3>
+                <dl class="space-y-3">
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Asignación</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
+                            {{ $orden->fecha_asignacion?->format('d/m/Y H:i') ?? '—' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Fecha Límite</dt>
+                        <dd
+                            class="mt-0.5 text-sm font-semibold {{ $orden->fecha_limite && $orden->fecha_limite->isPast() && $orden->estado->value !== 'completada' ? 'text-red-600' : 'text-zinc-900 dark:text-white' }}">
+                            {{ $orden->fecha_limite?->format('d/m/Y H:i') ?? '—' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Completado</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
+                            {{ $orden->fecha_completado?->format('d/m/Y H:i') ?? '—' }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+
 
             {{-- ═══ Ubicación GPS ═══ --}}
             @if ($reporte->ubicacion?->latitud && $reporte->ubicacion?->longitud)
