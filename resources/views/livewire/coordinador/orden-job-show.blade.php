@@ -233,13 +233,13 @@
                         <dd class="mt-1">
                             <flux:badge
                                 :color="match($orden->tipo_servicio->value) {
-                                                                                                                                    'fraudes'           => 'zinc',
-                                                                                                                                    'investigacion'     => 'blue',
-                                                                                                                                    'gestion_legal'     => 'info',
-                                                                                                                                    'vigilancia'        => 'green',
-                                                                                                                                    'Gestión de Riesgo' => 'purple',
-                                                                                                                                    default             => 'zinc',
-                                                                                                                                }">
+                                                                                                                                                                    'fraudes'           => 'zinc',
+                                                                                                                                                                    'investigacion'     => 'blue',
+                                                                                                                                                                    'gestion_legal'     => 'info',
+                                                                                                                                                                    'vigilancia'        => 'green',
+                                                                                                                                                                    'Gestión de Riesgo' => 'purple',
+                                                                                                                                                                    default             => 'zinc',
+                                                                                                                                                                }">
                                 {{ $orden->tipo_servicio->label() }}
                             </flux:badge>
                         </dd>
@@ -247,14 +247,14 @@
                     <div>
                         <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tipo de Investigación</dt>
                         <dd class="mt-1">
-                        <flux:badge
-    :color="match($orden->tipo_investigacion) {
-        'interna'   => 'blue',
-        'terceros'  => 'orange',
-        default     => 'purple',
-    }">
-    {{ $orden->tipo_investigacion === 'interna' ? 'Interna' : ($orden->tipo_investigacion === 'terceros' ? 'Terceros' : 'Contratista') }}
-</flux:badge>
+                            <flux:badge
+                                :color="match($orden->tipo_investigacion) {
+                                        'interna'   => 'blue',
+                                        'terceros'  => 'orange',
+                                        default     => 'purple',
+                                    }">
+                                {{ $orden->tipo_investigacion === 'interna' ? 'Interna' : ($orden->tipo_investigacion === 'terceros' ? 'Terceros' : 'Contratista') }}
+                            </flux:badge>
                         </dd>
                     </div>
                     <div>
@@ -262,12 +262,12 @@
                         <dd class="mt-1">
                             <flux:badge
                                 :color="match($orden->prioridad->value) {
-                                                                                                                                                                                                                                                                'baja'    => 'zinc',
-                                                                                                                                                                                                                                                                'media'   => 'blue',
-                                                                                                                                                                                                                                                                'alta'    => 'yellow',
-                                                                                                                                                                                                                                                                'urgente' => 'red',
-                                                                                                                                                                                                                                                                default   => 'zinc',
-                                                                                                                                                                                                                                                            }">
+                                                                                                                                                                                                                                                                                                'baja'    => 'zinc',
+                                                                                                                                                                                                                                                                                                'media'   => 'blue',
+                                                                                                                                                                                                                                                                                                'alta'    => 'yellow',
+                                                                                                                                                                                                                                                                                                'urgente' => 'red',
+                                                                                                                                                                                                                                                                                                default   => 'zinc',
+                                                                                                                                                                                                                                                                                            }">
                                 {{ $orden->prioridad->label() }}
                             </flux:badge>
                         </dd>
@@ -277,15 +277,15 @@
                         <dd class="mt-1">
                             <flux:badge
                                 :color="match($orden->estado->value) {
-                                                                                                                                                                                                                                                                'pendiente'   => 'zinc',
-                                                                                                                                                                                                                                                                'asignada'    => 'blue',
-                                                                                                                                                                                                                                                                'en_progreso' => 'yellow',
-                                                                                                                                                                                                                                                                'en_revision' => 'purple',
-                                                                                                                                                                                                                                                                'completada'  => 'green',
-                                                                                                                                                                                                                                                                'rechazada'   => 'red',
-                                                                                                                                                                                                                                                                'cancelada'   => 'zinc',
-                                                                                                                                                                                                                                                                default       => 'zinc',
-                                                                                                                                                                                                                                                            }">
+                                                                                                                                                                                                                                                                                                'pendiente'   => 'zinc',
+                                                                                                                                                                                                                                                                                                'asignada'    => 'blue',
+                                                                                                                                                                                                                                                                                                'en_progreso' => 'yellow',
+                                                                                                                                                                                                                                                                                                'en_revision' => 'purple',
+                                                                                                                                                                                                                                                                                                'completada'  => 'green',
+                                                                                                                                                                                                                                                                                                'rechazada'   => 'red',
+                                                                                                                                                                                                                                                                                                'cancelada'   => 'zinc',
+                                                                                                                                                                                                                                                                                                default       => 'zinc',
+                                                                                                                                                                                                                                                                                            }">
                                 {{ $orden->estado->label() }}
                             </flux:badge>
                         </dd>
