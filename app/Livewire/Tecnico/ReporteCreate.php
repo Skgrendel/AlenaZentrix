@@ -371,7 +371,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                     Repeater::make('actividades')
                         ->label('Actividades Realizadas')
                         ->schema([
-                            Forms\Components\TextInput::make('descripcion_orden')
+                            Forms\Components\Textarea::make('descripcion_orden')
                                 ->label('Actividad asignada')
                                 ->disabled()
                                 ->dehydrated(true)
@@ -1119,7 +1119,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'actividades' => $data['actividades'] ?? null,
         ]);
 
-        
+
         // Actualizar estado de la orden a EnRevision para que el coordinador pueda revisarla
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
         // Notificar al coordinador que hay un nuevo reporte para revisar
