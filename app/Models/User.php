@@ -7,6 +7,7 @@ use App\Services\TenantService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -60,6 +61,12 @@ class User extends Authenticatable
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'company_id');
+    }
+
+    /** Servicios que este auditor puede auditar */
+    public function serviciosAuditables(): HasMany
+    {
+        return $this->hasMany(UsuarioServicioAuditable::class, 'user_id');
     }
 
     /**

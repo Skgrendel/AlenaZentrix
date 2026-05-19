@@ -120,11 +120,10 @@ class OrdenJob extends Model
         });
 
         static::updated(function (self $model): void {
-            // Solo Fraudes genera auditoría automática al completarse
+            // Genera auditoría automática al completarse para todos los servicios
             if (
                 $model->wasChanged('estado') &&
-                $model->estado === EstadoOrden::Completada &&
-                $model->tipo_servicio === TipoServicio::Fraudes
+                $model->estado === EstadoOrden::Completada
             ) {
                 $reporte = $model->reportes()->latest()->first();
 
