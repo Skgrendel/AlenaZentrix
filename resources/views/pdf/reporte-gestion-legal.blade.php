@@ -326,7 +326,7 @@
         @endif
 
         {{-- ── Datos de la Orden ── --}}
-        <div class="section">
+        {{-- <div class="section">
             <div class="section-title">DATOS DE LA ORDEN</div>
             <div class="info-box">
                 <div class="info-grid">
@@ -368,7 +368,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
         {{-- ── Datos Operativos ── --}}
         @if ($datosReporte['tipologia'] || $datosReporte['fecha_ejecucion'] || $datosReporte['departamento'])

@@ -449,7 +449,7 @@
         @endif
 
         {{-- ── 1. Datos de la Orden ── --}}
-        <div class="section">
+        {{-- <div class="section">
             <div class="section-title">DATOS DE LA ORDEN</div>
             <div class="info-box">
                 <div class="info-grid">
@@ -487,7 +487,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
         {{-- ── 2. Persona o Comercio Investigado ── --}}
         <div class="section">

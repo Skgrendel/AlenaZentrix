@@ -318,7 +318,7 @@
         </p>
 
         {{-- ── Datos de la Orden ── --}}
-        <div class="section">
+        {{-- <div class="section">
             <div class="section-title">DATOS DE LA ORDEN</div>
             <div class="info-box">
                 <div class="info-grid">
@@ -372,7 +372,7 @@
                     @endif
                 </div>
             </div>
-        </div>
+        </div> --}}
 
         {{-- ── Actividades Realizadas ── --}}
         <div class="section">
