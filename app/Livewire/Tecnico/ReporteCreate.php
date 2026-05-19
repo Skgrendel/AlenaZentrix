@@ -474,7 +474,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->maxLength(255)
                         ->columnSpanFull(),
                 ]),
-            Section::make('3. Actividad Realizada')
+            Section::make('2. Actividad Realizada')
                 ->icon('heroicon-o-check-badge')
                 ->schema([
                     Repeater::make('actividades')
@@ -497,7 +497,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->collapsible()
                         ->addable(false),
                 ]),
-            Section::make('2. Observaciones')
+            Section::make('3. Observaciones')
                 ->icon('heroicon-o-pencil-square')
                 ->schema([
                     Forms\Components\Textarea::make('observaciones')
