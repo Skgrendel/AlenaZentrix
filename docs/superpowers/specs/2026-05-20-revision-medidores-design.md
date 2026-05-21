@@ -31,6 +31,10 @@ Nuevo módulo para importar masivamente órdenes de verificación de medidores/l
 | ¿Correos en asignación masiva? | Un solo correo resumen | Evitar spam al investigador cuando se asignan hasta 100 órdenes simultáneas |
 | ¿Validación de import? | Filas inválidas se reportan, el resto se importa | Maximiza aprovechamiento del archivo sin bloquear el lote completo |
 | Formato de import | CSV y XLSX | Las empresas pueden entregar cualquiera de los dos |
+| ¿Reporte de campo? | Reutilizar `fraudesSchema()` y `submitFraudes()` en `ReporteCreate` | Misma estructura de datos — solo agregar el nuevo case al match existente |
+| ¿Nuevos permisos? | Ninguno | Los permisos `ordenes.ver`, `ordenes.crear`, `informes` ya cubren el nuevo tipo |
+| ¿Aparece en `OrdenesTrabajoIndex`? | Sí — agregar acción PDF para RevisionMedidores | El query no filtra por tipo; las órdenes aparecen ahí también |
+| ¿Aparece en Informes/Mapa? | Automático | `InformesIndex` y `MapaIndex` usan `TipoServicio::cases()` → incluyen el nuevo tipo sin cambios |
 
 ---
 
@@ -101,6 +105,30 @@ Middleware: `role:Coordinador|Administrador`
 | `App\Mail\OrdenesAsignadasResumen` | Correo único al investigador con total y lista de contratos asignados en bloque |
 
 El mailable `OrdenAsignada` existente se sigue usando solo para asignaciones individuales (1 orden).
+
+---
+
+## Componentes Existentes que Requieren Cambios
+
+Estos archivos ya existen y deben ser modificados — no son nuevos.
+
+### `app/Livewire/Tecnico/ReporteCreate.php`
+Tiene dos `match(TipoServicio)` que cubren todos los tipos. **Sin este cambio el técnico no puede crear el reporte y la app lanza error.**
+- Agregar `TipoServicio::RevisionMedidores => $this->fraudesSchema()` en el match de schema
+- Agregar `TipoServicio::RevisionMedidores => $this->submitFraudes($data)` en el match de submit
+- No crear métodos nuevos — reutilizar los de Fraudes directamente
+
+### `app/Livewire/Coordinador/ReporteRevisar.php`
+Tiene un método `datosServicioDisplay()` con `if` por tipo de servicio. Fraudes no tiene bloque propio (cae al return vacío por defecto). `RevisionMedidores` tiene la misma estructura de datos → **no requiere cambio**, pero verificar que el comportamiento por defecto es correcto en la vista Blade.
+
+### `app/Livewire/Coordinador/OrdenesTrabajoIndex.php`
+El query no filtra por tipo — las órdenes de `RevisionMedidores` aparecen en este listado también. Hay acciones de PDF condicionales por tipo de servicio. **Debe agregarse la acción de descarga PDF para RevisionMedidores** con `->visible(fn($r) => $r->tipo_servicio === TipoServicio::RevisionMedidores && $r->estado === EstadoOrden::Completada)`.
+
+### `resources/data/objetivos-pdf.json`
+El `ReportePdfController` llama `resolveObjetivos('revision_medidores')` — si no existe esa clave devuelve array vacío (no rompe). **Debe agregarse** la clave `revision_medidores` con el texto de objetivos correspondiente al servicio.
+
+### `resources/views/layouts/app/sidebar.blade.php`
+Agregar nuevo `flux:sidebar.item` para "Revisión de Medidores" dentro del grupo Operaciones, bajo el guard `@can('ordenes.ver')`, con el route name `operaciones.revision-medidores` y marcado activo cuando `request()->routeIs('operaciones.revision-medidores*')`.
 
 ---
 
@@ -237,11 +265,28 @@ El trabajo se divide en subtareas independientes y ordenadas. Cada una tiene con
 - Agregar `case RevisionMedidores = 'revision_medidores'` con todos los métodos
 - Test: verificar que el label, color y métodos retornan los valores correctos
 
-### ST-2: Paquete maatwebsite/excel
+### ST-2: Integrar RevisionMedidores en componentes existentes
+Todos estos archivos ya existen — solo se agregan casos al código existente:
+
+**`app/Livewire/Tecnico/ReporteCreate.php`** *(crítico — sin esto el técnico no puede reportar)*
+- Agregar `TipoServicio::RevisionMedidores => $this->fraudesSchema()` en el match del schema (~línea 93)
+- Agregar `TipoServicio::RevisionMedidores => $this->submitFraudes($data)` en el match del submit (~línea 952)
+
+**`app/Livewire/Coordinador/OrdenesTrabajoIndex.php`**
+- Agregar acción de descarga PDF para RevisionMedidores con `->visible(fn($r) => $r->tipo_servicio === TipoServicio::RevisionMedidores && estado Completada)` y URL a la nueva ruta de PDF
+
+**`resources/data/objetivos-pdf.json`**
+- Agregar clave `"revision_medidores"` con el texto de objetivos del servicio
+
+Tests:
+- El técnico puede acceder al formulario de reporte para una orden RevisionMedidores
+- La acción PDF aparece en OrdenesTrabajoIndex para órdenes RevisionMedidores completadas
+
+### ST-3: Paquete maatwebsite/excel
 - Verificar si ya está instalado; si no, `composer require maatwebsite/excel`
 - Publicar config si aplica
 
-### ST-3: Export class — RevisionMedidoresPlantillaExport + Controller
+### ST-4: Export class — RevisionMedidoresPlantillaExport + Controller
 - Clase `App\Exports\RevisionMedidoresPlantillaExport` que implementa `FromArray` + `WithHeadings`
 - Encabezados: `contrato`, `cliente`, `direccion`, `barrio`, `medidor`, `tipo_medidor`, `ciclo`, `descripcion`
 - Una fila de ejemplo con datos ficticios
@@ -249,40 +294,40 @@ El trabajo se divide en subtareas independientes y ordenadas. Cada una tiene con
 - Ruta GET `operaciones/revision-medidores/plantilla` con middleware `role:Coordinador|Administrador`
 - Test: la ruta retorna status 200 y content-type de Excel
 
-### ST-4: Import class — RevisionMedidoresImport
+### ST-5: Import class — RevisionMedidoresImport
 - Clase `App\Imports\RevisionMedidoresImport` que implementa `ToCollection` + `WithHeadingRow` + `SkipsOnFailure`
 - Mapeo de columnas del archivo → campos de `OrdenJob`
 - Validación fila por fila con reglas específicas
 - Retorna colección de órdenes creadas y colección de errores
 
-### ST-5: Mailable OrdenesAsignadasResumen
+### ST-6: Mailable OrdenesAsignadasResumen
 - `App\Mail\OrdenesAsignadasResumen` con constructor `(personals $investigador, Collection $ordenes)`
 - Vista blade con total de órdenes y tabla de contratos/clientes
 - Test: estructura del correo
 
-### ST-6: Componente ImportarRevisionMedidores
+### ST-7: Componente ImportarRevisionMedidores
 - Livewire component con upload de archivo (Livewire file upload)
 - Llama a `RevisionMedidoresImport`
 - Muestra resumen de éxito y tabla de errores
 - Tests: import exitoso, import con errores, archivo inválido
 
-### ST-7: Componente RevisionMedidoresIndex
+### ST-8: Componente RevisionMedidoresIndex
 - Listado de `OrdenJob` donde `tipo_servicio = revision_medidores` con paginación y búsqueda
 - Asignación individual: mismo patrón que `OrdenesTrabajoIndex`, dispara `OrdenAsignada`
 - Asignación masiva: checkbox + modal + acción en lote, dispara `OrdenesAsignadasResumen`
 - Tests: listado, asignación individual (1 correo), asignación masiva (1 correo resumen, no N individuales)
 
-### ST-8: Rutas y Sidebar
+### ST-9: Rutas y Sidebar
 - Registrar rutas en `routes/web.php`
 - Agregar entrada al sidebar con control de visibilidad por rol
 - Tests: rutas accesibles para Coordinador/Admin, no accesibles para otros roles
 
-### ST-9: Auditoría — UsuarioServicioAuditable
+### ST-10: Auditoría — UsuarioServicioAuditable
 - Agregar `RevisionMedidores` como opción válida en el formulario de gestión de servicios auditables
 - Verificar que el filtro en `AuditoriasIndex` incluye este tipo cuando está asignado al auditor
 - Tests: auditor con servicio asignado ve auditorías, auditor sin servicio no las ve
 
-### ST-10: Informe PDF — RevisionMedidores
+### ST-11: Informe PDF — RevisionMedidores
 - Nuevo método `DownLoadInformeRevisionMedidores(OrdenJob $orden)` en `ReportePdfController`
   - Guard: `abort_unless($orden->tipo_servicio === TipoServicio::RevisionMedidores, 403)`
   - Guard: `abort_unless(auth()->user()->can('informes'), 403)`
@@ -298,7 +343,7 @@ El trabajo se divide en subtareas independientes y ordenadas. Cada una tiene con
 - Botón "Descargar Informe PDF" en `RevisionMedidoresIndex` por cada orden completada
 - Test: la ruta retorna 200 y content-type PDF para orden de tipo RevisionMedidores; retorna 403 para otro tipo
 
-### ST-11: Pint y tests finales
+### ST-12: Pint y tests finales
 - Ejecutar `vendor/bin/pint --dirty --format agent`
 - Ejecutar suite completa de tests del módulo
 - Verificar que tests existentes no regresen
