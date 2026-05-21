@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ReportePdfController;
+use App\Livewire\Coordinador\ConsultaGis\ConsultaGisIndex;
 use App\Livewire\Coordinador\OrdenCreate;
 use App\Livewire\Coordinador\OrdenesTrabajoIndex;
 use App\Livewire\Coordinador\OrdenJobShow;
@@ -27,4 +28,6 @@ Route::middleware(['auth', 'verified', 'permission:ordenes.ver'])
         Route::get('ordenes-trabajo/{orden}/reporte-auditoria-campo', [ReportePdfController::class, 'DownLoadInformeAuditoriaCampo'])->name('ordenes-trabajo.reporte-auditoria-campo');
         Route::get('ordenes-trabajo/{orden}/reporte-gestion-riesgo', [ReportePdfController::class, 'DownLoadInformeGestionRiesgo'])->name('ordenes-trabajo.reporte-gestion-riesgo');
         Route::get('ordenes-trabajo/{orden}/reportes', ReportesVigilanciaIndex::class)->name('ordenes-trabajo.reportes');
+
+        Route::get('consulta-gis', ConsultaGisIndex::class)->name('consulta-gis');
     });
