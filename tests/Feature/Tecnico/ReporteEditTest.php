@@ -56,6 +56,47 @@ test('editar reporte no consulta metadatos de archivos al montar', function () {
         ->assertOk();
 });
 
+test('editar reporte muestra archivos sin previsualizacion', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'estado' => EstadoOrden::Rechazada->value,
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden]);
+
+    $method = new ReflectionMethod($component->instance(), 'fraudesSchema');
+    $method->setAccessible(true);
+
+    $schema = $method->invoke($component->instance());
+
+    $fileUploads = collect($schema)
+        ->flatMap(fn ($section) => method_exists($section, 'getChildComponents') ? $section->getChildComponents() : [])
+        ->filter(fn ($component) => method_exists($component, 'getName') && in_array($component->getName(), ['imagenes', 'foto_detector_fuga'], true));
+
+    expect($fileUploads)->not->toBeEmpty();
+    expect($fileUploads->every(fn ($component) => method_exists($component, 'isPreviewable') && ! $component->isPreviewable()))
+        ->toBeTrue();
+});
+
 test('editar reporte carga y guarda actividades en servicios genericos', function () {
     $personal = personals::create([
         'tipo_documento' => 'CC',
