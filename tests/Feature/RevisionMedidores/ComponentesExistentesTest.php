@@ -11,7 +11,10 @@ use App\Models\personals;
 use App\Models\reportes;
 use App\Models\User;
 use Database\Seeders\PermissionsSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(PermissionsSeeder::class);
