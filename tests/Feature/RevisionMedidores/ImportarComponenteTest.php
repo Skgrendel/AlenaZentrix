@@ -7,7 +7,7 @@ use App\Models\OrdenJob;
 use App\Models\User;
 use Database\Seeders\PermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -37,16 +37,19 @@ it('técnico no puede acceder al componente', function () {
 });
 
 it('importa un archivo CSV válido y crea las órdenes', function () {
+    Storage::fake('local');
     $this->actingAs($this->user);
 
     $csv = "contrato,cliente,direccion,barrio,medidor,tipo_medidor,ciclo,descripcion\n"
          ."CONT-A,Cliente A,Calle 1,Centro,MED-A,digital,C1,Verificar\n"
          ."CONT-B,Cliente B,Calle 2,Norte,MED-B,,,\n";
 
-    $file = UploadedFile::fake()->createWithContent('ordenes.csv', $csv);
+    $path = 'temp/imports/ordenes.csv';
+    Storage::disk('local')->put($path, $csv);
 
+    // FileUpload stores state as an associative array (key => path)
     Livewire::test(ImportarRevisionMedidores::class)
-        ->set('archivo', $file)
+        ->set('data.archivo', ['file' => $path])
         ->call('importar')
         ->assertHasNoErrors()
         ->assertSee('2 órdenes importadas')
@@ -56,16 +59,18 @@ it('importa un archivo CSV válido y crea las órdenes', function () {
 });
 
 it('muestra errores de filas inválidas y sigue importando las válidas', function () {
+    Storage::fake('local');
     $this->actingAs($this->user);
 
     $csv = "contrato,cliente,direccion,barrio,medidor,tipo_medidor,ciclo,descripcion\n"
          ."CONT-OK,Cliente OK,Calle 1,Centro,MED-OK,,,\n"
          .",Sin Contrato,Calle 2,Norte,MED-X,,,\n";
 
-    $file = UploadedFile::fake()->createWithContent('ordenes.csv', $csv);
+    $path = 'temp/imports/ordenes.csv';
+    Storage::disk('local')->put($path, $csv);
 
     Livewire::test(ImportarRevisionMedidores::class)
-        ->set('archivo', $file)
+        ->set('data.archivo', ['file' => $path])
         ->call('importar')
         ->assertSee('1 órdenes importadas')
         ->assertSee('1 errores');
@@ -78,5 +83,5 @@ it('muestra error de validación si no se sube ningún archivo', function () {
 
     Livewire::test(ImportarRevisionMedidores::class)
         ->call('importar')
-        ->assertHasErrors(['archivo']);
+        ->assertHasFormErrors(['archivo']);
 });

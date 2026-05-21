@@ -52,27 +52,23 @@
         </flux:button>
     @else
         <div class="bg-white rounded-xl border border-gray-200 p-6">
-            <flux:heading size="sm" class="mb-4">Cargar archivo</flux:heading>
-
-            <div class="mb-4 text-sm text-gray-600">
-                <p>Formatos aceptados: <strong>CSV</strong> y <strong>Excel (.xlsx)</strong>. Tamaño máximo: 10 MB.</p>
-                <p class="mt-1">Columnas requeridas: <code>contrato, cliente, direccion, barrio, medidor</code></p>
-            </div>
+            <flux:heading size="sm" class="mb-1">Cargar archivo</flux:heading>
+            <p class="text-sm text-gray-500 mb-4">
+                Columnas requeridas: <code>contrato, cliente, direccion, barrio, medidor</code>
+            </p>
 
             <form wire:submit="importar">
-                <div class="mb-4">
-                    <input type="file" wire:model="archivo" accept=".csv,.xlsx,.xls"
-                        class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                    @error('archivo')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
+                {{ $this->form }}
 
-                <flux:button type="submit" variant="primary" icon="arrow-up-tray" wire:loading.attr="disabled">
-                    <span wire:loading.remove wire:target="importar">Importar Órdenes</span>
-                    <span wire:loading wire:target="importar">Procesando...</span>
-                </flux:button>
+                <div class="mt-4">
+                    <flux:button type="submit" variant="primary" icon="arrow-up-tray" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="importar">Importar Órdenes</span>
+                        <span wire:loading wire:target="importar">Procesando...</span>
+                    </flux:button>
+                </div>
             </form>
         </div>
     @endif
+
+    <x-filament-actions::modals />
 </div>
