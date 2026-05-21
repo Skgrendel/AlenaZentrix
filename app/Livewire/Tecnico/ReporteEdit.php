@@ -23,6 +23,7 @@ use App\Models\ubicacion;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
@@ -84,6 +85,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                 'observaciones' => $this->reporte->observaciones,
                 'imagenes' => $this->reporte->imagenes,
                 'video' => $this->reporte->video,
+                'actividades' => $this->reporte->actividades,
             ]);
         }
     }
@@ -368,7 +370,31 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->visible(fn ($get) => $get('tipo_investigado') === 'comercio'),
                 ]),
 
-            Section::make('3. Resultado')
+            Section::make('3. Actividad Realizada')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Repeater::make('actividades')
+                        ->label('Actividades Realizadas')
+                        ->schema([
+                            Forms\Components\Textarea::make('descripcion_orden')
+                                ->label('Actividad asignada')
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->columnSpanFull()
+                                ->placeholder('—'),
+                            Forms\Components\Textarea::make('actividades')
+                                ->autosize()
+                                ->label('Respuesta del investigador')
+                                ->columnSpanFull()
+                                ->placeholder('Describe las actividades realizadas durante la investigación...')
+                                ->required(),
+                        ])
+                        ->columns(1)
+                        ->collapsible()
+                        ->addable(false),
+                ]),
+
+            Section::make('4. Resultado')
                 ->icon('heroicon-o-check-badge')
                 ->schema([
                     Forms\Components\Select::make('resultado_reporte_id')
@@ -383,7 +409,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->placeholder('Seleccionar'),
                 ]),
 
-            Section::make('4. Observaciones')
+            Section::make('5. Observaciones')
                 ->icon('heroicon-o-pencil-square')
                 ->schema([
                     Forms\Components\Textarea::make('observaciones')
@@ -393,7 +419,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('5. Evidencias')
+            Section::make('6. Evidencias')
                 ->icon('heroicon-o-camera')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
@@ -455,7 +481,31 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('2. Observaciones')
+            Section::make('2. Actividad Realizada')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Repeater::make('actividades')
+                        ->label('Actividades Por Realizar')
+                        ->schema([
+                            Forms\Components\TextInput::make('descripcion_orden')
+                                ->label('Actividad asignada')
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->columnSpanFull()
+                                ->placeholder('—'),
+                            Forms\Components\Textarea::make('actividades')
+                                ->autosize()
+                                ->label('Respuesta del Investigador')
+                                ->columnSpanFull()
+                                ->placeholder('Describe las actividades realizadas...')
+                                ->required(),
+                        ])
+                        ->columns(1)
+                        ->collapsible()
+                        ->addable(false),
+                ]),
+
+            Section::make('3. Observaciones')
                 ->icon('heroicon-o-pencil-square')
                 ->schema([
                     Forms\Components\Textarea::make('observaciones')
@@ -465,7 +515,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('3. Evidencias')
+            Section::make('4. Evidencias')
                 ->icon('heroicon-o-camera')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
@@ -494,8 +544,32 @@ class ReporteEdit extends Component implements HasActions, HasForms
     private function gestionRiesgoSchema(): array
     {
         return [
-            Section::make('1. Actividades Realizadas')
+            Section::make('1. Actividad Realizada')
                 ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Repeater::make('actividades')
+                        ->label('Actividades Realizadas')
+                        ->schema([
+                            Forms\Components\TextInput::make('descripcion_orden')
+                                ->label('Actividad asignada')
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->columnSpanFull()
+                                ->placeholder('—'),
+                            Forms\Components\Textarea::make('actividades')
+                                ->autosize()
+                                ->label('Respuesta del técnico')
+                                ->columnSpanFull()
+                                ->placeholder('Describe las actividades realizadas...')
+                                ->required(),
+                        ])
+                        ->columns(1)
+                        ->collapsible()
+                        ->addable(false),
+                ]),
+
+            Section::make('2. Observaciones')
+                ->icon('heroicon-o-pencil-square')
                 ->schema([
                     Forms\Components\Textarea::make('observaciones')
                         ->label('Novedades / Observaciones')
@@ -504,7 +578,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('2. Evidencias')
+            Section::make('3. Evidencias')
                 ->icon('heroicon-o-paper-clip')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
@@ -1023,13 +1097,14 @@ class ReporteEdit extends Component implements HasActions, HasForms
     private function submitServicioGenerico(array $data): void
     {
         $datosServicio = $data;
-        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
 
         $this->reporte->update([
             'observaciones' => $data['observaciones'] ?? null,
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
             'datos_servicio' => $datosServicio,
+            'actividades' => $data['actividades'] ?? null,
         ]);
 
         $this->actualizarUbicacion();
