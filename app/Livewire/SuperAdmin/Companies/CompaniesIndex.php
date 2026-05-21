@@ -45,6 +45,7 @@ class CompaniesIndex extends Component implements HasActions, HasForms, HasTable
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')->label('Empresa')->searchable()->sortable(),
                 Tables\Columns\IconColumn::make('activo')->label('Activa')->boolean(),
+                Tables\Columns\IconColumn::make('gis_habilitado')->label('GIS')->boolean(),
                 Tables\Columns\TextColumn::make('users_count')
                     ->label('Usuarios')
                     ->counts('users')
@@ -79,6 +80,10 @@ class CompaniesIndex extends Component implements HasActions, HasForms, HasTable
             Forms\Components\Toggle::make('activo')
                 ->label('Activa')
                 ->default(true),
+            Forms\Components\Toggle::make('gis_habilitado')
+                ->label('Consulta GIS habilitada')
+                ->helperText('Permite a esta empresa usar el módulo de Consulta GIS (Surtigas).')
+                ->default(false),
         ];
     }
 
