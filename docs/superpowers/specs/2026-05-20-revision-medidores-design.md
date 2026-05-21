@@ -112,14 +112,21 @@ El mailable `OrdenAsignada` existente se sigue usando solo para asignaciones ind
 
 Estos archivos ya existen y deben ser modificados — no son nuevos.
 
-### `app/Livewire/Tecnico/ReporteCreate.php`
-Tiene dos `match(TipoServicio)` que cubren todos los tipos. **Sin este cambio el técnico no puede crear el reporte y la app lanza error.**
+### `app/Livewire/Tecnico/ReporteCreate.php` ⚠️ Crítico
+Dos `match($this->orden->tipo_servicio)` **sin `default`** → `UnhandledMatchError` si el tipo no está listado.
+- Agregar `TipoServicio::RevisionMedidores => $this->fraudesSchema()` en el match de schema (~línea 92)
+- Agregar `TipoServicio::RevisionMedidores => $this->submitFraudes($data)` en el match de submit (~línea 951)
+
+### `app/Livewire/Tecnico/ReporteEdit.php` ⚠️ Crítico
+Un `match` **sin `default`** en el schema (~línea 93) → mismo riesgo que ReporteCreate.
 - Agregar `TipoServicio::RevisionMedidores => $this->fraudesSchema()` en el match de schema
-- Agregar `TipoServicio::RevisionMedidores => $this->submitFraudes($data)` en el match de submit
-- No crear métodos nuevos — reutilizar los de Fraudes directamente
+- El match del submit (~línea 889) ya tiene `default` → safe, no requiere cambio
+
+### `app/Livewire/Coordinador/OrdenCreate.php`
+El select de `tipo_servicio` usa `TipoServicio::cases()` → `RevisionMedidores` aparecería en el formulario manual. Las órdenes de este tipo solo se crean por import — **excluirlo del dropdown**.
 
 ### `app/Livewire/Coordinador/ReporteRevisar.php`
-Tiene un método `datosServicioDisplay()` con `if` por tipo de servicio. Fraudes no tiene bloque propio (cae al return vacío por defecto). `RevisionMedidores` tiene la misma estructura de datos → **no requiere cambio**, pero verificar que el comportamiento por defecto es correcto en la vista Blade.
+`datosServicioDisplay()` usa `if` (no match) por tipo. Fraudes cae al return vacío por defecto. `RevisionMedidores` tiene la misma estructura → **no requiere cambio**. Safe.
 
 ### `app/Livewire/Coordinador/OrdenesTrabajoIndex.php`
 El query no filtra por tipo — las órdenes de `RevisionMedidores` aparecen en este listado también. Hay acciones de PDF condicionales por tipo de servicio. **Debe agregarse la acción de descarga PDF para RevisionMedidores** con `->visible(fn($r) => $r->tipo_servicio === TipoServicio::RevisionMedidores && $r->estado === EstadoOrden::Completada)`.
@@ -268,18 +275,31 @@ El trabajo se divide en subtareas independientes y ordenadas. Cada una tiene con
 ### ST-2: Integrar RevisionMedidores en componentes existentes
 Todos estos archivos ya existen — solo se agregan casos al código existente:
 
-**`app/Livewire/Tecnico/ReporteCreate.php`** *(crítico — sin esto el técnico no puede reportar)*
-- Agregar `TipoServicio::RevisionMedidores => $this->fraudesSchema()` en el match del schema (~línea 93)
-- Agregar `TipoServicio::RevisionMedidores => $this->submitFraudes($data)` en el match del submit (~línea 952)
+**`app/Livewire/Tecnico/ReporteCreate.php`** *(crítico — match sin default en líneas 92 y 951)*
+- Agregar `TipoServicio::RevisionMedidores => $this->fraudesSchema()` en el match del schema (línea ~92)
+- Agregar `TipoServicio::RevisionMedidores => $this->submitFraudes($data)` en el match del submit (línea ~951)
+- Sin este cambio → `UnhandledMatchError` en producción
+
+**`app/Livewire/Tecnico/ReporteEdit.php`** *(crítico — match sin default en línea 93)*
+- Agregar `TipoServicio::RevisionMedidores => $this->fraudesSchema()` en el match del schema (línea ~93)
+- El match del submit (~línea 889) ya tiene `default` → no requiere cambio
+- Sin este cambio → `UnhandledMatchError` si el técnico edita un reporte de RevisionMedidores
+
+**`app/Livewire/Coordinador/OrdenCreate.php`** *(excluir del dropdown)*
+- El select de `tipo_servicio` usa `TipoServicio::cases()` → `RevisionMedidores` aparecería en el formulario de creación manual
+- Las órdenes de RevisionMedidores se crean **solo por import** — excluir del dropdown:
+  `collect(TipoServicio::cases())->filter(fn($c) => $c !== TipoServicio::RevisionMedidores)`
 
 **`app/Livewire/Coordinador/OrdenesTrabajoIndex.php`**
-- Agregar acción de descarga PDF para RevisionMedidores con `->visible(fn($r) => $r->tipo_servicio === TipoServicio::RevisionMedidores && estado Completada)` y URL a la nueva ruta de PDF
+- Agregar acción de descarga PDF para RevisionMedidores con `->visible(fn($r) => $r->tipo_servicio === TipoServicio::RevisionMedidores && $r->estado === EstadoOrden::Completada)` y URL a la nueva ruta de PDF
 
 **`resources/data/objetivos-pdf.json`**
 - Agregar clave `"revision_medidores"` con el texto de objetivos del servicio
 
 Tests:
 - El técnico puede acceder al formulario de reporte para una orden RevisionMedidores
+- El técnico puede editar un reporte de RevisionMedidores sin error
+- RevisionMedidores NO aparece en el dropdown de OrdenCreate
 - La acción PDF aparece en OrdenesTrabajoIndex para órdenes RevisionMedidores completadas
 
 ### ST-3: Paquete maatwebsite/excel
