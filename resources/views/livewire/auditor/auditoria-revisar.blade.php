@@ -632,7 +632,7 @@
                 </div>
             @endif
 
-               {{-- Observaciones del investigador --}}
+               {{-- Conclusión del Coordinador --}}
             @if ($reporte?->conclusion)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
