@@ -38,6 +38,8 @@ it('la acción masiva despacha el job solo con órdenes completadas', function (
         'personals_id' => $this->personal->id,
     ]);
 
+    $completadasIds = $completadas->pluck('id')->all();
+
     $pendiente = OrdenJob::factory()->create([
         'tipo_servicio' => TipoServicio::RevisionMedidores->value,
         'company_id' => $this->company->id,
@@ -50,9 +52,9 @@ it('la acción masiva despacha el job solo con órdenes completadas', function (
     Livewire::test(RevisionMedidoresIndex::class)
         ->callTableBulkAction('descargar_pdfs', $todas, data: []);
 
-    Queue::assertPushed(GenerarZipReportesRevisionMedidoresJob::class, function ($job) use ($completadas) {
+    Queue::assertPushed(GenerarZipReportesRevisionMedidoresJob::class, function ($job) use ($completadasIds) {
         return count($job->ordenIds) === 2
-            && empty(array_diff($completadas->pluck('id')->all(), $job->ordenIds));
+            && empty(array_diff($completadasIds, $job->ordenIds));
     });
 });
 
