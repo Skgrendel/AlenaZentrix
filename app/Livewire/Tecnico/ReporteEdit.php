@@ -239,7 +239,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->helperText('Toma o sube una foto del detector cuando se detecte fuga de gas')
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
-                        ->fetchFileInformation(false)
+                        ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->image()
                         ->imagePreviewHeight('100')
                         ->maxFiles(1)
@@ -273,7 +273,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('Imágenes')
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
-                        ->fetchFileInformation(false)
+                        ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
                         ->image()
                         ->imagePreviewHeight('100')
@@ -414,7 +414,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         )
                         ->searchable()
                         ->placeholder('Seleccionar'),
-                        
+
                 ]),
 
             Section::make('5. Observaciones')
@@ -434,7 +434,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('Imágenes')
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
-                        ->fetchFileInformation(false)
+                        ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
                         ->image()
                         ->imagePreviewHeight('100')
@@ -593,7 +593,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('Archivos / Evidencias')
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
-                        ->fetchFileInformation(false)
+                        ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
                         ->acceptedFileTypes([
                             'image/*',
@@ -689,7 +689,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('Imágenes')
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
-                        ->fetchFileInformation(false)
+                        ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
                         ->image()
                         ->imagePreviewHeight('100')
@@ -933,7 +933,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('Fotos')
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
-                        ->fetchFileInformation(false)
+                        ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
                         ->image()
                         ->imagePreviewHeight('100')
