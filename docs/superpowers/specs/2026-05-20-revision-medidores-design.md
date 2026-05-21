@@ -34,6 +34,30 @@ Nuevo módulo para importar masivamente órdenes de verificación de medidores/l
 
 ---
 
+## Stack y Convenciones
+
+Este módulo debe seguir **exactamente** los mismos patrones que los componentes existentes del proyecto.
+
+| Aspecto | Patrón obligatorio |
+|---|---|
+| Filament version | **v5.6** (`filament/forms`, `filament/tables`, `filament/actions`, `filament/schemas`) |
+| Tablas | `InteractsWithTable` + `HasTable` + `Filament\Tables\Table` (mismo que `OrdenesTrabajoIndex`) |
+| Formularios | `InteractsWithForms` + `HasForms` + `Filament\Schemas\Schema` (mismo que `OrdenCreate`) |
+| Acciones/Modales | `InteractsWithActions` + `HasActions` + `Filament\Actions\Action` |
+| Acciones masivas | `Filament\Actions\BulkActionGroup` con `BulkAction` dentro de `table()` |
+| Secciones de form | `Filament\Schemas\Components\Section` (no `Filament\Forms\Components\Section`) |
+| Layouts | `#[Layout('layouts.app')]` + `#[Title('...')]` en cada componente |
+| UUID | `HasUuids` en modelos de entidad; `foreignUuid` en FKs con constraint |
+| Tenant | `company_id` inyectado vía `TenantService` en `booted()` — nunca hardcodeado |
+
+**Referencia de sibling files:**
+- Tabla con acciones: `app/Livewire/Coordinador/OrdenesTrabajoIndex.php`
+- Formulario con secciones dinámicas: `app/Livewire/Coordinador/OrdenCreate.php`
+- PDF controller: `app/Http/Controllers/ReportePdfController.php`
+- Vista PDF: `resources/views/pdf/reporte-fraude.blade.php`
+
+---
+
 ## Arquitectura
 
 ### Enum
