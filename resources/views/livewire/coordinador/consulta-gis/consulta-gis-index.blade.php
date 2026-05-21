@@ -1,6 +1,6 @@
 <div class="mx-auto max-w-4xl px-4 py-8">
 
-    {{-- Encabezado de página --}}
+    {{-- Page header --}}
     <div class="mb-6">
         <div class="flex items-center gap-3">
             <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 dark:bg-primary-900/40">
@@ -13,7 +13,7 @@
         </div>
     </div>
 
-    {{-- Buscador --}}
+    {{-- Search form --}}
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
         <div class="border-b border-gray-100 bg-gray-50/60 px-6 py-3 dark:border-gray-800 dark:bg-gray-800/40">
             <p class="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">Búsqueda por contrato</p>
@@ -50,24 +50,14 @@
         </div>
     @endif
 
-    {{-- ───── RESULTADO ───── --}}
+    {{-- Result --}}
     @if ($resultado)
         @php
             $nombre = $resultado['titular']['nombre'] ?? null;
             $iniciales = $nombre
-                ? collect(explode(' ', $nombre))->take(2)->map(fn($p) => mb_strtoupper(mb_substr($p,0,1)))->implode('')
+                ? collect(explode(' ', $nombre))->take(2)->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('')
                 : '?';
-
-            $estadoRaw  = strtoupper($resultado['servicio']['estado'] ?? '');
-            $estadoMap  = [
-                'ACTIVO'     => ['label' => 'Activo',     'dot' => 'bg-emerald-500', 'pill' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300'],
-                'SUSPENDIDO' => ['label' => 'Suspendido', 'dot' => 'bg-amber-500',   'pill' => 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'],
-                'CORTADO'    => ['label' => 'Cortado',    'dot' => 'bg-red-500',     'pill' => 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'],
-            ];
-            $estado = $estadoMap[$estadoRaw] ?? ['label' => $resultado['servicio']['estado'], 'dot' => 'bg-gray-400', 'pill' => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'];
-
-            $anillado = $resultado['servicio']['anillado'];
-            $anilladoLabel = match(strtoupper((string)$anillado)) { 'Y' => 'Sí', 'N' => 'No', default => $anillado };
+            $municipio = $resultado['ubicacion']['municipio'] ?? null;
 
             $consumosRaw = [
                 'M-6' => $resultado['consumos']['mes6'],
@@ -83,26 +73,23 @@
 
         <div class="mt-5 space-y-4">
 
-            {{-- ── Tarjeta titular ── --}}
+            {{-- Titular hero card --}}
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
                 <div class="h-1.5 w-full bg-linear-to-r from-primary-500 to-primary-400"></div>
                 <div class="flex flex-col gap-4 p-6 sm:flex-row sm:items-start sm:justify-between">
                     <div class="flex items-start gap-4">
-                        {{-- Avatar --}}
                         <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary-100 dark:bg-primary-900/50">
                             <span class="text-xl font-bold text-primary-700 dark:text-primary-300">{{ $iniciales }}</span>
                         </div>
-                        {{-- Info --}}
                         <div>
                             <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
                                 {{ $nombre ?? '—' }}
                             </h2>
-                            @if ($resultado['titular']['zona'])
+                            @if ($municipio)
                                 <p class="text-sm font-medium text-primary-600 dark:text-primary-400">
-                                    {{ $resultado['titular']['zona'] }}
+                                    {{ $municipio }}
                                 </p>
                             @endif
-                            {{-- Chips de metadatos --}}
                             <div class="mt-2.5 flex flex-wrap gap-2">
                                 @if ($resultado['titular']['contrato'])
                                     <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
@@ -125,7 +112,6 @@
                             </div>
                         </div>
                     </div>
-                    {{-- Botón Maps --}}
                     <a href="{{ $resultado['coordenadas']['maps_url'] }}" target="_blank" rel="noopener noreferrer" class="shrink-0">
                         <flux:button variant="primary" icon="map-pin" class="w-full sm:w-auto">
                             Ver en Google Maps
@@ -134,138 +120,51 @@
                 </div>
             </div>
 
-            {{-- ── Grid de tarjetas ── --}}
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {{-- Filament infolist: Ubicación, Servicio, Medidor --}}
+            {{ $this->gisResultado }}
 
-                {{-- Ubicación --}}
-                <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-                    <div class="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
-                        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/40">
-                            <flux:icon.map-pin class="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Ubicación</span>
+            {{-- Consumos bar chart --}}
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
+                <div class="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
+                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
+                        <flux:icon.chart-bar class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <dl class="divide-y divide-gray-50 dark:divide-gray-800">
-                        @foreach ([
-                            'Dirección' => $resultado['ubicacion']['direccion'],
-                            'Barrio'    => $resultado['ubicacion']['barrio'],
-                            'TAG'       => $resultado['ubicacion']['tag'],
-                        ] as $label => $valor)
-                            @if ($valor)
-                                <div class="flex items-start justify-between gap-4 px-5 py-3">
-                                    <dt class="shrink-0 text-sm text-gray-500 dark:text-gray-400">{{ $label }}</dt>
-                                    <dd class="text-right text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $valor }}</dd>
-                                </div>
-                            @endif
-                        @endforeach
-                    </dl>
+                    <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Consumos — últimos 6 meses</span>
                 </div>
-
-                {{-- Servicio --}}
-                <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-                    <div class="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
-                        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40">
-                            <flux:icon.bolt class="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Servicio</span>
-                    </div>
-                    <dl class="divide-y divide-gray-50 dark:divide-gray-800">
-                        {{-- Estado con badge destacado --}}
-                        @if ($resultado['servicio']['estado'])
-                            <div class="flex items-center justify-between gap-4 px-5 py-3">
-                                <dt class="shrink-0 text-sm text-gray-500 dark:text-gray-400">Estado</dt>
-                                <dd>
-                                    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold {{ $estado['pill'] }}">
-                                        <span class="h-1.5 w-1.5 rounded-full {{ $estado['dot'] }}"></span>
-                                        {{ $estado['label'] }}
-                                    </span>
-                                </dd>
-                            </div>
-                        @endif
-                        @foreach ([
-                            'Estado de Corte' => $resultado['servicio']['estado_corte'],
-                            'Descripción'     => $resultado['servicio']['descripcion'],
-                            'Categoría'       => $resultado['servicio']['categoria'],
-                            'Estrato'         => $resultado['servicio']['estrato'],
-                            'Ciclo'           => $resultado['servicio']['ciclo'],
-                            'Anillado'        => $anilladoLabel,
-                        ] as $label => $valor)
-                            @if ($valor)
-                                <div class="flex items-start justify-between gap-4 px-5 py-3">
-                                    <dt class="shrink-0 text-sm text-gray-500 dark:text-gray-400">{{ $label }}</dt>
-                                    <dd class="text-right text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $valor }}</dd>
-                                </div>
-                            @endif
-                        @endforeach
-                    </dl>
-                </div>
-
-                {{-- Medidor --}}
-                <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-                    <div class="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
-                        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/40">
-                            <flux:icon.cpu-chip class="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                        </div>
-                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Medidor</span>
-                    </div>
-                    <dl class="divide-y divide-gray-50 dark:divide-gray-800">
-                        @foreach ([
-                            'Serie Actual'   => $resultado['medidor']['serie_actual'],
-                            'Serie Anterior' => $resultado['medidor']['serie_anterior'],
-                            'Fecha Anterior' => $resultado['medidor']['fecha_anterior'],
-                        ] as $label => $valor)
-                            @if ($valor)
-                                <div class="flex items-start justify-between gap-4 px-5 py-3">
-                                    <dt class="shrink-0 text-sm text-gray-500 dark:text-gray-400">{{ $label }}</dt>
-                                    <dd class="text-right font-mono text-sm font-semibold text-gray-800 dark:text-gray-100">{{ $valor }}</dd>
-                                </div>
-                            @endif
-                        @endforeach
-                    </dl>
-                </div>
-
-                {{-- Consumos --}}
-                <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-                    <div class="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
-                        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-                            <flux:icon.chart-bar class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Consumos — últimos 6 meses</span>
-                    </div>
-                    <div class="px-5 py-4">
-                        @if (count($consumosFiltrados))
-                            <div class="space-y-3">
-                                @foreach ($consumosFiltrados as $mes => $consumo)
-                                    @php
-                                        $pct = $maxConsumo > 0 ? round(intval($consumo) / $maxConsumo * 100) : 0;
-                                        $barColor = $pct >= 80 ? 'bg-red-400' : ($pct >= 50 ? 'bg-amber-400' : 'bg-emerald-400');
-                                    @endphp
-                                    <div class="flex items-center gap-3">
-                                        <span class="w-8 shrink-0 text-right text-xs font-semibold text-gray-400 dark:text-gray-500">{{ $mes }}</span>
-                                        <div class="flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-                                            <div class="h-2.5 rounded-full {{ $barColor }} transition-all duration-500"
-                                                style="width: {{ $pct }}%"></div>
-                                        </div>
-                                        <span class="w-20 shrink-0 text-right text-xs font-semibold tabular-nums text-gray-700 dark:text-gray-200">
-                                            {{ number_format(intval($consumo)) }} m³
-                                        </span>
+                <div class="px-5 py-4">
+                    @if (count($consumosFiltrados))
+                        <div class="space-y-3">
+                            @foreach ($consumosFiltrados as $mes => $consumo)
+                                @php $pct = $maxConsumo > 0 ? round(intval($consumo) / $maxConsumo * 100) : 0; @endphp
+                                <div class="flex items-center gap-3">
+                                    <span class="w-8 shrink-0 text-right text-xs font-semibold text-gray-400 dark:text-gray-500">{{ $mes }}</span>
+                                    <div class="flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                                        <div @class([
+                                                'h-2.5 rounded-full transition-all duration-500',
+                                                'bg-red-400'   => $pct >= 80,
+                                                'bg-amber-400' => $pct >= 50 && $pct < 80,
+                                                'bg-emerald-400' => $pct < 50,
+                                            ])
+                                            style="width: {{ $pct }}%"></div>
                                     </div>
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="flex flex-col items-center justify-center py-6 text-center">
-                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                                    <flux:icon.chart-bar class="h-5 w-5 text-gray-400" />
+                                    <span class="w-20 shrink-0 text-right text-xs font-semibold tabular-nums text-gray-700 dark:text-gray-200">
+                                        {{ number_format(intval($consumo)) }} m³
+                                    </span>
                                 </div>
-                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Sin datos de consumo registrados</p>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="flex flex-col items-center justify-center py-6 text-center">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                                <flux:icon.chart-bar class="h-5 w-5 text-gray-400" />
                             </div>
-                        @endif
-                    </div>
+                            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Sin datos de consumo registrados</p>
+                        </div>
+                    @endif
                 </div>
-
             </div>
 
-            {{-- ── Coordenadas ── --}}
+            {{-- Coordenadas footer --}}
             <div class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-5 py-3.5 dark:border-gray-700 dark:bg-gray-800/50">
                 <flux:icon.map-pin class="h-4 w-4 shrink-0 text-gray-400" />
                 <p class="text-sm text-gray-500 dark:text-gray-400">

@@ -124,6 +124,7 @@ class DataGisServices
                     'orden' => $attributes['ORDEN'] ?? null,
                 ],
                 'ubicacion' => [
+                    'municipio' => $attributes['NOMBRE'] ?? null,
                     'direccion' => $attributes['DIRECCION'] ?? null,
                     'barrio' => $attributes['NOMBREBARRIO'] ?? $attributes['BARRIO'] ?? null,
                     'tag' => $attributes['TAG'] ?? null,
