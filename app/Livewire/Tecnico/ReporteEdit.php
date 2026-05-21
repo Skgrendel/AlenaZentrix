@@ -85,6 +85,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                 'observaciones' => $this->reporte->observaciones,
                 'imagenes' => $this->reporte->imagenes,
                 'video' => $this->reporte->video,
+                'geo_referencia' => $this->reporte->geo_referencia,
                 'actividades' => $this->reporte->actividades,
             ]);
         }
@@ -273,6 +274,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('Imágenes')
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
+                        ->visibility('public')
                         ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
                         ->image()
@@ -285,6 +287,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -434,6 +440,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('Imágenes')
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
+                        ->visibility('public')
                         ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
                         ->image()
@@ -446,6 +453,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -529,6 +540,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     Forms\Components\FileUpload::make('imagenes')
                         ->label('Imágenes')
                         ->disk('s3')
+                        ->visibility('public')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
@@ -542,6 +554,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -592,6 +608,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     Forms\Components\FileUpload::make('imagenes')
                         ->label('Archivos / Evidencias')
                         ->disk('s3')
+                        ->visibility('public')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
@@ -610,6 +627,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -688,6 +709,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     Forms\Components\FileUpload::make('imagenes')
                         ->label('Imágenes')
                         ->disk('s3')
+                        ->visibility('public')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
@@ -701,6 +723,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -932,6 +958,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     Forms\Components\FileUpload::make('imagenes')
                         ->label('Fotos')
                         ->disk('s3')
+                        ->visibility('public')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(fn (): bool => ! app()->runningUnitTests())
                         ->multiple()
@@ -948,6 +975,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->placeholder('Pega una URL y presiona Enter')
                         ->hint('Agrega links a documentos, Google Drive, etc.')
                         ->columnSpanFull(),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
+                        ->url()
+                        ->maxLength(500),
                 ]),
         ];
     }
@@ -1105,12 +1136,13 @@ class ReporteEdit extends Component implements HasActions, HasForms
     private function submitServicioGenerico(array $data): void
     {
         $datosServicio = $data;
-        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['geo_referencia'], $datosServicio['actividades']);
 
         $this->reporte->update([
             'observaciones' => $data['observaciones'] ?? null,
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
+            'geo_referencia' => $data['geo_referencia'] ?? null,
             'datos_servicio' => $datosServicio,
             'actividades' => $data['actividades'] ?? null,
         ]);

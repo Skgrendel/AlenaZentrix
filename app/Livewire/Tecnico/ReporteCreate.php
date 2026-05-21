@@ -277,6 +277,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
+                        ->url()
+                        ->maxLength(500),
                 ]),
         ];
     }
@@ -435,6 +439,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
+                        ->url()
+                        ->maxLength(500),
                 ]),
         ];
     }
@@ -528,6 +536,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
+                        ->url()
+                        ->maxLength(500),
                 ]),
         ];
     }
@@ -597,6 +609,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -688,6 +704,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -928,6 +948,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->placeholder('Pega una URL y presiona Enter')
                         ->hint('Agrega links a documentos, Google Drive, etc.')
                         ->columnSpanFull(),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
+                        ->url()
+                        ->maxLength(500),
                 ]),
         ];
     }
@@ -1100,7 +1124,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
         // Para servicios de Investigación, Gestión Legal y Gestión de Riesgo, el proceso de guardado es similar sin lógica específica de comercio o ubicación
         $datosServicio = $data;
         // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
-        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['geo_referencia'], $datosServicio['actividades']);
         // Crear ubicación con latitud, longitud y dirección de la orden
         $ubicacionRecord = ubicacion::create([
             'latitud' => $this->latitud,
@@ -1116,6 +1140,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'observaciones' => $data['observaciones'] ?? null,
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
+            'geo_referencia' => $data['geo_referencia'] ?? null,
             'datos_servicio' => $datosServicio,
             'ubicacions_id' => $ubicacionRecord->id,
             'actividades' => $data['actividades'] ?? null,
@@ -1137,7 +1162,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
         // Para el servicio de Vigilancia, el proceso de guardado es similar a los servicios genéricos pero sin actualizar el estado de la orden (permanece EnProgreso) y sin notificar al coordinador
         $datosServicio = $data;
         // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
-        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['geo_referencia'], $datosServicio['actividades']);
         // Crear ubicación con latitud, longitud y dirección de la orden
         $ubicacionRecord = ubicacion::create([
             'latitud' => $this->latitud,
@@ -1152,6 +1177,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'observaciones' => $data['observaciones'] ?? null,
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
+            'geo_referencia' => $data['geo_referencia'] ?? null,
             'datos_servicio' => $datosServicio,
             'ubicacions_id' => $ubicacionRecord->id,
             'actividades' => $data['actividades'] ?? null,
@@ -1168,7 +1194,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
     {   // Para el servicio de Auditoría de Campo, el proceso de guardado es similar a los servicios genéricos pero con un esquema específico para auditoría y sin lógica de comercio o ubicación
         $datosServicio = $data;
         // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
-        unset($datosServicio['observaciones'], $datosServicio['imagenes']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['geo_referencia']);
         // Crear ubicación con latitud, longitud y dirección de la orden
         $ubicacionRecord = ubicacion::create([
             'latitud' => $this->latitud,
@@ -1182,6 +1208,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'numero_orden' => $this->orden->numero_orden,
             'observaciones' => $data['observaciones'] ?? null,
             'imagenes' => $data['imagenes'] ?? null,
+            'geo_referencia' => $data['geo_referencia'] ?? null,
             'ubicacions_id' => $ubicacionRecord->id,
             'datos_servicio' => $datosServicio,
         ]);

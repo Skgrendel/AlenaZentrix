@@ -273,6 +273,7 @@ class ReportePdfController extends Controller
             'actividades' => $this->normalizeActividades($reporte->actividades ?? '[]'),
             'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
             'conclusion' => $reporte->conclusion ?: null,
+            'geo_referencia' => $reporte->geo_referencia ?? null,
         ];
     }
 
@@ -293,6 +294,7 @@ class ReportePdfController extends Controller
             'resultado' => ResultadoReporte::find($datos['resultado_reporte_id'] ?? null)?->nombre ?? '—',
             'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
             'conclusion' => $reporte->conclusion ?: null,
+            'geo_referencia' => $reporte->geo_referencia ?? null,
         ];
     }
 
@@ -524,6 +526,7 @@ class ReportePdfController extends Controller
             'actividades' => $this->normalizeActividades($reporte->actividades ?? '[]'),
             'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
             'video' => $reporte->video ?? null,
+            'geo_referencia' => $reporte->geo_referencia ?? null,
         ];
     }
 
@@ -569,6 +572,7 @@ class ReportePdfController extends Controller
             'cedula_auditor' => $datos['cedula_auditor'] ?? null,
             'urls_evidencia' => $datos['urls_evidencia'] ?? [],
             'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
+            'geo_referencia' => $reporte->geo_referencia ?? null,
         ];
     }
 }
