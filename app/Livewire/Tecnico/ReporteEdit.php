@@ -74,31 +74,19 @@ class ReporteEdit extends Component implements HasActions, HasForms
         $this->reporte = $orden->reportes()->latest()->firstOrFail();
 
         if ($this->orden->tipo_servicio === TipoServicio::Fraudes || $this->orden->tipo_servicio === TipoServicio::RevisionMedidores) {
-            $data = [
+            $this->form->fill([
                 ...$this->reporte->toArray(),
                 'nombre_comercio' => $this->reporte->comercio?->nombre_comercio,
                 'tipo_comercio_id' => $this->reporte->comercio?->tipo_comercio_id,
-            ];
-
-            if (! empty($data['imagenes'])) {
-                $data['imagenes'] = $this->prepareFileUploadFromPaths($data['imagenes']);
-            }
-
-            $this->form->fill($data);
+            ]);
         } else {
-            $data = [
+            $this->form->fill([
                 ...($this->reporte->datos_servicio ?? []),
                 'observaciones' => $this->reporte->observaciones,
                 'imagenes' => $this->reporte->imagenes,
                 'video' => $this->reporte->video,
                 'actividades' => $this->reporte->actividades,
-            ];
-
-            if (! empty($data['imagenes'])) {
-                $data['imagenes'] = $this->prepareFileUploadFromPaths($data['imagenes']);
-            }
-
-            $this->form->fill($data);
+            ]);
         }
     }
 
@@ -109,64 +97,6 @@ class ReporteEdit extends Component implements HasActions, HasForms
      * @param  array<int,string>|null  $paths
      * @return array<int,array<string,mixed>>|null
      */
-    private function prepareFileUploadFromPaths(?array $paths): ?array
-    {
-        if (empty($paths) || ! is_array($paths)) {
-            return null;
-        }
-
-        // Durante tests dejamos las rutas tal cual para evitar Storage::disk calls.
-        if (app()->runningUnitTests()) {
-            return $paths;
-        }
-
-        $result = [];
-        foreach ($paths as $p) {
-            try {
-                if (! Storage::disk('s3')->exists($p)) {
-                    continue;
-                }
-
-                $name = basename($p);
-                $size = null;
-                $mime = null;
-
-                try {
-                    $size = Storage::disk('s3')->size($p);
-                } catch (\Throwable $e) {
-                    // ignore
-                }
-
-                try {
-                    $mime = Storage::disk('s3')->mimeType($p);
-                } catch (\Throwable $e) {
-                    // ignore
-                }
-
-                // URL temporal (5 minutos)
-                $url = null;
-                try {
-                    $url = Storage::disk('s3')->temporaryUrl($p, now()->addMinutes(5));
-                } catch (\Throwable $e) {
-                    $url = Storage::disk('s3')->url($p);
-                }
-
-                $result[] = [
-                    'name' => $name,
-                    'size' => $size,
-                    'type' => $mime,
-                    'url' => $url,
-                    'path' => $p,
-                ];
-            } catch (\Throwable $e) {
-                // no interrumpimos si un archivo falla
-                continue;
-            }
-        }
-
-        return $result !== [] ? $result : null;
-    }
-
     public function form(Schema $form): Schema
     {
         $schema = match ($this->orden->tipo_servicio) {
