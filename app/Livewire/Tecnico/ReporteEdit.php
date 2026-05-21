@@ -72,7 +72,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
         $this->orden = $orden;
         $this->reporte = $orden->reportes()->latest()->firstOrFail();
 
-        if ($this->orden->tipo_servicio === TipoServicio::Fraudes) {
+        if ($this->orden->tipo_servicio === TipoServicio::Fraudes || $this->orden->tipo_servicio === TipoServicio::RevisionMedidores) {
             $this->form->fill([
                 ...$this->reporte->toArray(),
                 'nombre_comercio' => $this->reporte->comercio?->nombre_comercio,
@@ -91,7 +91,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
     public function form(Schema $form): Schema
     {
         $schema = match ($this->orden->tipo_servicio) {
-            TipoServicio::Fraudes => $this->fraudesSchema(),
+            TipoServicio::Fraudes,
+            TipoServicio::RevisionMedidores => $this->fraudesSchema(),
             TipoServicio::Investigacion => $this->investigacionSchema(),
             TipoServicio::GestionLegal => $this->gestionLegalSchema(),
             TipoServicio::Gestion_Riesgo => $this->gestionRiesgoSchema(),

@@ -90,7 +90,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
     public function form(Schema $form): Schema
     {
         $schema = match ($this->orden->tipo_servicio) {
-            TipoServicio::Fraudes => $this->fraudesSchema(),
+            TipoServicio::Fraudes,
+            TipoServicio::RevisionMedidores => $this->fraudesSchema(),
             TipoServicio::Investigacion => $this->investigacionSchema(),
             TipoServicio::GestionLegal => $this->gestionLegalSchema(),
             TipoServicio::Vigilancia => $this->vigilanciaSchema(),
@@ -949,7 +950,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
         }
 
         match ($this->orden->tipo_servicio) {
-            TipoServicio::Fraudes => $this->submitFraudes($data),
+            TipoServicio::Fraudes,
+            TipoServicio::RevisionMedidores => $this->submitFraudes($data),
             TipoServicio::Investigacion => $this->submitServicioGenerico($data),
             TipoServicio::GestionLegal => $this->submitServicioGenerico($data),
             TipoServicio::Vigilancia => $this->submitVigilancia($data),
@@ -1118,7 +1120,6 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'ubicacions_id' => $ubicacionRecord->id,
             'actividades' => $data['actividades'] ?? null,
         ]);
-
 
         // Actualizar estado de la orden a EnRevision para que el coordinador pueda revisarla
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);

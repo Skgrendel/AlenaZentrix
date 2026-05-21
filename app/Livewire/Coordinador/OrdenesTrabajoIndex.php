@@ -347,7 +347,10 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
             // ── Fraudes ───────────────────────────────────────────────────
             Section::make('Datos del Punto de Servicio')
                 ->columns(2)
-                ->visible($tipoServicio === TipoServicio::Fraudes)
+                ->visible(
+                    $tipoServicio === TipoServicio::Fraudes ||
+                    $tipoServicio === TipoServicio::RevisionMedidores
+                )
                 ->schema([
                     Forms\Components\TextInput::make('contrato')->label('Contrato')->maxLength(255),
                     Forms\Components\TextInput::make('cliente')->label('Cliente')->maxLength(255),

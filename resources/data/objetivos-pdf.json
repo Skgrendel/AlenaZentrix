@@ -4,5 +4,11 @@
             "parrafos": [
                 "Realizar labores de campo y verificación con el fin de establecer o corroborar la existencia de un mecanismo fraudulento en el sistema de medición del servicio público de Gas. En caso de confirmarse dicha situación, se deberá acompañar la intervención física ejecutada por el área BYC (antes PNO), con el propósito de recaudar las evidencias fotográficas, videográficas y documentales correspondientes."
             ]
-        }
+        },
+    "revision_medidores": {
+        "titulo": "OBJETIVOS",
+        "parrafos": [
+            "Realizar la verificación física del estado del sistema de medición de gas del contrato asignado, con el fin de establecer si existe alguna anomalía, manipulación o irregularidad en el medidor o instalaciones asociadas. Se documentarán evidencias fotográficas y se registrará el resultado de la revisión para respuesta a la empresa solicitante del servicio."
+        ]
+    }
 }
