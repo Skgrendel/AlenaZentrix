@@ -158,7 +158,7 @@
             <p class="text-sm text-zinc-900 dark:text-white">{{ $orden->objetivo }}</p>
         </div>
     @endif
-    @if (!empty($orden->actividades))
+    {{-- @if (!empty($orden->actividades))
         <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
             <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Actividades
             </h3>
@@ -168,7 +168,7 @@
                 @endforeach
             </ul>
         </div>
-    @endif
+    @endif --}}
 
     {{-- GPS silencioso: captura en segundo plano, modal si está bloqueado --}}
     <div x-data="{
