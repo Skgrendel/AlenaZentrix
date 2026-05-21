@@ -43,8 +43,11 @@
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Titular</p>
                     <h2 class="mt-0.5 text-xl font-bold text-gray-900 dark:text-white">
-                        {{ $resultado['titular']['nombre'] ?: '—' }}
+                        {{ $resultado['titular']['nombre'] ?? '—' }}
                     </h2>
+                    @if ($resultado['titular']['zona'])
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ $resultado['titular']['zona'] }}</p>
+                    @endif
                     <div class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
                         <span>Contrato: <span class="font-medium text-gray-700 dark:text-gray-200">{{ $resultado['titular']['contrato'] ?? '—' }}</span></span>
                         <span>NUP: <span class="font-medium text-gray-700 dark:text-gray-200">{{ $resultado['titular']['nup'] ?? '—' }}</span></span>
@@ -70,8 +73,6 @@
                         @foreach ([
                             'Dirección' => $resultado['ubicacion']['direccion'],
                             'Barrio' => $resultado['ubicacion']['barrio'],
-                            'Localidad' => $resultado['ubicacion']['localidad'],
-                            'Departamento' => $resultado['ubicacion']['departamento'],
                             'TAG' => $resultado['ubicacion']['tag'],
                         ] as $label => $valor)
                             @if ($valor)
@@ -111,7 +112,6 @@
                         @endif
                         @foreach ([
                             'Estado de Corte' => $resultado['servicio']['estado_corte'],
-                            'Tipo de Predio' => $resultado['servicio']['tipo_predio'],
                             'Descripción' => $resultado['servicio']['descripcion'],
                             'Categoría' => $resultado['servicio']['categoria'],
                             'Estrato' => $resultado['servicio']['estrato'],

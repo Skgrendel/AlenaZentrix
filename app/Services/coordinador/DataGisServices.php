@@ -110,9 +110,15 @@ class DataGisServices
 
             [$lat, $lng] = $this->convertWebMercatorToLatLng($geometry['x'], $geometry['y']);
 
+            $nombreUsuario = trim(($attributes['NOMBREUSUARIO'] ?? '').' '.($attributes['APELLIDO'] ?? ''));
+            $estadoCorte = isset($attributes['DESCESTADOCORTE'])
+                ? trim((string) preg_replace('/[-\s]+$/', '', $attributes['DESCESTADOCORTE']))
+                : null;
+
             return [
                 'titular' => [
-                    'nombre' => trim(($attributes['NOMBRE'] ?? '').' '.($attributes['APELLIDO'] ?? '')),
+                    'nombre' => $nombreUsuario ?: null,
+                    'zona' => $attributes['NOMBRE'] ?? null,
                     'nup' => $attributes['NUP'] ?? null,
                     'contrato' => $attributes['SUBSCRIPTION_ID'] ?? null,
                     'orden' => $attributes['ORDEN'] ?? null,
@@ -120,14 +126,11 @@ class DataGisServices
                 'ubicacion' => [
                     'direccion' => $attributes['DIRECCION'] ?? null,
                     'barrio' => $attributes['NOMBREBARRIO'] ?? $attributes['BARRIO'] ?? null,
-                    'localidad' => $attributes['LOCALIDAD'] ?? null,
-                    'departamento' => $attributes['DEPARTAMENTO'] ?? null,
                     'tag' => $attributes['TAG'] ?? null,
                 ],
                 'servicio' => [
                     'estado' => $attributes['ESTADOPRODUCTO'] ?? null,
-                    'estado_corte' => $attributes['DESCESTADOCORTE'] ?? null,
-                    'tipo_predio' => $attributes['TIPOPREDIO'] ?? null,
+                    'estado_corte' => $estadoCorte ?: null,
                     'descripcion' => $attributes['DESCRIPCION'] ?? null,
                     'categoria' => $attributes['DESCATEGORIA'] ?? $attributes['CATEGORIA'] ?? null,
                     'estrato' => $attributes['ESTRATO'] ?? null,
