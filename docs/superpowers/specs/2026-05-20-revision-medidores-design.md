@@ -198,6 +198,8 @@ Cada subtarea de implementación incluye sus propios tests Pest. Los tests clave
 - Asignación masiva NO envía `OrdenAsignada` individual
 - Auditor con servicio `revision_medidores` ve las auditorías del tipo
 - Auditor sin ese servicio no las ve
+- Descarga de PDF retorna 200 y content-type correcto para orden RevisionMedidores
+- Descarga de PDF retorna 403 para orden de otro tipo de servicio
 
 ---
 
@@ -256,7 +258,23 @@ El trabajo se divide en subtareas independientes y ordenadas. Cada una tiene con
 - Verificar que el filtro en `AuditoriasIndex` incluye este tipo cuando está asignado al auditor
 - Tests: auditor con servicio asignado ve auditorías, auditor sin servicio no las ve
 
-### ST-10: Pint y tests finales
+### ST-10: Informe PDF — RevisionMedidores
+- Nuevo método `DownLoadInformeRevisionMedidores(OrdenJob $orden)` en `ReportePdfController`
+  - Guard: `abort_unless($orden->tipo_servicio === TipoServicio::RevisionMedidores, 403)`
+  - Guard: `abort_unless(auth()->user()->can('informes'), 403)`
+  - Carga relaciones de `$orden` y `$reporte` igual que `DownLoadInformeFraude`
+  - Construye `$firma`, `$datosOrden` con `buildDatosOrden()` existente, `$anomalias` e `$imagenes`
+  - Retorna `Pdf::loadView('pdf.reporte-revision-medidores', [...])->download("reporte-revision-medidores-{$orden->numero_orden}.pdf")`
+- Nueva vista `resources/views/pdf/reporte-revision-medidores.blade.php`
+  - Misma estructura y plantilla que `reporte-fraude.blade.php`
+  - Título adaptado: "Revisión de Medidores / Lecturas"
+  - Ajustar encabezados de sección según corresponda al servicio
+- Nueva ruta GET: `operaciones/revision-medidores/{orden}/reporte` → `ReportePdfController@DownLoadInformeRevisionMedidores`
+  - Middleware: `role:Coordinador|Administrador` + permiso `informes`
+- Botón "Descargar Informe PDF" en `RevisionMedidoresIndex` por cada orden completada
+- Test: la ruta retorna 200 y content-type PDF para orden de tipo RevisionMedidores; retorna 403 para otro tipo
+
+### ST-11: Pint y tests finales
 - Ejecutar `vendor/bin/pint --dirty --format agent`
 - Ejecutar suite completa de tests del módulo
 - Verificar que tests existentes no regresen
