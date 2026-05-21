@@ -12,8 +12,10 @@ use App\Models\TipoComercio;
 use App\Models\TipologiaOrden;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportePdfController extends Controller
 {
@@ -579,6 +581,18 @@ class ReportePdfController extends Controller
         $pdf->setPaper('A4', 'portrait');
 
         return $pdf->download("reporte-revision-medidores-{$orden->numero_orden}.pdf");
+    }
+
+    public function descargarZipRevisionMedidores(Request $request): BinaryFileResponse
+    {
+        abort_unless($request->hasValidSignature(), 403);
+
+        $path = $request->query('path');
+        $absolutePath = storage_path('app/private/'.ltrim($path, '/'));
+
+        abort_unless(file_exists($absolutePath), 404);
+
+        return response()->download($absolutePath)->deleteFileAfterSend(true);
     }
 
     /**

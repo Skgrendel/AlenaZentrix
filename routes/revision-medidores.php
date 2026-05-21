@@ -20,4 +20,8 @@ Route::middleware(['auth', 'verified', 'permission:ordenes.ver'])
         Route::get('{orden}/reporte', [ReportePdfController::class, 'DownLoadInformeRevisionMedidores'])
             ->middleware('permission:informes')
             ->name('reporte');
+
+        Route::get('descargar-zip', [ReportePdfController::class, 'descargarZipRevisionMedidores'])
+            ->middleware('signed')
+            ->name('descargar-zip');
     });

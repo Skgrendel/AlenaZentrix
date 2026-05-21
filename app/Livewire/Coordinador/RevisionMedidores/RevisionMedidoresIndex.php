@@ -4,10 +4,12 @@ namespace App\Livewire\Coordinador\RevisionMedidores;
 
 use App\Enums\EstadoOrden;
 use App\Enums\TipoServicio;
+use App\Jobs\GenerarZipReportesRevisionMedidoresJob;
 use App\Mail\OrdenAsignada;
 use App\Mail\OrdenesAsignadasResumen;
 use App\Models\OrdenJob;
 use App\Models\personals;
+use App\Notifications\ZipReportesListoNotification;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -35,6 +37,12 @@ class RevisionMedidoresIndex extends Component implements HasActions, HasForms, 
     use InteractsWithActions;
     use InteractsWithForms;
     use InteractsWithTable;
+
+    public bool $zipListo = false;
+
+    public string $zipUrl = '';
+
+    public string $zipMensaje = '';
 
     public function table(Table $table): Table
     {
@@ -164,12 +172,48 @@ class RevisionMedidoresIndex extends Component implements HasActions, HasForms, 
                             $this->notificarMasivo($records, $data['personals_id']);
                         })
                         ->deselectRecordsAfterCompletion(),
+                    BulkAction::make('descargar_pdfs')
+                        ->label('Descargar PDFs')
+                        ->icon('heroicon-o-archive-box-arrow-down')
+                        ->color('info')
+                        ->action(function (Collection $records): void {
+                            $completadas = $records
+                                ->filter(fn (OrdenJob $r) => $r->estado === EstadoOrden::Completada)
+                                ->pluck('id')
+                                ->all();
+
+                            if (empty($completadas)) {
+                                return;
+                            }
+
+                            GenerarZipReportesRevisionMedidoresJob::dispatch($completadas, auth()->id());
+                        })
+                        ->deselectRecordsAfterCompletion(),
                 ]),
             ])
             ->emptyStateHeading('Sin órdenes de revisión')
             ->emptyStateDescription('Importa un archivo para comenzar.')
             ->emptyStateIcon('heroicon-o-clipboard-document-list')
             ->defaultSort('created_at', 'desc');
+    }
+
+    public function checkZipNotificacion(): void
+    {
+        $notification = auth()->user()
+            ?->unreadNotifications()
+            ->where('type', ZipReportesListoNotification::class)
+            ->latest()
+            ->first();
+
+        if (! $notification) {
+            return;
+        }
+
+        $this->zipListo = true;
+        $this->zipUrl = $notification->data['url'] ?? '';
+        $this->zipMensaje = 'Tu ZIP con '.($notification->data['cantidad'] ?? 0).' reporte(s) está listo.';
+
+        $notification->markAsRead();
     }
 
     private function notificarIndividual(OrdenJob $orden): void
