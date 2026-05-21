@@ -888,7 +888,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
         }
 
         match ($this->orden->tipo_servicio) {
-            TipoServicio::Fraudes => $this->submitFraudes($data),
+            TipoServicio::Fraudes,
+            TipoServicio::RevisionMedidores => $this->submitFraudes($data),
             default => $this->submitServicioGenerico($data),
         };
     }
