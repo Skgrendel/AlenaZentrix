@@ -15,6 +15,7 @@ enum TipoServicio: string
     case Vigilancia = 'vigilancia';
     case Gestion_Riesgo = 'Gestión de Riesgo';
     case AuditoriaCampo = 'auditoria_campo';
+    case RevisionMedidores = 'revision_medidores';
 
     public function label(): string
     {
@@ -25,6 +26,7 @@ enum TipoServicio: string
             self::Vigilancia => 'Dispositivos de Vigilancia',
             self::Gestion_Riesgo => 'Gestión de Riesgo',
             self::AuditoriaCampo => 'Auditorías de Campo',
+            self::RevisionMedidores => 'Revisión de Medidores',
         };
     }
 
@@ -37,6 +39,7 @@ enum TipoServicio: string
             self::Vigilancia => 'success',
             self::Gestion_Riesgo => 'primary',
             self::AuditoriaCampo => 'purple',
+            self::RevisionMedidores => 'cyan',
         };
     }
 
@@ -49,12 +52,12 @@ enum TipoServicio: string
     /** @return bool Servicios que requieren contrato y cliente */
     public function tieneContrato(): bool
     {
-        return in_array($this, [self::Fraudes, self::Investigacion, self::Vigilancia]);
+        return in_array($this, [self::Fraudes, self::Investigacion, self::Vigilancia, self::RevisionMedidores]);
     }
 
     /** @return bool Servicios que tienen datos de medidor */
     public function tieneMedidor(): bool
     {
-        return $this === self::Fraudes;
+        return in_array($this, [self::Fraudes, self::RevisionMedidores]);
     }
 }
