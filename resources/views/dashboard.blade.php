@@ -4,15 +4,16 @@
         {{-- Header --}}
         <div class="flex flex-col gap-3 border-b border-zinc-200 pb-4 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h1 class="text-xl font-bold text-zinc-800 dark:text-zinc-100">Panel de Control Operativo</h1>
-                <p class="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
-                    Bienvenido, <span class="font-medium text-zinc-700 dark:text-zinc-300">{{ Auth::user()->fullName() }}</span>
-                    <span class="mx-1.5 text-zinc-300 dark:text-zinc-600">·</span>
-                    {{ Auth::user()->getRoleNames()->first() ?? 'Sin Rol' }}
-                    <span class="mx-1.5 text-zinc-300 dark:text-zinc-600">·</span>
-                    {{ Auth::user()->company->nombre ?? 'Sin Empresa' }}
+                <h1 class="text-xl font-semibold text-zinc-800 dark:text-zinc-100">
+                    Bienvenido, {{ Auth::user()->fullName() }}
+                </h1>
+                <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                    Rol Asignado: {{ Auth::user()->getRoleNames()->first() ?? 'Sin Rol Asignado' }}
                 </p>
-                <p class="text-xs text-zinc-400 capitalize dark:text-zinc-500">
+                <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                    Empresa: {{ Auth::user()->company->nombre ?? 'Sin Empresa' }}
+                </p>
+                <p class="text-sm capitalize text-zinc-500 dark:text-zinc-400">
                     {{ now()->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
                 </p>
             </div>
