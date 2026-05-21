@@ -414,6 +414,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         )
                         ->searchable()
                         ->placeholder('Seleccionar'),
+                        
                 ]),
 
             Section::make('5. Observaciones')
