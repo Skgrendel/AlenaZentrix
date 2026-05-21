@@ -158,11 +158,28 @@ Operaciones
 
 ---
 
+## Plantilla de Importación Descargable
+
+La pantalla `ImportarRevisionMedidores` incluye un botón **"Descargar Plantilla"** que genera y devuelve un archivo `.xlsx` con:
+
+- Fila de encabezados con los nombres exactos de columna esperados
+- Una fila de ejemplo con datos ficticios para guiar al usuario
+- Columnas: `contrato`, `cliente`, `direccion`, `barrio`, `medidor`, `tipo_medidor`, `ciclo`, `descripcion`
+
+La plantilla se genera en tiempo real con `maatwebsite/excel` mediante una clase `App\Exports\RevisionMedidoresPlantillaExport` — no se almacena en disco. La descarga se maneja desde una ruta GET dedicada para no bloquear Livewire.
+
+**Ruta adicional:**
+```
+GET  operaciones/revision-medidores/plantilla  → RevisionMedidoresPlantillaController@download
+```
+
+---
+
 ## Paquete Requerido
 
 | Paquete | Uso |
 |---|---|
-| `maatwebsite/excel` | Parseo de CSV y XLSX en el import |
+| `maatwebsite/excel` | Parseo de CSV/XLSX en el import y generación de la plantilla descargable |
 
 Verificar si ya está instalado antes de hacer `composer require`.
 
@@ -172,6 +189,7 @@ Verificar si ya está instalado antes de hacer `composer require`.
 
 Cada subtarea de implementación incluye sus propios tests Pest. Los tests clave del módulo completo son:
 
+- Descarga de plantilla retorna archivo XLSX con encabezados correctos
 - Import válido crea las órdenes correctas en DB
 - Import con filas inválidas importa las válidas y reporta errores
 - Import con archivo vacío muestra error adecuado
@@ -197,40 +215,48 @@ El trabajo se divide en subtareas independientes y ordenadas. Cada una tiene con
 - Verificar si ya está instalado; si no, `composer require maatwebsite/excel`
 - Publicar config si aplica
 
-### ST-3: Import class — RevisionMedidoresImport
+### ST-3: Export class — RevisionMedidoresPlantillaExport + Controller
+- Clase `App\Exports\RevisionMedidoresPlantillaExport` que implementa `FromArray` + `WithHeadings`
+- Encabezados: `contrato`, `cliente`, `direccion`, `barrio`, `medidor`, `tipo_medidor`, `ciclo`, `descripcion`
+- Una fila de ejemplo con datos ficticios
+- `App\Http\Controllers\RevisionMedidoresPlantillaController` con método `download()` que retorna `Excel::download()`
+- Ruta GET `operaciones/revision-medidores/plantilla` con middleware `role:Coordinador|Administrador`
+- Test: la ruta retorna status 200 y content-type de Excel
+
+### ST-4: Import class — RevisionMedidoresImport
 - Clase `App\Imports\RevisionMedidoresImport` que implementa `ToCollection` + `WithHeadingRow` + `SkipsOnFailure`
 - Mapeo de columnas del archivo → campos de `OrdenJob`
 - Validación fila por fila con reglas específicas
 - Retorna colección de órdenes creadas y colección de errores
 
-### ST-4: Mailable OrdenesAsignadasResumen
+### ST-5: Mailable OrdenesAsignadasResumen
 - `App\Mail\OrdenesAsignadasResumen` con constructor `(personals $investigador, Collection $ordenes)`
 - Vista blade con total de órdenes y tabla de contratos/clientes
 - Test: estructura del correo
 
-### ST-5: Componente ImportarRevisionMedidores
+### ST-6: Componente ImportarRevisionMedidores
 - Livewire component con upload de archivo (Livewire file upload)
 - Llama a `RevisionMedidoresImport`
 - Muestra resumen de éxito y tabla de errores
 - Tests: import exitoso, import con errores, archivo inválido
 
-### ST-6: Componente RevisionMedidoresIndex
+### ST-7: Componente RevisionMedidoresIndex
 - Listado de `OrdenJob` donde `tipo_servicio = revision_medidores` con paginación y búsqueda
 - Asignación individual: mismo patrón que `OrdenesTrabajoIndex`, dispara `OrdenAsignada`
 - Asignación masiva: checkbox + modal + acción en lote, dispara `OrdenesAsignadasResumen`
 - Tests: listado, asignación individual (1 correo), asignación masiva (1 correo resumen, no N individuales)
 
-### ST-7: Rutas y Sidebar
+### ST-8: Rutas y Sidebar
 - Registrar rutas en `routes/web.php`
 - Agregar entrada al sidebar con control de visibilidad por rol
 - Tests: rutas accesibles para Coordinador/Admin, no accesibles para otros roles
 
-### ST-8: Auditoría — UsuarioServicioAuditable
+### ST-9: Auditoría — UsuarioServicioAuditable
 - Agregar `RevisionMedidores` como opción válida en el formulario de gestión de servicios auditables
 - Verificar que el filtro en `AuditoriasIndex` incluye este tipo cuando está asignado al auditor
 - Tests: auditor con servicio asignado ve auditorías, auditor sin servicio no las ve
 
-### ST-9: Pint y tests finales
+### ST-10: Pint y tests finales
 - Ejecutar `vendor/bin/pint --dirty --format agent`
 - Ejecutar suite completa de tests del módulo
 - Verificar que tests existentes no regresen
