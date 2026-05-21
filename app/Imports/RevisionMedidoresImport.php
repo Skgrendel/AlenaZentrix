@@ -16,6 +16,8 @@ class RevisionMedidoresImport implements ToCollection, WithHeadingRow
 
     private int $filaActual = 1;
 
+    private int $creadas = 0;
+
     public function __construct(
         private readonly string $companyId,
         private readonly string $creadoPorId,
@@ -51,6 +53,7 @@ class RevisionMedidoresImport implements ToCollection, WithHeadingRow
                 'comentario_usuario' => trim($rowArray['descripcion'] ?? '') ?: null,
                 'estado_servicio' => true,
             ]);
+            $this->creadas++;
         }
     }
 
@@ -70,6 +73,11 @@ class RevisionMedidoresImport implements ToCollection, WithHeadingRow
         }
 
         return $errores;
+    }
+
+    public function creadas(): int
+    {
+        return $this->creadas;
     }
 
     /** @return array<int, array{fila: int, campo: string, motivo: string}> */

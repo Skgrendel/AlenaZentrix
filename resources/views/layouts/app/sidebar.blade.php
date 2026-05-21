@@ -29,6 +29,12 @@
                     wire:navigate>
                     {{ __('Órdenes de Trabajo') }}
                 </flux:sidebar.item>
+                <flux:sidebar.item icon="calculator"
+                    :href="route('operaciones.revision-medidores.index')"
+                    :current="request()->routeIs('operaciones.revision-medidores*')"
+                    wire:navigate>
+                    {{ __('Revisión de Medidores') }}
+                </flux:sidebar.item>
             </flux:sidebar.group>
             @endcan
 
