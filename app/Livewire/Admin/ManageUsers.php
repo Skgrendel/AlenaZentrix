@@ -196,7 +196,15 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                     Forms\Components\TextInput::make('numero_documento')
                         ->label('Número de Documento')
                         ->required()
-                        ->maxLength(20),
+                        ->maxLength(20)
+                        ->unique(
+                            table: 'personals',
+                            column: 'numero_documento',
+                            ignorable: fn ($record) => $record?->personal,
+                        )
+                        ->validationMessages([
+                            'unique' => 'Este número de documento ya está registrado en el sistema.',
+                        ]),
 
                     Forms\Components\TextInput::make('nombres')
                         ->label('Nombres')

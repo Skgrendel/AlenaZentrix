@@ -142,7 +142,18 @@ class UsersIndex extends Component implements HasActions, HasForms, HasTable
                                 ->mapWithKeys(fn (TipoDocumento $case) => [$case->value => $case->label()])
                         )
                         ->required(),
-                    Forms\Components\TextInput::make('numero_documento')->label('Número de Documento')->required()->maxLength(20),
+                    Forms\Components\TextInput::make('numero_documento')
+                        ->label('Número de Documento')
+                        ->required()
+                        ->maxLength(20)
+                        ->unique(
+                            table: 'personals',
+                            column: 'numero_documento',
+                            ignorable: fn ($record) => $record?->personal,
+                        )
+                        ->validationMessages([
+                            'unique' => 'Este número de documento ya está registrado en el sistema.',
+                        ]),
                     Forms\Components\TextInput::make('nombres')->label('Nombres')->required()->maxLength(100),
                     Forms\Components\TextInput::make('apellidos')->label('Apellidos')->required()->maxLength(100),
                     Forms\Components\TextInput::make('telefono')->label('Teléfono')->tel()->maxLength(20),
