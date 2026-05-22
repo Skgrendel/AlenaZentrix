@@ -48,3 +48,4 @@ require __DIR__.'/admin.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/mapa.php';
 require __DIR__.'/superadmin.php';
+require __DIR__.'/revision-medidores.php';

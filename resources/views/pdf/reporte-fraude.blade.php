@@ -541,6 +541,21 @@
             <div class="content-box">{{ $reporte->observaciones ?: 'Sin observaciones registradas.' }}</div>
         </div>
 
+        {{-- ── 5b. GeoReferencia ── --}}
+        @if (!empty($reporte->geo_referencia))
+            <div class="section">
+                <div class="section-title">GEOREFERENCIA</div>
+                <div class="info-box">
+                    <div class="info-grid">
+                        <div class="info-row">
+                            <div class="info-label">URL GeoReferencia:</div>
+                            <div class="info-value" style="word-break: break-all;">{{ $reporte->geo_referencia }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         {{-- ── 6. Resultado de la Auditoría ── --}}
         @php $auditoria = $reporte->auditoria; @endphp
         @if ($auditoria && $auditoria->estado?->value !== 'pendiente_auditoria')

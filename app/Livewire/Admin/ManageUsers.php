@@ -3,9 +3,11 @@
 namespace App\Livewire\Admin;
 
 use App\Enums\TipoDocumento;
+use App\Enums\TipoServicio;
 use App\Mail\WelcomeNewUser;
 use App\Models\personals;
 use App\Models\User;
+use App\Models\UsuarioServicioAuditable;
 use App\Services\TenantService;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -105,6 +107,17 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                             $user->assignRole($data['rol']);
                         }
 
+                        // Si es Auditor, sincronizar servicios auditables
+                        if ($data['rol'] === 'Auditor' && ! empty($data['servicios_auditables'])) {
+                            UsuarioServicioAuditable::where('user_id', $user->id)->delete();
+                            foreach ($data['servicios_auditables'] as $servicio) {
+                                UsuarioServicioAuditable::create([
+                                    'user_id' => $user->id,
+                                    'tipo_servicio' => $servicio,
+                                ]);
+                            }
+                        }
+
                         try {
                             Mail::to($user->email)->send(new WelcomeNewUser(
                                 $user->email,
@@ -132,6 +145,7 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                         'email' => $record->email,
                         'estado' => $record->estado,
                         'rol' => $record->roles->first()?->name,
+                        'servicios_auditables' => $record->serviciosAuditables()->pluck('tipo_servicio')->toArray(),
                     ])
                     ->using(function (User $record, array $data): User {
                         $record->personal?->update([
@@ -154,6 +168,20 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
 
                         if (! empty($data['rol'])) {
                             $record->syncRoles([$data['rol']]);
+                        }
+
+                        // Si es Auditor, sincronizar servicios auditables
+                        if ($data['rol'] === 'Auditor' && ! empty($data['servicios_auditables'])) {
+                            UsuarioServicioAuditable::where('user_id', $record->id)->delete();
+                            foreach ($data['servicios_auditables'] as $servicio) {
+                                UsuarioServicioAuditable::create([
+                                    'user_id' => $record->id,
+                                    'tipo_servicio' => $servicio,
+                                ]);
+                            }
+                        } elseif ($data['rol'] !== 'Auditor') {
+                            // Si cambia a otro rol, eliminar servicios auditables
+                            UsuarioServicioAuditable::where('user_id', $record->id)->delete();
                         }
 
                         return $record;
@@ -248,6 +276,16 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                         ->label('Rol')
                         ->options($roles)
                         ->searchable()
+                        ->live()
+                        ->columnSpanFull(),
+
+                    Forms\Components\CheckboxList::make('servicios_auditables')
+                        ->label('Servicios que puede auditar')
+                        ->options(
+                            collect(TipoServicio::cases())
+                                ->mapWithKeys(fn (TipoServicio $case) => [$case->value => $case->label()])
+                        )
+                        ->visible(fn ($get) => $get('rol') === 'Auditor')
                         ->columnSpanFull(),
 
                     Forms\Components\Toggle::make('estado')

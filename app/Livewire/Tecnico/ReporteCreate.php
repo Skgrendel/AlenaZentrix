@@ -90,7 +90,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
     public function form(Schema $form): Schema
     {
         $schema = match ($this->orden->tipo_servicio) {
-            TipoServicio::Fraudes => $this->fraudesSchema(),
+            TipoServicio::Fraudes,
+            TipoServicio::RevisionMedidores => $this->fraudesSchema(),
             TipoServicio::Investigacion => $this->investigacionSchema(),
             TipoServicio::GestionLegal => $this->gestionLegalSchema(),
             TipoServicio::Vigilancia => $this->vigilanciaSchema(),
@@ -276,6 +277,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
+                        ->url()
+                        ->maxLength(500),
                 ]),
         ];
     }
@@ -371,7 +376,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                     Repeater::make('actividades')
                         ->label('Actividades Realizadas')
                         ->schema([
-                            Forms\Components\TextInput::make('descripcion_orden')
+                            Forms\Components\Textarea::make('descripcion_orden')
                                 ->label('Actividad asignada')
                                 ->disabled()
                                 ->dehydrated(true)
@@ -434,6 +439,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
+                        ->url()
+                        ->maxLength(500),
                 ]),
         ];
     }
@@ -474,7 +483,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->maxLength(255)
                         ->columnSpanFull(),
                 ]),
-            Section::make('3. Actividad Realizada')
+            Section::make('2. Actividad Realizada')
                 ->icon('heroicon-o-check-badge')
                 ->schema([
                     Repeater::make('actividades')
@@ -497,7 +506,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->collapsible()
                         ->addable(false),
                 ]),
-            Section::make('2. Observaciones')
+            Section::make('3. Observaciones')
                 ->icon('heroicon-o-pencil-square')
                 ->schema([
                     Forms\Components\Textarea::make('observaciones')
@@ -525,6 +534,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -596,6 +609,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -687,6 +704,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -927,6 +948,10 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->placeholder('Pega una URL y presiona Enter')
                         ->hint('Agrega links a documentos, Google Drive, etc.')
                         ->columnSpanFull(),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
+                        ->url()
+                        ->maxLength(500),
                 ]),
         ];
     }
@@ -949,7 +974,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
         }
 
         match ($this->orden->tipo_servicio) {
-            TipoServicio::Fraudes => $this->submitFraudes($data),
+            TipoServicio::Fraudes,
+            TipoServicio::RevisionMedidores => $this->submitFraudes($data),
             TipoServicio::Investigacion => $this->submitServicioGenerico($data),
             TipoServicio::GestionLegal => $this->submitServicioGenerico($data),
             TipoServicio::Vigilancia => $this->submitVigilancia($data),
@@ -1098,7 +1124,14 @@ class ReporteCreate extends Component implements HasActions, HasForms
         // Para servicios de Investigación, Gestión Legal y Gestión de Riesgo, el proceso de guardado es similar sin lógica específica de comercio o ubicación
         $datosServicio = $data;
         // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
-        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['geo_referencia'], $datosServicio['actividades']);
+        // Crear ubicación con latitud, longitud y dirección de la orden
+        $ubicacionRecord = ubicacion::create([
+            'latitud' => $this->latitud,
+            'longitud' => $this->longitud,
+            'direccion' => $this->orden->direccion ?? null,
+        ]);
+
         // Crear el reporte con los datos del formulario y las relaciones con orden y personal
         reportes::create([
             'orden_job_id' => $this->orden->id,
@@ -1107,9 +1140,12 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'observaciones' => $data['observaciones'] ?? null,
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
+            'geo_referencia' => $data['geo_referencia'] ?? null,
             'datos_servicio' => $datosServicio,
+            'ubicacions_id' => $ubicacionRecord->id,
             'actividades' => $data['actividades'] ?? null,
         ]);
+
         // Actualizar estado de la orden a EnRevision para que el coordinador pueda revisarla
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
         // Notificar al coordinador que hay un nuevo reporte para revisar
@@ -1126,7 +1162,13 @@ class ReporteCreate extends Component implements HasActions, HasForms
         // Para el servicio de Vigilancia, el proceso de guardado es similar a los servicios genéricos pero sin actualizar el estado de la orden (permanece EnProgreso) y sin notificar al coordinador
         $datosServicio = $data;
         // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
-        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['actividades']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['geo_referencia'], $datosServicio['actividades']);
+        // Crear ubicación con latitud, longitud y dirección de la orden
+        $ubicacionRecord = ubicacion::create([
+            'latitud' => $this->latitud,
+            'longitud' => $this->longitud,
+            'direccion' => $this->orden->direccion ?? null,
+        ]);
         // Crear el reporte con los datos del formulario y las relaciones con orden y personal
         reportes::create([
             'orden_job_id' => $this->orden->id,
@@ -1135,7 +1177,9 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'observaciones' => $data['observaciones'] ?? null,
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
+            'geo_referencia' => $data['geo_referencia'] ?? null,
             'datos_servicio' => $datosServicio,
+            'ubicacions_id' => $ubicacionRecord->id,
             'actividades' => $data['actividades'] ?? null,
         ]);
 
@@ -1150,7 +1194,13 @@ class ReporteCreate extends Component implements HasActions, HasForms
     {   // Para el servicio de Auditoría de Campo, el proceso de guardado es similar a los servicios genéricos pero con un esquema específico para auditoría y sin lógica de comercio o ubicación
         $datosServicio = $data;
         // Eliminar campos que no son parte de datos_servicio para guardarlos en columnas específicas del reporte
-        unset($datosServicio['observaciones'], $datosServicio['imagenes']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['geo_referencia']);
+        // Crear ubicación con latitud, longitud y dirección de la orden
+        $ubicacionRecord = ubicacion::create([
+            'latitud' => $this->latitud,
+            'longitud' => $this->longitud,
+            'direccion' => $this->orden->direccion ?? null,
+        ]);
         // Crear el reporte con los datos del formulario y las relaciones con orden y personal
         reportes::create([
             'orden_job_id' => $this->orden->id,
@@ -1158,6 +1208,8 @@ class ReporteCreate extends Component implements HasActions, HasForms
             'numero_orden' => $this->orden->numero_orden,
             'observaciones' => $data['observaciones'] ?? null,
             'imagenes' => $data['imagenes'] ?? null,
+            'geo_referencia' => $data['geo_referencia'] ?? null,
+            'ubicacions_id' => $ubicacionRecord->id,
             'datos_servicio' => $datosServicio,
         ]);
         // Actualizar estado de la orden a EnRevision para que el coordinador pueda revisarla

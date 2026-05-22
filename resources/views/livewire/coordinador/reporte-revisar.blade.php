@@ -190,12 +190,8 @@
                             <div>
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de
                                     Investigación</dt>
-                                <dd class="mt-0.5">
-                                    <flux:badge
-                                        color="{{ $orden->tipo_investigacion === 'interna' ? 'blue' : 'purple' }}"
-                                        size="sm">
-                                        {{ $orden->tipo_investigacion === 'interna' ? 'Interna' : 'Contratista' }}
-                                    </flux:badge>
+                               <dd class="mt-0.5">
+                                    <flux:badge color="blue" size="m"> {{$orden->tipo_investigacion}}</flux:badge>
                                 </dd>
                             </div>
                         @endif
@@ -846,8 +842,14 @@
                     <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                         Video</h3>
                     <a href="{{ $reporte->video }}" target="_blank" rel="noopener"
-                        class="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
-                        {{ $reporte->video }}
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-all bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-offset-slate-900">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z">
+                            </path>
+                        </svg>
+                        Ver video
                     </a>
                 </div>
             @endif
@@ -920,6 +922,33 @@
                     @endif
                 </dl>
             </div>
+               {{-- Fechas --}}
+            <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Fechas
+                </h3>
+                <dl class="space-y-3">
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Asignación</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
+                            {{ $orden->fecha_asignacion?->format('d/m/Y H:i') ?? '—' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Fecha Límite</dt>
+                        <dd
+                            class="mt-0.5 text-sm font-semibold {{ $orden->fecha_limite && $orden->fecha_limite->isPast() && $orden->estado->value !== 'completada' ? 'text-red-600' : 'text-zinc-900 dark:text-white' }}">
+                            {{ $orden->fecha_limite?->format('d/m/Y H:i') ?? '—' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Completado</dt>
+                        <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
+                            {{ $orden->fecha_completado?->format('d/m/Y H:i') ?? '—' }}
+                        </dd>
+                    </div>
+                </dl>
+            </div>
+
 
             {{-- ═══ Ubicación GPS ═══ --}}
             @if ($reporte->ubicacion?->latitud && $reporte->ubicacion?->longitud)

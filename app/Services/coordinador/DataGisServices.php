@@ -80,6 +80,88 @@ class DataGisServices
         }
     }
 
+    public function consultarContrato(string $contrato): array
+    {
+        try {
+            $token = $this->getToken();
+            $url = $this->buildGisUrl($contrato, $token);
+
+            $response = Http::withoutVerifying()
+                ->withHeaders($this->headers)
+                ->withOptions(['version' => 2.0])
+                ->get($url);
+
+            if ($response->failed()) {
+                return ['error' => 'Error al consultar el servicio GIS. Por favor, inténtelo más tarde.'];
+            }
+
+            $data = $response->json();
+
+            if (isset($data['error'])) {
+                return ['error' => $data['error']['message']];
+            }
+
+            if (! $data || ! isset($data['features'][0])) {
+                return ['error' => 'No se encontraron datos para el contrato proporcionado.'];
+            }
+
+            $attributes = $data['features'][0]['attributes'];
+            $geometry = $data['features'][0]['geometry'];
+
+            [$lat, $lng] = $this->convertWebMercatorToLatLng($geometry['x'], $geometry['y']);
+
+            $nombreUsuario = trim(($attributes['NOMBREUSUARIO'] ?? '').' '.($attributes['APELLIDO'] ?? ''));
+            $estadoCorte = isset($attributes['DESCESTADOCORTE'])
+                ? trim((string) preg_replace('/[-\s]+$/', '', $attributes['DESCESTADOCORTE']))
+                : null;
+
+            return [
+                'titular' => [
+                    'nombre' => $nombreUsuario ?: null,
+                    'zona' => $attributes['NOMBRE'] ?? null,
+                    'nup' => $attributes['NUP'] ?? null,
+                    'contrato' => $attributes['SUBSCRIPTION_ID'] ?? null,
+                    'orden' => $attributes['ORDEN'] ?? null,
+                ],
+                'ubicacion' => [
+                    'municipio' => $attributes['NOMBRE'] ?? null,
+                    'direccion' => $attributes['DIRECCION'] ?? null,
+                    'barrio' => $attributes['NOMBREBARRIO'] ?? $attributes['BARRIO'] ?? null,
+                    'tag' => $attributes['TAG'] ?? null,
+                ],
+                'servicio' => [
+                    'estado' => $attributes['ESTADOPRODUCTO'] ?? null,
+                    'estado_corte' => $estadoCorte ?: null,
+                    'descripcion' => $attributes['DESCRIPCION'] ?? null,
+                    'categoria' => $attributes['DESCATEGORIA'] ?? $attributes['CATEGORIA'] ?? null,
+                    'estrato' => $attributes['ESTRATO'] ?? null,
+                    'ciclo' => $attributes['CICLO'] ?? null,
+                    'anillado' => $attributes['ANILLADO'] ?? null,
+                ],
+                'medidor' => [
+                    'serie_actual' => $attributes['SERIEMEDIDOR_ACTUAL'] ?? null,
+                    'serie_anterior' => $attributes['SERIEMEDIDOR_ANTERIOR'] ?? null,
+                    'fecha_anterior' => $this->formatTimestamp($attributes['FECHA_ANTERIOR'] ?? null),
+                ],
+                'consumos' => [
+                    'mes1' => $attributes['MES1'] ?? null,
+                    'mes2' => $attributes['MES2'] ?? null,
+                    'mes3' => $attributes['MES3'] ?? null,
+                    'mes4' => $attributes['MES4'] ?? null,
+                    'mes5' => $attributes['MES5'] ?? null,
+                    'mes6' => $attributes['MES6'] ?? null,
+                ],
+                'coordenadas' => [
+                    'lat' => $lat,
+                    'lng' => $lng,
+                    'maps_url' => "https://www.google.com/maps/place/{$lat},{$lng}",
+                ],
+            ];
+        } catch (\Exception $e) {
+            return ['error' => 'Se produjo un error al intentar acceder al servicio GIS.'];
+        }
+    }
+
     public function DataGisubicacion(string $contrato)
     {
         try {

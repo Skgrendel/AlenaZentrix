@@ -29,6 +29,20 @@
                     wire:navigate>
                     {{ __('Órdenes de Trabajo') }}
                 </flux:sidebar.item>
+                <flux:sidebar.item icon="calculator"
+                    :href="route('operaciones.revision-medidores.index')"
+                    :current="request()->routeIs('operaciones.revision-medidores*')"
+                    wire:navigate>
+                    {{ __('Revisión de Medidores') }}
+                </flux:sidebar.item>
+                @if(Auth::user()->company?->gis_habilitado)
+                <flux:sidebar.item icon="globe-alt"
+                    :href="route('operaciones.consulta-gis')"
+                    :current="request()->routeIs('operaciones.consulta-gis')"
+                    wire:navigate>
+                    {{ __('Consulta GIS') }}
+                </flux:sidebar.item>
+                @endif
             </flux:sidebar.group>
             @endcan
 

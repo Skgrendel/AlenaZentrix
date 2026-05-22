@@ -34,10 +34,38 @@ class OrdenesStatsOverview extends BaseWidget
         $pendientes = OrdenJob::where('estado', EstadoOrden::Pendiente)->count();
         $enProgreso = OrdenJob::where('estado', EstadoOrden::EnProgreso)->count();
         $enRevision = OrdenJob::where('estado', EstadoOrden::EnRevision)->count();
+
         $completadasMes = OrdenJob::where('estado', EstadoOrden::Completada)
             ->whereMonth('fecha_completado', now()->month)
             ->whereYear('fecha_completado', now()->year)
             ->count();
+
+        $completadasMesAnterior = OrdenJob::where('estado', EstadoOrden::Completada)
+            ->whereMonth('fecha_completado', now()->subMonth()->month)
+            ->whereYear('fecha_completado', now()->subMonth()->year)
+            ->count();
+
+        $tendencia = $completadasMesAnterior > 0
+            ? round(($completadasMes - $completadasMesAnterior) / $completadasMesAnterior * 100)
+            : null;
+
+        $sparkline = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $d = now()->subMonths($i);
+            $sparkline[] = OrdenJob::where('estado', EstadoOrden::Completada)
+                ->whereYear('fecha_completado', $d->year)
+                ->whereMonth('fecha_completado', $d->month)
+                ->count();
+        }
+
+        $completadasTotal = OrdenJob::where('estado', EstadoOrden::Completada)->count();
+        $rechazadasTotal = OrdenJob::where('estado', EstadoOrden::Rechazada)->count();
+        $cerradas = $completadasTotal + $rechazadasTotal;
+        $eficiencia = $cerradas > 0 ? round($completadasTotal / $cerradas * 100) : null;
+
+        $tendenciaDesc = $tendencia !== null
+            ? ($tendencia >= 0 ? "+{$tendencia}% vs mes anterior" : "{$tendencia}% vs mes anterior")
+            : 'Este mes';
 
         return [
             Stat::make('Total Órdenes', $total)
@@ -57,9 +85,20 @@ class OrdenesStatsOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-document-magnifying-glass')
                 ->color('warning'),
             Stat::make('Completadas', $completadasMes)
-                ->description('Este mes')
-                ->descriptionIcon('heroicon-m-check-circle')
-                ->color('success'),
+                ->description($tendenciaDesc)
+                ->descriptionIcon($tendencia !== null && $tendencia >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
+                ->chart($sparkline)
+                ->chartColor('success')
+                ->color($tendencia !== null && $tendencia < 0 ? 'danger' : 'success'),
+            Stat::make('Eficiencia', $eficiencia !== null ? "{$eficiencia}%" : 'N/D')
+                ->description('Completadas vs rechazadas')
+                ->descriptionIcon('heroicon-m-chart-bar')
+                ->color(match (true) {
+                    $eficiencia === null => 'gray',
+                    $eficiencia >= 80 => 'success',
+                    $eficiencia >= 60 => 'warning',
+                    default => 'danger',
+                }),
         ];
     }
 

@@ -12,9 +12,12 @@ class Company extends Model
     use HasFactory;
     use HasUuids;
 
-    protected $fillable = ['nombre', 'logo', 'activo'];
+    protected $fillable = ['nombre', 'logo', 'activo', 'gis_habilitado'];
 
-    protected $casts = ['activo' => 'boolean'];
+    protected $casts = [
+        'activo' => 'boolean',
+        'gis_habilitado' => 'boolean',
+    ];
 
     public function users(): HasMany
     {

@@ -326,7 +326,7 @@
         @endif
 
         {{-- ── Datos de la Orden ── --}}
-        <div class="section">
+        {{-- <div class="section">
             <div class="section-title">DATOS DE LA ORDEN</div>
             <div class="info-box">
                 <div class="info-grid">
@@ -368,7 +368,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
         {{-- ── Datos Operativos ── --}}
         @if ($datosReporte['tipologia'] || $datosReporte['fecha_ejecucion'] || $datosReporte['departamento'])
@@ -451,6 +451,21 @@
             <div class="section-title">OBSERVACIONES</div>
             <div class="content-box">{{ $datosReporte['observaciones'] }}</div>
         </div>
+
+        {{-- ── GeoReferencia ── --}}
+        @if (!empty($datosReporte['geo_referencia']))
+            <div class="section">
+                <div class="section-title">GEOREFERENCIA</div>
+                <div class="info-box">
+                    <div class="info-grid">
+                        <div class="info-row">
+                            <div class="info-label">URL GeoReferencia:</div>
+                            <div class="info-value" style="word-break: break-all;">{{ $datosReporte['geo_referencia'] }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         {{-- ── Conclusión del Coordinador ── --}}
         @if (!empty($datosReporte['conclusion']))

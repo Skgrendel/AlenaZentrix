@@ -37,6 +37,7 @@ class reportes extends Model
         'excede_capacidad',
         'imagenes',
         'video',
+        'geo_referencia',
         'observaciones',
         'comentarios',
         'conclusion',

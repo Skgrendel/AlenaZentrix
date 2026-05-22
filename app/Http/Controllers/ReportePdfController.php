@@ -12,8 +12,10 @@ use App\Models\TipoComercio;
 use App\Models\TipologiaOrden;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportePdfController extends Controller
 {
@@ -273,6 +275,7 @@ class ReportePdfController extends Controller
             'actividades' => $this->normalizeActividades($reporte->actividades ?? '[]'),
             'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
             'conclusion' => $reporte->conclusion ?: null,
+            'geo_referencia' => $reporte->geo_referencia ?? null,
         ];
     }
 
@@ -293,6 +296,7 @@ class ReportePdfController extends Controller
             'resultado' => ResultadoReporte::find($datos['resultado_reporte_id'] ?? null)?->nombre ?? '—',
             'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
             'conclusion' => $reporte->conclusion ?: null,
+            'geo_referencia' => $reporte->geo_referencia ?? null,
         ];
     }
 
@@ -515,6 +519,82 @@ class ReportePdfController extends Controller
         return $pdf->download("reporte-gestion-riesgo-{$orden->numero_orden}.pdf");
     }
 
+    public function DownLoadInformeRevisionMedidores(OrdenJob $orden): Response
+    {
+        abort_unless($orden->tipo_servicio === TipoServicio::RevisionMedidores, 403);
+        abort_unless(auth()->user()->can('informes'), 403);
+
+        ini_set('memory_limit', '256M');
+
+        $reporteId = request()->query('reporte');
+
+        $orden->load(['personal', 'creadoPor']);
+
+        $query = $orden->reportes()->with([
+            'comercio.tipoComercio',
+            'tipoImposibilidad',
+            'tipoRegulador',
+            'marcaMedidor',
+            'marcaRegulador',
+            'tipoNotificacionAlerta',
+            'auditoria.auditadoPor.personal',
+        ]);
+
+        $reporte = $reporteId
+            ? $query->where('id', $reporteId)->firstOrFail()
+            : $query->latest()->firstOrFail();
+
+        $anomalias = collect($reporte->anomalia ?? [])
+            ->map(fn (string|int $id) => TipoAnomalia::find($id)?->nombre)
+            ->filter()
+            ->implode(', ');
+
+        $logoProderi = $this->fileToBase64(public_path('assets/image/LOGO PRODERI CON SLOGAN.png'), 'image/png');
+
+        $imagenes = $this->resolveImagenes($reporte->imagenes ?? []);
+
+        /** @var User $firmante */
+        $firmante = auth()->user();
+
+        $firma = [
+            'nombre' => $firmante->fullName(),
+            'cargo' => $firmante->personal?->cargo,
+            'email' => $firmante->email,
+            'ip' => request()->ip(),
+            'agente' => request()->userAgent() ?? 'No disponible',
+            'fecha' => now()->format('d/m/Y H:i:s'),
+        ];
+
+        $objetivos = $this->resolveObjetivos($orden->tipo_servicio->value);
+
+        $pdf = Pdf::loadView('pdf.reporte-revision-medidores', [
+            'orden' => $orden,
+            'reporte' => $reporte,
+            'anomalias' => $anomalias,
+            'logoProderi' => $logoProderi,
+            'imagenes' => $imagenes,
+            'fechaGeneracion' => now()->format('d-m-Y'),
+            'firma' => $firma,
+            'objetivos' => $objetivos,
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download("reporte-revision-medidores-{$orden->numero_orden}.pdf");
+    }
+
+    public function descargarZipRevisionMedidores(Request $request): BinaryFileResponse
+    {
+        abort_unless($request->hasValidSignature(), 403);
+
+        $path = $request->query('path');
+        $absolutePath = storage_path('app/private/'.ltrim($path, '/'));
+
+        abort_unless(file_exists($absolutePath), 404);
+
+        return response()->download($absolutePath)->deleteFileAfterSend(true);
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -524,6 +604,7 @@ class ReportePdfController extends Controller
             'actividades' => $this->normalizeActividades($reporte->actividades ?? '[]'),
             'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
             'video' => $reporte->video ?? null,
+            'geo_referencia' => $reporte->geo_referencia ?? null,
         ];
     }
 
@@ -569,6 +650,7 @@ class ReportePdfController extends Controller
             'cedula_auditor' => $datos['cedula_auditor'] ?? null,
             'urls_evidencia' => $datos['urls_evidencia'] ?? [],
             'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
+            'geo_referencia' => $reporte->geo_referencia ?? null,
         ];
     }
 }

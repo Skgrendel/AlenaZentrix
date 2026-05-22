@@ -19,9 +19,11 @@ use App\Models\TipoComercio;
 use App\Models\TipoImposibilidad;
 use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
+use App\Models\ubicacion;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
@@ -51,6 +53,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
 
     public reportes $reporte;
 
+    public ?string $latitud = null;
+
+    public ?string $longitud = null;
+
     /** @var array<string, mixed> */
     public array $data = [];
 
@@ -67,7 +73,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
         $this->orden = $orden;
         $this->reporte = $orden->reportes()->latest()->firstOrFail();
 
-        if ($this->orden->tipo_servicio === TipoServicio::Fraudes) {
+        if ($this->orden->tipo_servicio === TipoServicio::Fraudes || $this->orden->tipo_servicio === TipoServicio::RevisionMedidores) {
             $this->form->fill([
                 ...$this->reporte->toArray(),
                 'nombre_comercio' => $this->reporte->comercio?->nombre_comercio,
@@ -79,14 +85,24 @@ class ReporteEdit extends Component implements HasActions, HasForms
                 'observaciones' => $this->reporte->observaciones,
                 'imagenes' => $this->reporte->imagenes,
                 'video' => $this->reporte->video,
+                'geo_referencia' => $this->reporte->geo_referencia,
+                'actividades' => $this->reporte->actividades,
             ]);
         }
     }
 
+    /**
+     * Convierte un array de rutas (strings) en la estructura que FileUpload usa para previews.
+     * Solo genera URLs/metadata fuera de los tests para evitar llamadas a Storage en las pruebas.
+     *
+     * @param  array<int,string>|null  $paths
+     * @return array<int,array<string,mixed>>|null
+     */
     public function form(Schema $form): Schema
     {
         $schema = match ($this->orden->tipo_servicio) {
-            TipoServicio::Fraudes => $this->fraudesSchema(),
+            TipoServicio::Fraudes,
+            TipoServicio::RevisionMedidores => $this->fraudesSchema(),
             TipoServicio::Investigacion => $this->investigacionSchema(),
             TipoServicio::GestionLegal => $this->gestionLegalSchema(),
             TipoServicio::Gestion_Riesgo => $this->gestionRiesgoSchema(),
@@ -225,6 +241,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(false)
+                        ->previewable(false)
                         ->image()
                         ->imagePreviewHeight('100')
                         ->maxFiles(1)
@@ -258,7 +275,9 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('Imágenes')
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
+                        ->visibility('public')
                         ->fetchFileInformation(false)
+                        ->previewable(false)
                         ->multiple()
                         ->image()
                         ->imagePreviewHeight('100')
@@ -270,6 +289,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -362,7 +385,31 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->visible(fn ($get) => $get('tipo_investigado') === 'comercio'),
                 ]),
 
-            Section::make('3. Resultado')
+            Section::make('3. Actividad Realizada')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Repeater::make('actividades')
+                        ->label('Actividades Realizadas')
+                        ->schema([
+                            Forms\Components\Textarea::make('descripcion_orden')
+                                ->label('Actividad asignada')
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->columnSpanFull()
+                                ->placeholder('—'),
+                            Forms\Components\Textarea::make('actividades')
+                                ->autosize()
+                                ->label('Respuesta del investigador')
+                                ->columnSpanFull()
+                                ->placeholder('Describe las actividades realizadas durante la investigación...')
+                                ->required(),
+                        ])
+                        ->columns(1)
+                        ->collapsible()
+                        ->addable(false),
+                ]),
+
+            Section::make('4. Resultado')
                 ->icon('heroicon-o-check-badge')
                 ->schema([
                     Forms\Components\Select::make('resultado_reporte_id')
@@ -375,9 +422,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         )
                         ->searchable()
                         ->placeholder('Seleccionar'),
+
                 ]),
 
-            Section::make('4. Observaciones')
+            Section::make('5. Observaciones')
                 ->icon('heroicon-o-pencil-square')
                 ->schema([
                     Forms\Components\Textarea::make('observaciones')
@@ -387,7 +435,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('5. Evidencias')
+            Section::make('6. Evidencias')
                 ->icon('heroicon-o-camera')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
@@ -395,6 +443,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(false)
+                        ->previewable(false)
                         ->multiple()
                         ->image()
                         ->imagePreviewHeight('100')
@@ -406,6 +455,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -449,7 +502,31 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('2. Observaciones')
+            Section::make('2. Actividad Realizada')
+                ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Repeater::make('actividades')
+                        ->label('Actividades Por Realizar')
+                        ->schema([
+                            Forms\Components\TextInput::make('descripcion_orden')
+                                ->label('Actividad asignada')
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->columnSpanFull()
+                                ->placeholder('—'),
+                            Forms\Components\Textarea::make('actividades')
+                                ->autosize()
+                                ->label('Respuesta del Investigador')
+                                ->columnSpanFull()
+                                ->placeholder('Describe las actividades realizadas...')
+                                ->required(),
+                        ])
+                        ->columns(1)
+                        ->collapsible()
+                        ->addable(false),
+                ]),
+
+            Section::make('3. Observaciones')
                 ->icon('heroicon-o-pencil-square')
                 ->schema([
                     Forms\Components\Textarea::make('observaciones')
@@ -459,14 +536,16 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('3. Evidencias')
+            Section::make('4. Evidencias')
                 ->icon('heroicon-o-camera')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
                         ->label('Imágenes')
                         ->disk('s3')
+                        ->visibility('public')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(false)
+                        ->previewable(false)
                         ->multiple()
                         ->image()
                         ->imagePreviewHeight('100')
@@ -480,6 +559,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
+                        ->url()
+                        ->maxLength(500),
                 ]),
         ];
     }
@@ -488,8 +571,32 @@ class ReporteEdit extends Component implements HasActions, HasForms
     private function gestionRiesgoSchema(): array
     {
         return [
-            Section::make('1. Actividades Realizadas')
+            Section::make('1. Actividad Realizada')
                 ->icon('heroicon-o-check-badge')
+                ->schema([
+                    Repeater::make('actividades')
+                        ->label('Actividades Realizadas')
+                        ->schema([
+                            Forms\Components\TextInput::make('descripcion_orden')
+                                ->label('Actividad asignada')
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->columnSpanFull()
+                                ->placeholder('—'),
+                            Forms\Components\Textarea::make('actividades')
+                                ->autosize()
+                                ->label('Respuesta del técnico')
+                                ->columnSpanFull()
+                                ->placeholder('Describe las actividades realizadas...')
+                                ->required(),
+                        ])
+                        ->columns(1)
+                        ->collapsible()
+                        ->addable(false),
+                ]),
+
+            Section::make('2. Observaciones')
+                ->icon('heroicon-o-pencil-square')
                 ->schema([
                     Forms\Components\Textarea::make('observaciones')
                         ->label('Novedades / Observaciones')
@@ -498,14 +605,16 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            Section::make('2. Evidencias')
+            Section::make('3. Evidencias')
                 ->icon('heroicon-o-paper-clip')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
                         ->label('Archivos / Evidencias')
                         ->disk('s3')
+                        ->visibility('public')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(false)
+                        ->previewable(false)
                         ->multiple()
                         ->acceptedFileTypes([
                             'image/*',
@@ -522,6 +631,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -600,8 +713,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     Forms\Components\FileUpload::make('imagenes')
                         ->label('Imágenes')
                         ->disk('s3')
+                        ->visibility('public')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(false)
+                        ->previewable(false)
                         ->multiple()
                         ->image()
                         ->imagePreviewHeight('100')
@@ -613,6 +728,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('video')
                         ->label('URL del Video')
+                        ->url()
+                        ->maxLength(500),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
                 ]),
@@ -844,8 +963,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     Forms\Components\FileUpload::make('imagenes')
                         ->label('Fotos')
                         ->disk('s3')
+                        ->visibility('public')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(false)
+                        ->previewable(false)
                         ->multiple()
                         ->image()
                         ->imagePreviewHeight('100')
@@ -860,6 +981,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->placeholder('Pega una URL y presiona Enter')
                         ->hint('Agrega links a documentos, Google Drive, etc.')
                         ->columnSpanFull(),
+                    Forms\Components\TextInput::make('geo_referencia')
+                        ->label('GeoReferencia')
+                        ->url()
+                        ->maxLength(500),
                 ]),
         ];
     }
@@ -882,9 +1007,27 @@ class ReporteEdit extends Component implements HasActions, HasForms
         }
 
         match ($this->orden->tipo_servicio) {
-            TipoServicio::Fraudes => $this->submitFraudes($data),
+            TipoServicio::Fraudes,
+            TipoServicio::RevisionMedidores => $this->submitFraudes($data),
             default => $this->submitServicioGenerico($data),
         };
+    }
+
+    private function actualizarUbicacion(): void
+    {
+        if ($this->reporte->ubicacion) {
+            $this->reporte->ubicacion->update([
+                'latitud' => $this->latitud,
+                'longitud' => $this->longitud,
+            ]);
+        } else {
+            $ubicacionRecord = ubicacion::create([
+                'latitud' => $this->latitud,
+                'longitud' => $this->longitud,
+                'direccion' => $this->orden->direccion,
+            ]);
+            $this->reporte->update(['ubicacions_id' => $ubicacionRecord->id]);
+        }
     }
 
     /** @param array<string, mixed> $data */
@@ -906,6 +1049,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
             ...$data,
             'imagenes' => $imagenes,
         ]);
+
+        $this->actualizarUbicacion();
 
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
 
@@ -997,14 +1142,18 @@ class ReporteEdit extends Component implements HasActions, HasForms
     private function submitServicioGenerico(array $data): void
     {
         $datosServicio = $data;
-        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video']);
+        unset($datosServicio['observaciones'], $datosServicio['imagenes'], $datosServicio['video'], $datosServicio['geo_referencia'], $datosServicio['actividades']);
 
         $this->reporte->update([
             'observaciones' => $data['observaciones'] ?? null,
             'imagenes' => $data['imagenes'] ?? null,
             'video' => $data['video'] ?? null,
+            'geo_referencia' => $data['geo_referencia'] ?? null,
             'datos_servicio' => $datosServicio,
+            'actividades' => $data['actividades'] ?? null,
         ]);
+
+        $this->actualizarUbicacion();
 
         $this->orden->update(['estado' => EstadoOrden::EnRevision]);
 

@@ -318,7 +318,7 @@
         </p>
 
         {{-- ── Datos de la Orden ── --}}
-        <div class="section">
+        {{-- <div class="section">
             <div class="section-title">DATOS DE LA ORDEN</div>
             <div class="info-box">
                 <div class="info-grid">
@@ -372,7 +372,7 @@
                     @endif
                 </div>
             </div>
-        </div>
+        </div> --}}
 
         {{-- ── Actividades Realizadas ── --}}
         <div class="section">
@@ -483,6 +483,20 @@
                         <div class="info-row">
                             <div class="info-label">URL del Video:</div>
                             <div class="info-value">{{ $datosReporte['video'] }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if (!empty($datosReporte['geo_referencia']))
+            <div class="section">
+                <div class="section-title">GEOREFERENCIA</div>
+                <div class="info-box">
+                    <div class="info-grid">
+                        <div class="info-row">
+                            <div class="info-label">URL GeoReferencia:</div>
+                            <div class="info-value" style="word-break: break-all;">{{ $datosReporte['geo_referencia'] }}</div>
                         </div>
                     </div>
                 </div>

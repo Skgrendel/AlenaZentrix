@@ -161,10 +161,17 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                     )
                     ->url(fn (OrdenJob $record): string => route('tecnico.ordenes.reporte.editar', $record)),
             ])
+            ->stackedOnMobile()
             ->emptyStateHeading('Sin órdenes asignadas')
             ->emptyStateDescription('No tienes órdenes activas en este momento.')
             ->emptyStateIcon('heroicon-o-clipboard-document-list')
-            ->defaultSort('fecha_limite', 'asc');
+            ->defaultSort(function ($query) {
+                return $query
+                    // 1. Las órdenes con estado 'en_revision' irán primero
+                    ->orderByRaw("CASE WHEN estado = 'en_revision' THEN 1 ELSE 0 END DESC")
+                    // 2. El resto de las órdenes se ordenarán por fecha de creación descendente
+                    ->orderBy('created_at', 'desc');
+            });
     }
 
     /** Notifica al coordinador que el técnico inició la atención de la orden. */

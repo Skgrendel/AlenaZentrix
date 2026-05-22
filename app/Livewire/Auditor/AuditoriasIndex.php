@@ -3,6 +3,7 @@
 namespace App\Livewire\Auditor;
 
 use App\Enums\EstadoAuditoria;
+use App\Enums\TipoServicio;
 use App\Models\auditoria;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -22,7 +23,7 @@ use Livewire\Component;
 #[Title('Auditorías')]
 /**
  * Listado de auditorías pendientes y completadas para el rol Auditor.
- * Solo se generan auditorías para órdenes de tipo Fraudes al completarse.
+ * Filtra por servicios que el auditor tiene permisos para auditar.
  */
 class AuditoriasIndex extends Component implements HasActions, HasForms, HasTable
 {
@@ -32,12 +33,23 @@ class AuditoriasIndex extends Component implements HasActions, HasForms, HasTabl
 
     public function table(Table $table): Table
     {
+        $user = auth()->user();
+        $serviciosAuditables = $user->serviciosAuditables()
+            ->pluck('tipo_servicio')
+            ->toArray();
+
         return $table
             ->query(
                 auditoria::query()
                     ->with(['reporte.ordenJob.personal'])
+                    ->whereHas('reporte.ordenJob', fn ($q) => $q->whereIn('tipo_servicio', $serviciosAuditables))
             )
             ->columns([
+                Tables\Columns\TextColumn::make('tipo_servicio_label')
+                    ->label('Tipo Servicio')
+                    ->badge()
+                    ->getStateUsing(fn (auditoria $record): string => $record->reporte?->ordenJob?->tipo_servicio?->label() ?? '—')
+                    ->color(fn (auditoria $record): string => $record->reporte?->ordenJob?->tipo_servicio?->color() ?? 'gray'),
                 Tables\Columns\TextColumn::make('numero_orden')
                     ->label('N° Orden')
                     ->badge()
@@ -94,6 +106,19 @@ class AuditoriasIndex extends Component implements HasActions, HasForms, HasTabl
                         collect(EstadoAuditoria::cases())
                             ->mapWithKeys(fn (EstadoAuditoria $case) => [$case->value => $case->label()])
                     ),
+                Tables\Filters\SelectFilter::make('tipo_servicio')
+                    ->label('Tipo de Servicio')
+                    ->options(
+                        collect(TipoServicio::cases())
+                            ->mapWithKeys(fn (TipoServicio $case) => [$case->value => $case->label()])
+                    )
+                    ->query(function ($query, $value) {
+                        if (filled($value)) {
+                            return $query->whereHas('reporte.ordenJob', fn ($q) => $q->where('tipo_servicio', $value));
+                        }
+
+                        return $query;
+                    }),
             ])
             ->emptyStateHeading('Sin auditorías registradas')
             ->emptyStateIcon('heroicon-o-clipboard-document-check')

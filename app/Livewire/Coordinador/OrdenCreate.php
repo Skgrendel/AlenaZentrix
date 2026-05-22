@@ -64,6 +64,7 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->label('Tipo de Servicio')
                             ->options(
                                 collect(TipoServicio::cases())
+                                    ->filter(fn (TipoServicio $case) => $case !== TipoServicio::RevisionMedidores)
                                     ->mapWithKeys(fn (TipoServicio $case) => [$case->value => $case->label()])
                             )
                             ->required()
@@ -185,7 +186,7 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->label('Nombre del Usuario')
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
                             ->maxLength(255),
-                            Forms\Components\TextInput::make('tecnico')
+                        Forms\Components\TextInput::make('tecnico')
                             ->label('Nombre del Técnico que realizó la visita')
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
                             ->maxLength(255),
