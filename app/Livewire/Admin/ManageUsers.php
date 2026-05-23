@@ -10,11 +10,8 @@ use App\Models\User;
 use App\Models\UsuarioServicioAuditable;
 use App\Services\TenantService;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -186,15 +183,19 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
 
                         return $record;
                     }),
-                DeleteAction::make()
-                    ->modalHeading('Eliminar usuario')
-                    ->using(fn (User $record) => $record->personal?->delete()),
-            ])
-            ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make()
-                        ->using(fn ($records) => $records->each(fn (User $user) => $user->personal?->delete())),
-                ]),
+
+                Action::make('toggleEstado')
+                    ->label(fn (User $record) => $record->estado ? 'Desactivar' : 'Activar')
+                    ->icon(fn (User $record) => $record->estado ? 'heroicon-o-lock-closed' : 'heroicon-o-lock-open')
+                    ->color(fn (User $record) => $record->estado ? 'danger' : 'success')
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (User $record) => $record->estado ? 'Desactivar usuario' : 'Activar usuario')
+                    ->modalDescription(fn (User $record) => $record->estado
+                        ? "¿Está seguro que desea desactivar a {$record->fullName()}? El usuario no podrá iniciar sesión hasta que sea activado nuevamente."
+                        : "¿Desea activar nuevamente a {$record->fullName()}?"
+                    )
+                    ->modalSubmitActionLabel(fn (User $record) => $record->estado ? 'Sí, desactivar' : 'Sí, activar')
+                    ->action(fn (User $record) => $record->update(['estado' => ! $record->estado])),
             ])
             ->defaultSort('created_at', 'desc');
     }

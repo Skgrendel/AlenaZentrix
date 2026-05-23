@@ -128,12 +128,15 @@ Permite crear, editar, activar/desactivar y eliminar usuarios del sistema.
 
 - En la tabla de usuarios, use el toggle de la columna **Estado** para activar o desactivar el acceso del usuario. Un usuario desactivado no puede iniciar sesión.
 
-**Eliminar un usuario:**
+**Desactivar un usuario:**
 
-1. En la tabla de usuarios, haga clic en el ícono de eliminar (papelera).
-2. Confirme la acción en el diálogo de confirmación.
+Los usuarios no se eliminan del sistema para preservar la trazabilidad de órdenes, reportes y auditorías. Para bloquear el acceso de un usuario:
 
-> La eliminación es permanente. El registro personal vinculado también se eliminará.
+1. Abra el formulario de edición del usuario (ícono de lápiz).
+2. En la sección **Acceso al Sistema**, desactive el toggle **Activo**.
+3. Haga clic en **Guardar**.
+
+> Un usuario desactivado no puede iniciar sesión. Todos sus datos históricos (órdenes, reportes, auditorías) se conservan intactos en el sistema.
 
 ---
 
