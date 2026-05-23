@@ -262,7 +262,15 @@ class ManageUsers extends Component implements HasActions, HasForms, HasTable
                         ->label('Correo de Acceso')
                         ->email()
                         ->required()
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->unique(
+                            table: 'users',
+                            column: 'email',
+                            ignorable: fn ($record) => $record,
+                        )
+                        ->validationMessages([
+                            'unique' => 'Este correo electrónico ya está registrado en el sistema.',
+                        ]),
 
                     Forms\Components\TextInput::make('password')
                         ->label('Contraseña')
