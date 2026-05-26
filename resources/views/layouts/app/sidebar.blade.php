@@ -83,7 +83,7 @@
             </flux:sidebar.group>
             @endcan
 
-             @if(Auth::user()->company?->gis_habilitado)
+            @if(Auth::user()->company?->gis_habilitado)
             <flux:sidebar.group :heading="__('Ubicacion')" class="grid">
                 <flux:sidebar.item icon="globe-alt"
                     :href="route('operaciones.consulta-gis')"
