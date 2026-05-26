@@ -522,7 +522,7 @@ class ReporteCreate extends Component implements HasActions, HasForms
                 ->icon('heroicon-o-camera')
                 ->schema([
                     Forms\Components\FileUpload::make('imagenes')
-                        ->label('Imágenes')
+                        ->label('Imágenes / Archivos')
                         ->disk('s3')
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(false)
