@@ -173,7 +173,14 @@
                     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         @foreach ($documentoUrls as $url)
                             @php
-                                $extension = strtolower(pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
+                                $extension = '';
+                                $query = parse_url($url, PHP_URL_QUERY);
+                                if ($query) {
+                                    parse_str($query, $qs);
+                                    $pathParam = $qs['path'] ?? '';
+                                    $extension = strtolower(pathinfo(urldecode($pathParam), PATHINFO_EXTENSION));
+                                }
+
                                 $isImage = in_array($extension, ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'heic', 'heif', 'avif']);
                             @endphp
                             @if ($isImage)
