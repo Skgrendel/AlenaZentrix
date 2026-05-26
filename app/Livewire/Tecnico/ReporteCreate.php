@@ -427,8 +427,16 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(false)
                         ->multiple()
-                        ->image()
-                        ->imagePreviewHeight('100')
+                        ->acceptedFileTypes([
+                            'image/*',
+                            'application/pdf',
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/vnd.ms-powerpoint',
+                            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                        ])
                         ->maxFiles(10)
                         ->maxSize(5120)
                         ->reorderable()
@@ -524,8 +532,16 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(false)
                         ->multiple()
-                        ->image()
-                        ->imagePreviewHeight('100')
+                        ->acceptedFileTypes([
+                            'image/*',
+                            'application/pdf',
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/vnd.ms-powerpoint',
+                            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                        ])
                         ->maxFiles(10)
                         ->maxSize(5120)
                         ->reorderable()
@@ -694,8 +710,16 @@ class ReporteCreate extends Component implements HasActions, HasForms
                         ->directory('reportes/'.$this->orden->numero_orden)
                         ->fetchFileInformation(false)
                         ->multiple()
-                        ->image()
-                        ->imagePreviewHeight('100')
+                        ->acceptedFileTypes([
+                            'image/*',
+                            'application/pdf',
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/vnd.ms-powerpoint',
+                            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                        ])
                         ->maxFiles(10)
                         ->maxSize(5120)
                         ->reorderable()

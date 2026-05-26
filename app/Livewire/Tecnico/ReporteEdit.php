@@ -547,8 +547,16 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->fetchFileInformation(false)
                         ->previewable(false)
                         ->multiple()
-                        ->image()
-                        ->imagePreviewHeight('100')
+                        ->acceptedFileTypes([
+                            'image/*',
+                            'application/pdf',
+                            'application/msword',
+                            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                            'application/vnd.ms-excel',
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                            'application/vnd.ms-powerpoint',
+                            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+                        ])
                         ->maxFiles(10)
                         ->maxSize(5120)
                         ->reorderable()

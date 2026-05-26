@@ -33,8 +33,6 @@ class ConsultaGisIndex extends Component implements HasSchemas
 
     public function mount(): void
     {
-        abort_unless(auth()->user()?->company?->gis_habilitado, 403);
-
         $this->form->fill();
     }
 
