@@ -22,12 +22,19 @@ class EditRolePermisos extends Component
 
     public string $name = '';
 
+    public string $backRoute = 'admin.roles';
+
     /** @var string[] Nombres de los permisos actualmente asignados al rol. */
     public array $selectedPermissions = [];
 
     public function mount(Role $role): void
     {
-        abort_if($role->name === 'Administrador' && ! auth()->user()->can('roles.editar'), 403);
+        abort_if(
+            $role->name === 'Administrador'
+            && ! auth()->user()?->is_superadmin
+            && ! auth()->user()?->can('roles.editar'),
+            403
+        );
 
         $this->role = $role;
         $this->name = $role->name;
@@ -51,7 +58,7 @@ class EditRolePermisos extends Component
 
         session()->flash('success', "Rol \"{$this->role->name}\" actualizado correctamente.");
 
-        $this->redirect(route('admin.roles'), navigate: true);
+        $this->redirect(route($this->backRoute), navigate: true);
     }
 
     /** @return array<string, mixed[]> */
@@ -94,6 +101,7 @@ class EditRolePermisos extends Component
         return view('livewire.admin.edit-role-permisos', [
             'permisosPorModulo' => $this->permisosPorModulo(),
             'esAdministrador' => $this->role->name === 'Administrador',
+            'backRoute' => $this->backRoute,
         ]);
     }
 }

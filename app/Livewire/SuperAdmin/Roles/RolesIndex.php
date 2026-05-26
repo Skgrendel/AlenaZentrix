@@ -46,7 +46,7 @@ class RolesIndex extends Component implements HasActions, HasForms, HasTable
                     ])
                     ->action(function (array $data): void {
                         $role = Role::create(['name' => $data['name'], 'guard_name' => 'web']);
-                        $this->redirect(route('admin.roles.editar', $role), navigate: true);
+                        $this->redirect(route('superadmin.roles.editar', $role), navigate: true);
                     }),
             ])
             ->actions([
@@ -54,7 +54,7 @@ class RolesIndex extends Component implements HasActions, HasForms, HasTable
                     ->label('Editar permisos')
                     ->icon('heroicon-o-pencil-square')
                     ->color('primary')
-                    ->url(fn (Role $record): string => route('admin.roles.editar', $record)),
+                    ->url(fn (Role $record): string => route('superadmin.roles.editar', $record)),
                 DeleteAction::make()
                     ->visible(fn (Role $record): bool => $record->name !== 'Administrador')
                     ->before(function (Role $record): void {

@@ -1,9 +1,12 @@
 <?php
 
 use App\Livewire\SuperAdmin\Companies\CompaniesIndex;
+use App\Livewire\SuperAdmin\Roles\EditRolePermisos;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
@@ -63,4 +66,21 @@ test('superadmin can access roles management', function () {
     $this->actingAs($superadmin)
         ->get(route('superadmin.roles'))
         ->assertOk();
+});
+
+test('superadmin can edit a role and its permissions', function () {
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    Permission::create(['name' => 'roles.ver', 'guard_name' => 'web']);
+    $role = Role::create(['name' => 'Administrador', 'guard_name' => 'web']);
+    $superadmin = User::factory()->superadmin()->create();
+
+    Livewire\Livewire::actingAs($superadmin)
+        ->test(EditRolePermisos::class, ['role' => $role])
+        ->set('selectedPermissions', ['roles.ver'])
+        ->call('guardar')
+        ->assertHasNoErrors()
+        ->assertRedirect(route('superadmin.roles'));
+
+    expect($role->fresh()->hasPermissionTo('roles.ver'))->toBeTrue();
 });

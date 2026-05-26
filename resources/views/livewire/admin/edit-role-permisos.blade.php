@@ -6,7 +6,7 @@
             <flux:heading size="xl">Editar Rol</flux:heading>
             <flux:text class="mt-1 text-sm">Configura el nombre y los permisos del rol.</flux:text>
         </div>
-        <flux:button href="{{ route('admin.roles') }}" icon="arrow-left" variant="ghost" wire:navigate>
+        <flux:button href="{{ route($backRoute) }}" icon="arrow-left" variant="ghost" wire:navigate>
             Volver
         </flux:button>
     </div>
