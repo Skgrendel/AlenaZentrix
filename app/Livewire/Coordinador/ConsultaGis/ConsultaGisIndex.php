@@ -16,7 +16,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
-#[Title('Consulta GIS')]
+#[Title('CS Ubicacion')]
 class ConsultaGisIndex extends Component implements HasSchemas
 {
     use InteractsWithSchemas;
