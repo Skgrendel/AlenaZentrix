@@ -137,6 +137,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                 Action::make('create')
                     ->label('Nueva Orden')
                     ->icon('heroicon-o-plus')
+                    ->visible(fn (): bool => auth()->user()?->can('ordenes.crear') ?? false)
                     ->url(route('operaciones.ordenes-trabajo.crear')),
             ])
             ->actions([

@@ -17,6 +17,7 @@ beforeEach(function () {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
 
     Permission::create(['name' => 'ordenes.ver', 'guard_name' => 'web']);
+    Permission::create(['name' => 'ordenes.crear', 'guard_name' => 'web']);
 
     Role::create(['name' => 'Administrador', 'guard_name' => 'web'])
         ->givePermissionTo('ordenes.ver');
@@ -46,6 +47,27 @@ test('coordinador can access ordenes de trabajo', function () {
     $this->actingAs($user)
         ->get(route('operaciones.ordenes-trabajo'))
         ->assertOk();
+});
+
+test('users with ordenes.crear can see the new order action', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+    $user->givePermissionTo('ordenes.crear');
+
+    $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo'))
+        ->assertOk()
+        ->assertSee('Nueva Orden');
+});
+
+test('users without ordenes.crear cannot see the new order action', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo'))
+        ->assertOk()
+        ->assertDontSee('Nueva Orden');
 });
 
 test('administrador can access ordenes de trabajo', function () {
