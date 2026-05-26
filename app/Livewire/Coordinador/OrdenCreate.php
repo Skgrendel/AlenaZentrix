@@ -8,6 +8,7 @@ use App\Enums\TipoServicio;
 use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
 use App\Models\personals;
+use App\Services\TenantService;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
@@ -50,13 +51,20 @@ class OrdenCreate extends Component implements HasActions, HasForms
 
     public function form(Schema $form): Schema
     {
-        $companyId = auth()->user()?->company_id;
+        $companyId = app(TenantService::class)->id() ?? auth()->user()?->company_id;
 
-        $tecnicos = personals::query()
-            ->select(['id', 'nombres', 'apellidos'])
-            ->where('company_id', $companyId)
-            ->get()
-            ->mapWithKeys(fn ($p) => [$p->id => "{$p->nombres} {$p->apellidos}"]);
+        $tecnicos = collect();
+
+        if ($companyId) {
+            $tecnicos = personals::query()
+                ->select(['id', 'nombres', 'apellidos'])
+                ->withoutGlobalScopes()
+                ->where('company_id', $companyId)
+                ->orderBy('nombres')
+                ->orderBy('apellidos')
+                ->get()
+                ->mapWithKeys(fn ($p) => [$p->id => "{$p->nombres} {$p->apellidos}"]);
+        }
 
         return $form
             ->schema([
