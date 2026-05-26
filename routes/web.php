@@ -32,10 +32,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 abort(404);
             }
 
+            $basename = basename($path);
+
             return response()->stream(
                 fn () => fpassthru($disk->readStream($path)),
                 200,
-                ['Content-Type' => $disk->mimeType($path), 'Cache-Control' => 'max-age=3600, private'],
+                [
+                    'Content-Type' => $disk->mimeType($path),
+                    'Cache-Control' => 'max-age=3600, private',
+                    'Content-Disposition' => 'inline; filename="' . $basename . '"',
+                ],
             );
         })->name('operaciones.foto');
 });
