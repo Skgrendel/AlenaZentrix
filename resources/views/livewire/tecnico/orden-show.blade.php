@@ -174,7 +174,7 @@
                         @foreach ($documentoUrls as $url)
                             @php
                                 $extension = strtolower(pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
-                                $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']);
+                                $isImage = in_array($extension, ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'heic', 'heif', 'avif']);
                             @endphp
                             @if ($isImage)
                                 <button type="button" @click="src = '{{ $url }}'; open = true"

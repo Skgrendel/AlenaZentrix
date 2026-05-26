@@ -153,7 +153,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
      */
     public function archivosUrls(): array
     {
-        $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif'];
+        $imageExtensions = ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif', 'heic', 'heif', 'avif'];
 
         return collect($this->reporte->imagenes ?? [])
             ->map(function (string $path) use ($imageExtensions): array {
