@@ -50,8 +50,11 @@ class OrdenCreate extends Component implements HasActions, HasForms
 
     public function form(Schema $form): Schema
     {
+        $companyId = auth()->user()?->company_id;
+
         $tecnicos = personals::query()
             ->select(['id', 'nombres', 'apellidos'])
+            ->where('company_id', $companyId)
             ->get()
             ->mapWithKeys(fn ($p) => [$p->id => "{$p->nombres} {$p->apellidos}"]);
 
