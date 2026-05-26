@@ -7,8 +7,8 @@
                 <flux:icon.globe-alt class="h-5 w-5 text-primary-600 dark:text-primary-400" />
             </div>
             <div>
-                <flux:heading size="xl">Consulta GIS</flux:heading>
-                <flux:subheading>Consulta en tiempo real al sistema GIS de la red de distribución.</flux:subheading>
+                <flux:heading size="xl">Consulta de Ubicacion</flux:heading>
+                <flux:subheading>Consulta en tiempo real la ubicación de la red de distribución.</flux:subheading>
             </div>
         </div>
     </div>
