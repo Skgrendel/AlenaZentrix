@@ -35,16 +35,16 @@
                     wire:navigate>
                     {{ __('Revisión de Medidores') }}
                 </flux:sidebar.item>
-                @if(Auth::user()->company?->gis_habilitado)
+            </flux:sidebar.group>
+            @endcan
+            @if(Auth::user()->company?->gis_habilitado)
                 <flux:sidebar.item icon="globe-alt"
                     :href="route('operaciones.consulta-gis')"
                     :current="request()->routeIs('operaciones.consulta-gis')"
                     wire:navigate>
-                    {{ __('Consulta GIS') }}
+                    {{ __('Consulta Ubicacion') }}
                 </flux:sidebar.item>
-                @endif
-            </flux:sidebar.group>
-            @endcan
+            @endif
 
             @can('auditorias.ver')
             <flux:sidebar.group :heading="__('Auditorías')" class="grid">
