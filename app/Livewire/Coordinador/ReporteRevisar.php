@@ -199,18 +199,12 @@ class ReporteRevisar extends Component implements HasActions, HasForms
         }
 
         if ($tipo === TipoServicio::GestionLegal) {
-            $subtipos = [
-                'capturas' => 'Capturas Criminales',
-                'bandas' => 'Desarticulación de Bandas',
-                'querella' => 'Querella Penal',
-                'seguimiento_denuncia' => 'Seguimiento a Denuncia',
-                'diligencia_judicial' => 'Diligencia Judicial',
-            ];
+            $tipologiaLabel = TipologiaOrden::find($datos['tipologia_orden_id'] ?? null)?->nombre;
 
             return [
-                'tipo_gestion_label' => $subtipos[$this->orden->tipo_gestion_legal ?? ''] ?? ($this->orden->tipo_gestion_legal ?? '—'),
+                'tipo_gestion_label' => $tipologiaLabel ?? ($this->orden->tipo_gestion_legal ?? '—'),
                 'numero_noticia_criminal' => $this->orden->numero_noticia_criminal,
-                'tipologia' => TipologiaOrden::find($datos['tipologia_orden_id'] ?? null)?->nombre,
+                'tipologia' => $tipologiaLabel,
                 'fecha_ejecucion' => $datos['fecha_ejecucion'] ?? null,
                 'departamento' => $datos['departamento'] ?? null,
                 'municipio' => $datos['municipio'] ?? null,

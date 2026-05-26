@@ -388,13 +388,12 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                 ->schema([
                     Forms\Components\Select::make('tipo_gestion_legal')
                         ->label('Tipo de Gestión Legal')
-                        ->options([
-                            'capturas' => 'Capturas Criminales',
-                            'bandas' => 'Desarticulación de Bandas',
-                            'querella' => 'Querella Penal',
-                            'seguimiento_denuncia' => 'Seguimiento a Denuncia',
-                            'diligencia_judicial' => 'Diligencia Judicial',
-                        ])
+                        ->options(
+                            TipologiaOrden::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
                         ->placeholder('Seleccionar')
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('numero_noticia_criminal')->label('N° Noticia Criminal')->maxLength(255),

@@ -243,12 +243,15 @@
                             </flux:badge>
                         </dd>
                     </div>
+                    @if ($orden->tipo_investigacion)
                     <div>
                         <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tipo de Investigación</dt>
                         <dd class="mt-1">
                             <flux:badge size="m"> {{ $orden->tipo_investigacion  }}
                             </flux:badge>
                         </dd>
+                    </div>
+                    @endif
                         <div>
                             <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Prioridad</dt>
                             <dd class="mt-1">
@@ -291,7 +294,7 @@
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Técnico Asignado</dt>
+                            <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Orden Asignada a</dt>
                             <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
                                 {{ $orden->personal ? "{$orden->personal->nombres} {$orden->personal->apellidos}" : '—' }}
                             </dd>
@@ -317,12 +320,14 @@
                             {{ $orden->fecha_limite?->format('d/m/Y H:i') ?? '—' }}
                         </dd>
                     </div>
+                    @if($orden->fecha_completado)
                     <div>
                         <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Completado</dt>
                         <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
                             {{ $orden->fecha_completado?->format('d/m/Y H:i') ?? '—' }}
                         </dd>
                     </div>
+                    @endif
                 </dl>
             </div>
 

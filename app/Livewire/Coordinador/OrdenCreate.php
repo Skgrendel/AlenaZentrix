@@ -8,6 +8,7 @@ use App\Enums\TipoServicio;
 use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
 use App\Models\personals;
+use App\Models\TipologiaOrden;
 use App\Services\TenantService;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -52,6 +53,13 @@ class OrdenCreate extends Component implements HasActions, HasForms
     public function form(Schema $form): Schema
     {
         $companyId = app(TenantService::class)->id() ?? auth()->user()?->company_id;
+
+        $tipologias = TipologiaOrden::query()
+            ->where('company_id', $companyId)
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->pluck('nombre', 'id')
+            ->toArray();
 
         $tecnicos = collect();
 
@@ -159,13 +167,7 @@ class OrdenCreate extends Component implements HasActions, HasForms
                     ->schema([
                         Forms\Components\Select::make('tipo_gestion_legal')
                             ->label('Tipo de Gestión Legal')
-                            ->options([
-                                'capturas' => 'Capturas Criminales',
-                                'bandas' => 'Desarticulación de Bandas',
-                                'querella' => 'Querella Penal',
-                                'seguimiento_denuncia' => 'Seguimiento a Denuncia',
-                                'diligencia_judicial' => 'Diligencia Judicial',
-                            ])
+                            ->options($tipologias)
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::GestionLegal->value)
                             ->placeholder('Seleccionar'),
                         Forms\Components\TextInput::make('numero_noticia_criminal')

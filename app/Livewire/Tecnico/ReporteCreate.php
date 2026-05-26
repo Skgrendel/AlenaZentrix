@@ -21,6 +21,7 @@ use App\Models\TipoImposibilidad;
 use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
 use App\Models\ubicacion;
+use App\Models\TipologiaOrden;
 use App\Services\coordinador\DataGisServices;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -466,15 +467,9 @@ class ReporteCreate extends Component implements HasActions, HasForms
                     Forms\Components\Placeholder::make('tipo_gestion_legal_display')
                         ->label('Tipo de Gestión Legal')
                         ->content(function (): string {
-                            $subtipos = [
-                                'capturas' => 'Capturas Criminales',
-                                'bandas' => 'Desarticulación de Bandas',
-                                'querella' => 'Querella Penal',
-                                'seguimiento_denuncia' => 'Seguimiento a Denuncia',
-                                'diligencia_judicial' => 'Diligencia Judicial',
-                            ];
+                            $label = TipologiaOrden::find($this->orden->tipo_gestion_legal ?? null)?->nombre;
 
-                            return $subtipos[$this->orden->tipo_gestion_legal ?? ''] ?? ($this->orden->tipo_gestion_legal ?? '—');
+                            return $label ?? ($this->orden->tipo_gestion_legal ?? '—');
                         }),
                     Forms\Components\DatePicker::make('fecha_ejecucion')
                         ->label('Fecha de Ejecución')

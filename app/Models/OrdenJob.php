@@ -171,16 +171,8 @@ class OrdenJob extends Model
 
     public function subtipoLabel(): string
     {
-        $subtipos = [
-            'capturas' => 'Capturas Criminales',
-            'bandas' => 'Desarticulación de Bandas',
-            'querella' => 'Querella Penal',
-            'seguimiento_denuncia' => 'Seguimiento a Denuncia',
-            'diligencia_judicial' => 'Diligencia Judicial',
-        ];
-
         return match ($this->tipo_servicio) {
-            TipoServicio::GestionLegal => $subtipos[$this->tipo_gestion_legal ?? ''] ?? ($this->tipo_gestion_legal ?? '—'),
+            TipoServicio::GestionLegal => TipologiaOrden::find($this->tipo_gestion_legal ?? null)?->nombre ?? ($this->tipo_gestion_legal ?? '—'),
             TipoServicio::Investigacion => $this->tipo_investigacion ?? '—',
             default => '—',
         };

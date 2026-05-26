@@ -179,16 +179,10 @@ class AuditoriaRevisar extends Component implements HasForms
         }
 
         if ($tipo === TipoServicio::GestionLegal) {
-            $subtipos = [
-                'capturas' => 'Capturas Criminales',
-                'bandas' => 'Desarticulación de Bandas',
-                'querella' => 'Querella Penal',
-                'seguimiento_denuncia' => 'Seguimiento a Denuncia',
-                'diligencia_judicial' => 'Diligencia Judicial',
-            ];
+            $label = TipologiaOrden::find($orden?->tipo_gestion_legal ?? null)?->nombre;
 
             return [
-                'tipo_gestion_label' => $subtipos[$orden?->tipo_gestion_legal ?? ''] ?? ($orden?->tipo_gestion_legal ?? '—'),
+                'tipo_gestion_label' => $label ?? ($orden?->tipo_gestion_legal ?? '—'),
                 'numero_noticia_criminal' => $orden?->numero_noticia_criminal,
                 'tipologia' => TipologiaOrden::find($datos['tipologia_orden_id'] ?? null)?->nombre,
                 'fecha_ejecucion' => $datos['fecha_ejecucion'] ?? null,

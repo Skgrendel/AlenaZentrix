@@ -191,16 +191,8 @@ class ReportePdfController extends Controller
             'fecha' => $reporte->created_at?->format('d/m/Y H:i:s') ?? now()->format('d/m/Y H:i:s'),
         ];
 
-        $subtipos = [
-            'capturas' => 'Capturas Criminales',
-            'bandas' => 'Desarticulación de Bandas',
-            'querella' => 'Querella Penal',
-            'seguimiento_denuncia' => 'Seguimiento a Denuncia',
-            'diligencia_judicial' => 'Diligencia Judicial',
-        ];
-
         $datosOrden = $this->buildDatosOrden($orden);
-        $datosOrden['tipo_gestion_label'] = $subtipos[$orden->tipo_gestion_legal ?? ''] ?? ($orden->tipo_gestion_legal ?? '—');
+        $datosOrden['tipo_gestion_label'] = TipologiaOrden::find($orden->tipo_gestion_legal ?? null)?->nombre ?? ($orden->tipo_gestion_legal ?? '—');
 
         $datosReporte = $this->buildDatosReporteGestionLegal($reporte);
 

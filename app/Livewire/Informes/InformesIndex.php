@@ -8,6 +8,7 @@ use App\Enums\TipoServicio;
 use App\Models\auditoria;
 use App\Models\OrdenJob;
 use App\Models\reportes as Reporte;
+use App\Models\TipologiaOrden;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -116,13 +117,11 @@ class InformesIndex extends Component
     public function subTipoOptions(): array
     {
         return match ($this->servicio) {
-            TipoServicio::GestionLegal->value => [
-                'capturas' => 'Capturas Criminales',
-                'bandas' => 'Desarticulación de Bandas',
-                'querella' => 'Querella Penal',
-                'seguimiento_denuncia' => 'Seguimiento a Denuncia',
-                'diligencia_judicial' => 'Diligencia Judicial',
-            ],
+            TipoServicio::GestionLegal->value => TipologiaOrden::query()
+                ->where('activo', true)
+                ->orderBy('nombre')
+                ->pluck('nombre', 'id')
+                ->toArray(),
             TipoServicio::Investigacion->value => [
                 'interna' => 'Interna',
                 'contratista' => 'Contratista',
