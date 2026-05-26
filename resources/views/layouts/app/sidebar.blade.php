@@ -37,16 +37,7 @@
                 </flux:sidebar.item>
             </flux:sidebar.group>
             @endcan
-            @if(Auth::user()->company?->gis_habilitado)
-            <flux:sidebar.group :heading="__('Ubicacion')" class="grid">
-                <flux:sidebar.item icon="globe-alt"
-                    :href="route('operaciones.consulta-gis')"
-                    :current="request()->routeIs('operaciones.consulta-gis')"
-                    wire:navigate>
-                    {{ __('Consulta Ubicacion') }}
-                </flux:sidebar.item>
-            </flux:sidebar.group>
-            @endif
+
 
             @can('auditorias.ver')
             <flux:sidebar.group :heading="__('Auditorías')" class="grid">
@@ -91,6 +82,17 @@
                 </flux:sidebar.item>
             </flux:sidebar.group>
             @endcan
+
+             @if(Auth::user()->company?->gis_habilitado)
+            <flux:sidebar.group :heading="__('Ubicacion')" class="grid">
+                <flux:sidebar.item icon="globe-alt"
+                    :href="route('operaciones.consulta-gis')"
+                    :current="request()->routeIs('operaciones.consulta-gis')"
+                    wire:navigate>
+                    {{ __('Consulta Ubicacion') }}
+                </flux:sidebar.item>
+            </flux:sidebar.group>
+            @endif
         </flux:sidebar.nav>
 
         <flux:spacer />
