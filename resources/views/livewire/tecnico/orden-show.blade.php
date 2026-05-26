@@ -243,15 +243,13 @@
                             </flux:badge>
                         </dd>
                     </div>
-                    @if ($orden->tipo_investigacion)
                     <div>
-                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tipo de Investigación</dt>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Tipo</dt>
                         <dd class="mt-1">
-                            <flux:badge size="m"> {{ $orden->tipo_investigacion  }}
+                            <flux:badge size="m"> {{ $orden->subtipoLabel() }}
                             </flux:badge>
                         </dd>
                     </div>
-                    @endif
                         <div>
                             <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Prioridad</dt>
                             <dd class="mt-1">
