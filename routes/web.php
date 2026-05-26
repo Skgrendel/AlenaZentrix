@@ -34,13 +34,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             $basename = basename($path);
 
+            // Intentar obtener el MIME desde el disco (S3). Si falla, usar extensión.
+            try {
+                $mime = $disk->mimeType($path);
+            } catch (\Throwable $e) {
+                $mime = null;
+            }
+
+            $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+            $imageExtensions = ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif', 'heic', 'heif', 'avif'];
+
+            $isImage = false;
+            if ($mime) {
+                $isImage = str_starts_with($mime, 'image/');
+            } else {
+                $isImage = in_array($extension, $imageExtensions, true);
+            }
+
+            $disposition = $isImage ? 'inline' : 'attachment';
+
             return response()->stream(
                 fn () => fpassthru($disk->readStream($path)),
                 200,
                 [
-                    'Content-Type' => $disk->mimeType($path),
+                    'Content-Type' => $mime ?? ($isImage ? 'image/jpeg' : 'application/octet-stream'),
                     'Cache-Control' => 'max-age=3600, private',
-                    'Content-Disposition' => 'inline; filename="' . $basename . '"',
+                    'Content-Disposition' => $disposition . '; filename="' . $basename . '"',
                 ],
             );
         })->name('operaciones.foto');
