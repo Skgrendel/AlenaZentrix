@@ -17,10 +17,10 @@ use App\Models\ResultadoReporte;
 use App\Models\TipoAnomalia;
 use App\Models\TipoComercio;
 use App\Models\TipoImposibilidad;
+use App\Models\TipologiaOrden;
 use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
 use App\Models\ubicacion;
-use App\Models\TipologiaOrden;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
@@ -657,13 +657,13 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->required()
                         ->displayFormat('d/m/Y'),
                     Forms\Components\TimePicker::make('hora_inicio')
+                        ->previewable(false)
                         ->label('Hora de Inicio')
                         ->required(),
                     Forms\Components\TimePicker::make('hora_fin')
                         ->label('Hora de Fin')
                         ->required(),
                 ]),
-
             Section::make('2. Novedades')
                 ->icon('heroicon-o-bell-alert')
                 ->schema([
@@ -972,11 +972,9 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->previewable(false)
                         ->multiple()
                         ->image()
-                        ->imagePreviewHeight('100')
                         ->maxFiles(10)
                         ->maxSize(5120)
                         ->reorderable()
-                        ->panelLayout('grid')
                         ->extraInputAttributes(['capture' => 'environment'])
                         ->columnSpanFull(),
                     Forms\Components\TagsInput::make('urls_evidencia')
