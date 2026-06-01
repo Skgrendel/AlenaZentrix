@@ -74,7 +74,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
     {
         $this->validate([
             'conclusion' => ['required', 'string', 'min:10'],
-            'resultado'  => ['required', 'string'], // Agrega esta línea
+            'resultado' => ['required', 'string'], // Agrega esta línea
         ], [
             'conclusion.required' => 'Debe ingresar una conclusión.',
             'conclusion.min' => 'La conclusión debe tener al menos 10 caracteres.',
@@ -202,7 +202,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             $tipologiaLabel = TipologiaOrden::find($datos['tipologia_orden_id'] ?? null)?->nombre;
 
             return [
-                'tipo_gestion_label' => $tipologiaLabel ?? ($this->orden->tipo_gestion_legal ?? '—'),
+                'tipo_gestion_label' => $tipologiaLabel ?? TipologiaOrden::find($this->orden->tipo_gestion_legal ?? null)?->nombre ?? '—',
                 'numero_noticia_criminal' => $this->orden->numero_noticia_criminal,
                 'tipologia' => $tipologiaLabel,
                 'fecha_ejecucion' => $datos['fecha_ejecucion'] ?? null,
