@@ -325,7 +325,7 @@
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Gestión</dt>
                                 <dd class="mt-0.5">
                                     <flux:badge color="blue" size="sm">
-                                        {{ $datosServicio['tipologia'] }}</flux:badge>
+                                        {{ $datosServicio['tipo_gestion_label'] }}</flux:badge>
                                 </dd>
                             </div>
                         @endif
