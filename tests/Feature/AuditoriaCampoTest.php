@@ -99,3 +99,40 @@ it('datosServicioDisplay returns structured array for AuditoriaCampo', function 
         ->and($display['nombre_atiende'])->toBe('Test')
         ->and($display['autoriza'])->toBeTrue();
 });
+
+it('evidenciasUrls clasifies images and documents by extension', function () {
+    $company = Company::factory()->create();
+    $user = User::factory()->create(['company_id' => $company->id, 'is_superadmin' => false]);
+    $this->actingAs($user);
+
+    $orden = OrdenJob::create([
+        'tipo_servicio' => TipoServicio::Gestion_Riesgo,
+        'prioridad' => PrioridadOrden::Media,
+        'estado' => EstadoOrden::EnRevision,
+        'estado_servicio' => true,
+    ]);
+
+    $reporte = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => null,
+        'numero_orden' => $orden->numero_orden,
+        'datos_servicio' => [
+            'urls_evidencia' => [
+                'https://example.test/evidencias/foto-1.png',
+                'https://example.test/evidencias/manual.pdf',
+            ],
+        ],
+    ]);
+
+    $component = new ReporteRevisar;
+    $component->orden = $orden->load('personal');
+    $component->reporte = $reporte;
+
+    $evidencias = $component->evidenciasUrls();
+
+    expect($evidencias)->toHaveCount(2)
+        ->and($evidencias[0]['es_imagen'])->toBeTrue()
+        ->and($evidencias[0]['nombre'])->toBe('foto-1.png')
+        ->and($evidencias[1]['es_imagen'])->toBeFalse()
+        ->and($evidencias[1]['nombre'])->toBe('manual.pdf');
+});

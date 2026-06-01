@@ -666,20 +666,74 @@
                     </div>
                 </div>
 
-                @if (!empty($datosServicio['urls_evidencia']))
-                    <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                        <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500">URLs de Evidencia
-                            / Documentos</h3>
-                        <ul class="space-y-1">
-                            @foreach ($datosServicio['urls_evidencia'] as $url)
-                                <li>
-                                    <a href="{{ $url }}" target="_blank" rel="noopener"
-                                        class="break-all text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400">
-                                        {{ $url }}
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
+                @if (!empty($evidenciasUrls))
+                    @php
+                        $evidenciasImgs = array_values(array_filter($evidenciasUrls, fn($evidencia) => $evidencia['es_imagen']));
+                        $evidenciasDocs = array_values(array_filter($evidenciasUrls, fn($evidencia) => ! $evidencia['es_imagen']));
+                    @endphp
+                    <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
+                        class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                            URLs de Evidencia / Documentos</h3>
+
+                        @if (!empty($evidenciasImgs))
+                            <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                @foreach ($evidenciasImgs as $archivo)
+                                    <button type="button" @click="src = '{{ $archivo['url'] }}'; open = true"
+                                        class="block overflow-hidden rounded-lg border border-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                        <img src="{{ $archivo['url'] }}" alt="{{ $archivo['nombre'] }}"
+                                            class="h-40 w-full object-cover transition hover:opacity-80">
+                                    </button>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if (!empty($evidenciasDocs))
+                            <ul class="space-y-2">
+                                @foreach ($evidenciasDocs as $archivo)
+                                    <li
+                                        class="flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 text-zinc-400"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                            stroke-width="1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                        </svg>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="truncate text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                                                {{ $archivo['nombre'] }}
+                                            </p>
+                                            @if ($archivo['extension'])
+                                                <p class="text-xs uppercase tracking-wide text-zinc-400">
+                                                    {{ $archivo['extension'] }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                        <a href="{{ $archivo['url'] }}" target="_blank" rel="noopener"
+                                            class="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+                                            Abrir
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+
+                        <div x-show="open" x-transition.opacity @click.self="open = false"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+                            style="display: none">
+                            <div class="relative max-h-full max-w-4xl">
+                                <button type="button" @click="open = false"
+                                    class="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-800 shadow-lg hover:bg-zinc-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <img :src="src" alt="Evidencia ampliada"
+                                    class="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl">
+                            </div>
+                        </div>
                     </div>
                 @endif
 
@@ -729,8 +783,8 @@
             @endif
 
             {{-- ═══ Evidencias ═══ --}}
-            @if ($orden->tipo_servicio === \App\Enums\TipoServicio::Gestion_Riesgo)
-                @if (!empty($archivosUrls))
+
+            @if (!empty($archivosUrls))
                     @php
                         $imgs = array_values(array_filter($archivosUrls, fn($a) => $a['es_imagen']));
                         $docs = array_values(array_filter($archivosUrls, fn($a) => !$a['es_imagen']));
@@ -800,7 +854,6 @@
                             </div>
                         </div>
                     </div>
-                @endif
             @elseif (!empty($imagenUrls))
                 <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
                     class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
