@@ -971,7 +971,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->fetchFileInformation(false)
                         ->previewable(false)
                         ->multiple()
-                        ->image()
+                        ->acceptedFileTypes(['image/*'])
                         ->maxFiles(10)
                         ->maxSize(5120)
                         ->reorderable()
