@@ -54,6 +54,9 @@ class ReporteEdit extends Component implements HasActions, HasForms
 
     public reportes $reporte;
 
+    /** @var array<int, string> */
+    public array $imagenesExistentes = [];
+
     public ?string $latitud = null;
 
     public ?string $longitud = null;
@@ -73,10 +76,12 @@ class ReporteEdit extends Component implements HasActions, HasForms
 
         $this->orden = $orden;
         $this->reporte = $orden->reportes()->latest()->firstOrFail();
+        $this->imagenesExistentes = $this->reporte->imagenes ?? [];
 
         if ($this->orden->tipo_servicio === TipoServicio::Fraudes || $this->orden->tipo_servicio === TipoServicio::RevisionMedidores) {
             $this->form->fill([
                 ...$this->reporte->toArray(),
+                'imagenes' => [],
                 'nombre_comercio' => $this->reporte->comercio?->nombre_comercio,
                 'tipo_comercio_id' => $this->reporte->comercio?->tipo_comercio_id,
             ]);
@@ -84,7 +89,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
             $this->form->fill([
                 ...($this->reporte->datos_servicio ?? []),
                 'observaciones' => $this->reporte->observaciones,
-                'imagenes' => $this->reporte->imagenes,
+                'imagenes' => [],
                 'video' => $this->reporte->video,
                 'geo_referencia' => $this->reporte->geo_referencia,
                 'actividades' => $this->reporte->actividades,
@@ -1072,17 +1077,17 @@ class ReporteEdit extends Component implements HasActions, HasForms
      */
     private function normalizarImagenes(array $data): ?array
     {
-        $imagenes = [];
+        $imagenes = $this->imagenesExistentes;
 
         if (! empty($data['imagenes']) && is_array($data['imagenes'])) {
-            $imagenes = array_values($data['imagenes']);
+            $imagenes = array_values(array_unique(array_merge($imagenes, $data['imagenes'])));
         }
 
         if (! empty($data['foto_detector_fuga'])) {
             $fotoDetectorFuga = $data['foto_detector_fuga'];
 
             if (is_array($fotoDetectorFuga)) {
-                $imagenes = array_merge($imagenes, array_values($fotoDetectorFuga));
+                $imagenes = array_values(array_unique(array_merge($imagenes, array_values($fotoDetectorFuga))));
             } elseif (is_string($fotoDetectorFuga)) {
                 $imagenes[] = $fotoDetectorFuga;
             }
@@ -1147,7 +1152,9 @@ class ReporteEdit extends Component implements HasActions, HasForms
 
         $this->reporte->update([
             'observaciones' => $data['observaciones'] ?? null,
-            'imagenes' => $data['imagenes'] ?? null,
+            'imagenes' => ! empty($data['imagenes']) && is_array($data['imagenes'])
+                ? array_values(array_unique(array_merge($this->imagenesExistentes, $data['imagenes'])))
+                : ($this->imagenesExistentes ?: null),
             'video' => $data['video'] ?? null,
             'geo_referencia' => $data['geo_referencia'] ?? null,
             'datos_servicio' => $datosServicio,
