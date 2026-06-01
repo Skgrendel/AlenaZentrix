@@ -320,13 +320,12 @@
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                         Gestión Legal</h3>
                     <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-                        @if ($datosServicio['tipo_gestion_label'] ?? null)
+                        @if ($datosServicio['tipologia'] ?? null)
                             <div class="sm:col-span-2">
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Gestión
-                                </dt>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Gestión</dt>
                                 <dd class="mt-0.5">
                                     <flux:badge color="blue" size="sm">
-                                        {{ $datosServicio['tipo_gestion_label'] }}</flux:badge>
+                                        {{ $datosServicio['tipologia'] }}</flux:badge>
                                 </dd>
                             </div>
                         @endif
