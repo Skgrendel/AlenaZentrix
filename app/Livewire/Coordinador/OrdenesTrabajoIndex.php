@@ -66,15 +66,15 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state instanceof TipoServicio ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof TipoServicio ? $state->color() : 'gray'),
+                Tables\Columns\TextColumn::make('contrato')
+                    ->label('Contrato')
+                    ->searchable()
+                    ->visible(fn (): bool => $this->tableColumnHasData('contrato')),
                 Tables\Columns\TextColumn::make('cliente')
                     ->label('Cliente')
                     ->searchable()
                     ->sortable()
                     ->visible(fn (): bool => $this->tableColumnHasData('cliente')),
-                Tables\Columns\TextColumn::make('contrato')
-                    ->label('Contrato')
-                    ->searchable()
-                    ->visible(fn (): bool => $this->tableColumnHasData('contrato')),
                 Tables\Columns\TextColumn::make('barrio')
                     ->label('Barrio')
                     ->searchable()
