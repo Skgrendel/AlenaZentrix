@@ -77,7 +77,7 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                     ->formatStateUsing(fn ($state) => $state instanceof TipoServicio ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof TipoServicio ? $state->color() : 'gray'),
                 Tables\Columns\TextColumn::make('contrato')
-                    ->label('Cliente / Referencia')
+                    ->label('Contrato')
                     ->searchable()
                     ->visible(fn (): bool => $this->tableColumnHasData('contrato'))
                     ->placeholder('—'),
