@@ -17,8 +17,12 @@ return new class extends Migration
             'diligencia_judicial' => 'Diligencia Judicial',
         ];
 
-        // Default company id: first company in DB. If you need per-company mapping, run a custom script.
+        // Default company id: first company in DB. Skip if none exist (e.g. fresh test database).
         $defaultCompanyId = DB::table('companies')->value('id');
+
+        if (! $defaultCompanyId) {
+            return;
+        }
 
         foreach ($mapping as $slug => $nombre) {
             $tip = DB::table('tipologias_orden')->where('nombre', $nombre)->first();
