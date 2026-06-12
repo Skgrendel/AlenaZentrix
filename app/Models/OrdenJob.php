@@ -56,6 +56,7 @@ class OrdenJob extends Model
         'fecha_limite',
         'fecha_completado',
         'resultado',
+        'proceso_id',
     ];
 
     protected $casts = [
@@ -150,6 +151,11 @@ class OrdenJob extends Model
         $sequence = $last ? ((int) substr($last, 4)) + 1 : 1;
 
         return 'ODT-'.str_pad((string) $sequence, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function proceso(): BelongsTo
+    {
+        return $this->belongsTo(Proceso::class, 'proceso_id');
     }
 
     /** Técnico o investigador asignado a ejecutar la orden. */

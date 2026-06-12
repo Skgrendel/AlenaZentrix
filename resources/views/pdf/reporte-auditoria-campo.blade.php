@@ -354,6 +354,10 @@
                     <h2>{{ $datosOrden['subtipo'] ?? 'Control y Seguimiento de Visita en Campo' }}</h2>
                     <div class="header-meta">
                         Orden: <strong>{{ $orden->numero_orden }}</strong>
+                        @if (!empty($datosOrden['proceso']))
+                            &nbsp;&nbsp;|&nbsp;&nbsp;
+                            Proceso: <strong>{{ $datosOrden['proceso'] }}</strong>
+                        @endif
                         &nbsp;&nbsp;|&nbsp;&nbsp;
                         Fecha de generación: <strong>{{ $fechaGeneracion }}</strong>
                     </div>

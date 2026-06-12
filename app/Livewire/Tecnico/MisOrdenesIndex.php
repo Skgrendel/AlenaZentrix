@@ -51,6 +51,7 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                         EstadoOrden::EnProgreso->value,
                         EstadoOrden::EnRevision->value,
                         EstadoOrden::Rechazada->value,
+                        EstadoOrden::Completada->value,
                     ]);
 
                 if (! auth()->user()->can('ordenes.ver')) {

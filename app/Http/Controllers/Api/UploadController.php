@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+class UploadController extends Controller
+{
+    public function store(Request $request): JsonResponse
+    {
+        $request->validate([
+            'archivo' => ['required', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,webp,heic,heif,mp4,mov,pdf'],
+            'directorio' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-Z0-9_\-\/]+$/'],
+        ]);
+
+        $directorio = $request->input('directorio', 'reportes/varios');
+        $path = $request->file('archivo')->store($directorio, 's3');
+
+        return response()->json(['path' => $path], 201);
+    }
+}

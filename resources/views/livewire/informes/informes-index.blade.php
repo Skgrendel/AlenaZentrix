@@ -65,6 +65,19 @@
                     </select>
                 </div>
 
+                @if(count($procesoOptions) > 0)
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Proceso</label>
+                    <select wire:model="proceso"
+                        class="w-full rounded-lg border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white">
+                        <option value="">Todos los procesos</option>
+                        @foreach($procesoOptions as $id => $nombre)
+                            <option value="{{ $id }}">{{ $nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                @endif
+
                 <div>
                     <label class="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Fecha inicial</label>
                     <input type="date" wire:model="fechaInicio"

@@ -58,7 +58,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
 
         abort_unless(in_array($orden->estado, $estadosPermitidos), 403);
 
-        $this->orden = $orden->load('personal');
+        $this->orden = $orden->load(['personal', 'proceso']);
 
         $reporteId = request()->query('reporte');
 

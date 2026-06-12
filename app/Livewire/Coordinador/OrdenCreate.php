@@ -8,6 +8,7 @@ use App\Enums\TipoServicio;
 use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
 use App\Models\personals;
+use App\Models\Proceso;
 use App\Models\TipologiaOrden;
 use App\Services\TenantService;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -61,6 +62,12 @@ class OrdenCreate extends Component implements HasActions, HasForms
             ->pluck('nombre', 'id')
             ->toArray();
 
+        $procesos = Proceso::query()
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->pluck('nombre', 'id')
+            ->toArray();
+
         $tecnicos = collect();
 
         if ($companyId) {
@@ -76,9 +83,16 @@ class OrdenCreate extends Component implements HasActions, HasForms
 
         return $form
             ->schema([
-                // ── Tipo de Servicio ──────────────────────────────────────
-                Section::make('Tipo de Servicio')
+                // ── Clasificación de la Orden ─────────────────────────────
+                Section::make('Clasificación de la Orden')
+                    ->columns(2)
                     ->schema([
+                        Forms\Components\Select::make('proceso_id')
+                            ->label('Proceso')
+                            ->options($procesos)
+                            ->searchable()
+                            ->nullable()
+                            ->placeholder('Sin proceso asignado'),
                         Forms\Components\Select::make('tipo_servicio')
                             ->label('Tipo de Servicio')
                             ->options(
@@ -296,6 +310,7 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->maxSize(5120)
                             ->reorderable()
                             ->panelLayout('grid')
+                            ->fetchFileInformation(false)
                             ->columnSpanFull(),
                     ]),
 

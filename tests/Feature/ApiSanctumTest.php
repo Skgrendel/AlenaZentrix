@@ -5,18 +5,16 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('GET /api/user requiere autenticación', function () {
-    $response = $this->getJson('/api/user');
-
-    $response->assertStatus(401);
+test('GET /api/tecnico/mis-ordenes requiere autenticación', function () {
+    $this->getJson('/api/tecnico/mis-ordenes')->assertStatus(401);
 });
 
-test('GET /api/user devuelve el usuario autenticado con token Sanctum', function () {
+test('GET /api/tecnico/mis-ordenes responde con token Sanctum válido', function () {
     $user = User::factory()->create();
     $token = $user->createToken('test-token')->plainTextToken;
 
-    $response = $this->withToken($token)->getJson('/api/user');
-
-    $response->assertOk()
-        ->assertJsonPath('id', $user->id);
+    $this->withToken($token)
+        ->getJson('/api/tecnico/mis-ordenes')
+        ->assertOk()
+        ->assertJsonStructure(['data']);
 });

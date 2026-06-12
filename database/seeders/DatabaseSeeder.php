@@ -10,6 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(PermissionsSeeder::class);
         $this->call(CompanySeeder::class);  // CompanyObserver seeds catalogs automatically on created
+        $this->call(ProcesosSeeder::class);
         $this->call(PersonalSeeder::class);
         $this->call(UserSeeder::class);
     }

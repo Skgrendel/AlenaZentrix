@@ -28,7 +28,7 @@ class ReportePdfController extends Controller
 
         $reporteId = request()->query('reporte');
 
-        $orden->load(['personal', 'creadoPor']);
+        $orden->load(['personal', 'creadoPor', 'proceso']);
 
         $query = $orden->reportes()->with([
             'comercio.tipoComercio',
@@ -92,7 +92,7 @@ class ReportePdfController extends Controller
 
         $reporteId = request()->query('reporte');
 
-        $orden->load(['personal', 'creadoPor']);
+        $orden->load(['personal', 'creadoPor', 'proceso']);
 
         $query = $orden->reportes()->with([
             'personal.usuario',
@@ -159,7 +159,7 @@ class ReportePdfController extends Controller
 
         $reporteId = request()->query('reporte');
 
-        $orden->load(['personal', 'creadoPor']);
+        $orden->load(['personal', 'creadoPor', 'proceso']);
 
         $query = $orden->reportes()->with([
             'personal.usuario',
@@ -219,6 +219,7 @@ class ReportePdfController extends Controller
     {
         return [
             'numero_orden' => $orden->numero_orden,
+            'proceso' => $orden->proceso?->nombre ?? null,
             'servicio' => $orden->tipo_servicio?->label() ?? '—',
             'prioridad' => $orden->prioridad?->label() ?? '—',
             'estado' => $orden->estado?->label() ?? '—',
@@ -395,7 +396,7 @@ class ReportePdfController extends Controller
 
         $reporteId = request()->query('reporte');
 
-        $orden->load(['personal', 'creadoPor']);
+        $orden->load(['personal', 'creadoPor', 'proceso']);
 
         $query = $orden->reportes()->with([
             'personal.usuario',
@@ -460,7 +461,7 @@ class ReportePdfController extends Controller
 
         $reporteId = request()->query('reporte');
 
-        $orden->load(['personal', 'creadoPor']);
+        $orden->load(['personal', 'creadoPor', 'proceso']);
 
         $query = $orden->reportes()->with([
             'personal.usuario',
@@ -520,7 +521,7 @@ class ReportePdfController extends Controller
 
         $reporteId = request()->query('reporte');
 
-        $orden->load(['personal', 'creadoPor']);
+        $orden->load(['personal', 'creadoPor', 'proceso']);
 
         $query = $orden->reportes()->with([
             'comercio.tipoComercio',

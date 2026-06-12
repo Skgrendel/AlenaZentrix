@@ -424,6 +424,12 @@
                         <div class="info-label">Número de Orden:</div>
                         <div class="info-value">{{ $orden->numero_orden }}</div>
                     </div>
+                    @if ($orden->proceso)
+                        <div class="info-row">
+                            <div class="info-label">Proceso:</div>
+                            <div class="info-value">{{ $orden->proceso->nombre }}</div>
+                        </div>
+                    @endif
                     <div class="info-row">
                         <div class="info-label">Contrato:</div>
                         <div class="info-value">{{ $orden->contrato ?? '—' }}</div>

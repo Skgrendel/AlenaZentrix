@@ -35,6 +35,12 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
 
+                <flux:navlist.group heading="Operaciones">
+                    <flux:navlist.item href="#" x-on:click.prevent="active = 'procesos'" x-bind:data-current="active === 'procesos'">
+                        Procesos
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
                 <flux:navlist.group heading="Catálogos Legales">
                     <flux:navlist.item href="#" x-on:click.prevent="active = 'convenciones'" x-bind:data-current="active === 'convenciones'">
                         Convenciones
@@ -60,6 +66,12 @@
 
         {{-- Paneles --}}
         <div class="flex-1 min-w-0">
+            <div x-show="active === 'procesos'" x-cloak>
+                <livewire:admin.catalogos.manage-catalog
+                    :model="\App\Models\Proceso::class"
+                    label="Proceso"
+                    wire:key="catalog-procesos" />
+            </div>
             <div x-show="active === 'anomalia'" x-cloak>
                 <livewire:admin.catalogos.manage-catalog
                     :model="\App\Models\TipoAnomalia::class"

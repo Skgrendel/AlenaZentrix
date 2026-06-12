@@ -53,7 +53,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
     public function table(Table $table): Table
     {
         return $table
-            ->query(OrdenJob::query()->with(['personal', 'reportes.auditoria']))
+            ->query(OrdenJob::query()->with(['personal', 'reportes.auditoria', 'proceso']))
             ->columns([
                 Tables\Columns\TextColumn::make('numero_orden')
                     ->label('N° Orden')
@@ -66,6 +66,12 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state instanceof TipoServicio ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof TipoServicio ? $state->color() : 'gray'),
+                Tables\Columns\TextColumn::make('proceso.nombre')
+                    ->label('Proceso')
+                    ->placeholder('—')
+                    ->searchable()
+                    ->toggleable()
+                    ->visible(fn (): bool => $this->tableColumnHasData('proceso_id')),
                 Tables\Columns\TextColumn::make('contrato')
                     ->label('Contrato')
                     ->searchable()
@@ -452,6 +458,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         ->maxSize(5120)
                         ->reorderable()
                         ->panelLayout('grid')
+                        ->fetchFileInformation(false)
                         ->columnSpanFull(),
                 ]),
 

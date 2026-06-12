@@ -7,6 +7,7 @@ use App\Enums\EstadoOrden;
 use App\Enums\TipoServicio;
 use App\Models\auditoria;
 use App\Models\OrdenJob;
+use App\Models\Proceso;
 use App\Models\reportes as Reporte;
 use App\Models\TipologiaOrden;
 use Illuminate\Contracts\View\View;
@@ -36,6 +37,8 @@ class InformesIndex extends Component
     public string $servicio = '';
 
     public string $subTipo = '';
+
+    public string $proceso = '';
 
     public bool $previewGenerado = false;
 
@@ -131,11 +134,21 @@ class InformesIndex extends Component
         };
     }
 
+    public function procesoOptions(): array
+    {
+        return Proceso::query()
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->pluck('nombre', 'id')
+            ->toArray();
+    }
+
     public function updatedTipoInforme(): void
     {
         $this->estado = '';
         $this->servicio = '';
         $this->subTipo = '';
+        $this->proceso = '';
         $this->preview = [];
         $this->previewGenerado = false;
     }
@@ -184,11 +197,12 @@ class InformesIndex extends Component
     private function xlsxOrdenes(): array
     {
         $rows = OrdenJob::query()
-            ->with('personal')
+            ->with(['personal', 'proceso'])
             ->when($this->fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaInicio))
             ->when($this->fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaFin))
             ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
             ->when($this->servicio, fn ($q) => $q->where('tipo_servicio', $this->servicio))
+            ->when($this->proceso, fn ($q) => $q->where('proceso_id', $this->proceso))
             ->when($this->subTipo, function ($q) {
                 match ($this->servicio) {
                     TipoServicio::GestionLegal->value => $q->where('tipo_gestion_legal', $this->subTipo),
@@ -200,6 +214,7 @@ class InformesIndex extends Component
             ->get()
             ->map(fn (OrdenJob $o) => [
                 $o->numero_orden,
+                $o->proceso?->nombre ?? '',
                 $o->tipo_servicio->label(),
                 $o->subtipoLabel(),
                 $o->estado->label(),
@@ -219,7 +234,7 @@ class InformesIndex extends Component
             ->all();
 
         return [
-            ['N° Orden', 'Servicio', 'Sub-tipo', 'Estado', 'Prioridad', 'Investigador', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Objetivo', 'N° Noticia Criminal', 'Fecha Asignación', 'Fecha Límite', 'Fecha Completado'],
+            ['N° Orden', 'Proceso', 'Servicio', 'Sub-tipo', 'Estado', 'Prioridad', 'Investigador', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Objetivo', 'N° Noticia Criminal', 'Fecha Asignación', 'Fecha Límite', 'Fecha Completado'],
             $rows,
             'ordenes-asignadas-'.now()->format('Y-m-d'),
         ];
@@ -228,7 +243,7 @@ class InformesIndex extends Component
     private function xlsxReportes($user): array
     {
         $rows = Reporte::query()
-            ->with(['ordenJob.personal', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador'])
+            ->with(['ordenJob.personal', 'ordenJob.proceso', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador'])
             ->when(! $user->can('ordenes.ver'), fn ($q) => $q->whereHas(
                 'ordenJob', fn ($q2) => $q2->where('personals_id', $user->personals_id)
             ))
@@ -239,6 +254,9 @@ class InformesIndex extends Component
             ))
             ->when($this->servicio, fn ($q) => $q->whereHas(
                 'ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
+            ))
+            ->when($this->proceso, fn ($q) => $q->whereHas(
+                'ordenJob', fn ($q2) => $q2->where('proceso_id', $this->proceso)
             ))
             ->when($this->subTipo, fn ($q) => $q->whereHas('ordenJob', function ($inner) {
                 match ($this->servicio) {
@@ -251,6 +269,7 @@ class InformesIndex extends Component
             ->get()
             ->map(fn (Reporte $r) => [
                 $r->ordenJob?->numero_orden ?? '',
+                $r->ordenJob?->proceso?->nombre ?? '',
                 $r->ordenJob?->tipo_servicio?->label() ?? '',
                 $r->ordenJob?->subtipoLabel() ?? '—',
                 $r->ordenJob?->estado?->label() ?? '',
@@ -273,7 +292,7 @@ class InformesIndex extends Component
             ->all();
 
         return [
-            ['N° Orden', 'Servicio', 'Sub-tipo', 'Estado Orden', 'Investigador', 'Dirección', 'Barrio', 'Cliente', 'Contrato', 'Lectura', 'N° Medidor', 'Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Actividades', 'Observaciones', 'Conclusión', 'Fecha Reporte'],
+            ['N° Orden', 'Proceso', 'Servicio', 'Sub-tipo', 'Estado Orden', 'Investigador', 'Dirección', 'Barrio', 'Cliente', 'Contrato', 'Lectura', 'N° Medidor', 'Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Actividades', 'Observaciones', 'Conclusión', 'Fecha Reporte'],
             $rows,
             'respuestas-tecnico-'.now()->format('Y-m-d'),
         ];
@@ -282,12 +301,15 @@ class InformesIndex extends Component
     private function xlsxAuditorias(): array
     {
         $rows = auditoria::query()
-            ->with(['reporte.ordenJob.personal'])
+            ->with(['reporte.ordenJob.personal', 'reporte.ordenJob.proceso'])
             ->when($this->fechaInicio, fn ($q) => $q->whereDate('fecha_auditoria', '>=', $this->fechaInicio))
             ->when($this->fechaFin, fn ($q) => $q->whereDate('fecha_auditoria', '<=', $this->fechaFin))
             ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
             ->when($this->servicio, fn ($q) => $q->whereHas(
                 'reporte.ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
+            ))
+            ->when($this->proceso, fn ($q) => $q->whereHas(
+                'reporte.ordenJob', fn ($q2) => $q2->where('proceso_id', $this->proceso)
             ))
             ->when($this->subTipo, fn ($q) => $q->whereHas('reporte.ordenJob', function ($inner) {
                 match ($this->servicio) {
@@ -300,6 +322,7 @@ class InformesIndex extends Component
             ->get()
             ->map(fn (auditoria $a) => [
                 $a->reporte?->ordenJob?->numero_orden ?? '',
+                $a->reporte?->ordenJob?->proceso?->nombre ?? '',
                 $a->reporte?->ordenJob?->tipo_servicio?->label() ?? '',
                 $a->reporte?->ordenJob?->estado?->label() ?? '',
                 $a->reporte?->ordenJob?->cliente ?? '',
@@ -317,7 +340,7 @@ class InformesIndex extends Component
             ->all();
 
         return [
-            ['N° Orden', 'Servicio', 'Estado Orden', 'Cliente', 'Contrato', 'Medidor', 'Barrio', 'Investigador', 'Estado Auditoría', 'Observaciones', 'Fecha Completado Orden', 'Fecha Auditoría'],
+            ['N° Orden', 'Proceso', 'Servicio', 'Estado Orden', 'Cliente', 'Contrato', 'Medidor', 'Barrio', 'Investigador', 'Estado Auditoría', 'Observaciones', 'Fecha Completado Orden', 'Fecha Auditoría'],
             $rows,
             'respuestas-auditor-'.now()->format('Y-m-d'),
         ];
@@ -330,11 +353,12 @@ class InformesIndex extends Component
 
         if ($tipo === 'ordenes') {
             return OrdenJob::query()
-                ->with('personal')
+                ->with(['personal', 'proceso'])
                 ->when($this->fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaInicio))
                 ->when($this->fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaFin))
                 ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
                 ->when($this->servicio, fn ($q) => $q->where('tipo_servicio', $this->servicio))
+                ->when($this->proceso, fn ($q) => $q->where('proceso_id', $this->proceso))
                 ->when($this->subTipo, function ($q) {
                     match ($this->servicio) {
                         TipoServicio::GestionLegal->value => $q->where('tipo_gestion_legal', $this->subTipo),
@@ -347,6 +371,7 @@ class InformesIndex extends Component
                 ->get()
                 ->map(fn (OrdenJob $o) => [
                     'N° Orden' => $o->numero_orden,
+                    'Proceso' => $o->proceso?->nombre ?? '—',
                     'Servicio' => $o->tipo_servicio->label(),
                     'Sub-tipo' => $o->subtipoLabel(),
                     'Estado' => $o->estado->label(),
@@ -363,7 +388,7 @@ class InformesIndex extends Component
 
         if ($tipo === 'reportes') {
             return Reporte::query()
-                ->with(['ordenJob.personal', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador'])
+                ->with(['ordenJob.personal', 'ordenJob.proceso', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador'])
                 ->when(! $user->can('ordenes.ver'), fn ($q) => $q->whereHas(
                     'ordenJob', fn ($q2) => $q2->where('personals_id', $user->personals_id)
                 ))
@@ -374,6 +399,9 @@ class InformesIndex extends Component
                 ))
                 ->when($this->servicio, fn ($q) => $q->whereHas(
                     'ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
+                ))
+                ->when($this->proceso, fn ($q) => $q->whereHas(
+                    'ordenJob', fn ($q2) => $q2->where('proceso_id', $this->proceso)
                 ))
                 ->when($this->subTipo, fn ($q) => $q->whereHas('ordenJob', function ($inner) {
                     match ($this->servicio) {
@@ -387,6 +415,7 @@ class InformesIndex extends Component
                 ->get()
                 ->map(fn (Reporte $r) => [
                     'N° Orden' => $r->ordenJob?->numero_orden ?? '—',
+                    'Proceso' => $r->ordenJob?->proceso?->nombre ?? '—',
                     'Servicio' => $r->ordenJob?->tipo_servicio?->label() ?? '—',
                     'Sub-tipo' => $r->ordenJob?->subtipoLabel() ?? '—',
                     'Estado Orden' => $r->ordenJob?->estado?->label() ?? '—',
@@ -405,12 +434,15 @@ class InformesIndex extends Component
 
         if ($tipo === 'auditorias') {
             return auditoria::query()
-                ->with(['reporte.ordenJob.personal'])
+                ->with(['reporte.ordenJob.personal', 'reporte.ordenJob.proceso'])
                 ->when($this->fechaInicio, fn ($q) => $q->whereDate('fecha_auditoria', '>=', $this->fechaInicio))
                 ->when($this->fechaFin, fn ($q) => $q->whereDate('fecha_auditoria', '<=', $this->fechaFin))
                 ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
                 ->when($this->servicio, fn ($q) => $q->whereHas(
                     'reporte.ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
+                ))
+                ->when($this->proceso, fn ($q) => $q->whereHas(
+                    'reporte.ordenJob', fn ($q2) => $q2->where('proceso_id', $this->proceso)
                 ))
                 ->when($this->subTipo, fn ($q) => $q->whereHas('reporte.ordenJob', function ($inner) {
                     match ($this->servicio) {
@@ -424,6 +456,7 @@ class InformesIndex extends Component
                 ->get()
                 ->map(fn (auditoria $a) => [
                     'N° Orden' => $a->reporte?->ordenJob?->numero_orden ?? '—',
+                    'Proceso' => $a->reporte?->ordenJob?->proceso?->nombre ?? '—',
                     'Servicio' => $a->reporte?->ordenJob?->tipo_servicio?->label() ?? '—',
                     'Estado Orden' => $a->reporte?->ordenJob?->estado?->label() ?? '—',
                     'Cliente' => $a->reporte?->ordenJob?->cliente ?? '—',
@@ -451,6 +484,7 @@ class InformesIndex extends Component
             'estadoOptions' => $this->estadoOptions(),
             'servicioOptions' => $this->servicioOptions(),
             'subTipoOptions' => $this->subTipoOptions(),
+            'procesoOptions' => $this->procesoOptions(),
             'tipoEfectivo' => $this->tipoEfectivo(),
         ]);
     }

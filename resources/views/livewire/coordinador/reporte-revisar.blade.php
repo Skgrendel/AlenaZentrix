@@ -912,12 +912,20 @@
         <div class="space-y-6">
 
             {{-- ═══ Información de la Orden ═══ --}}
-            @if ($orden->cliente || $orden->direccion || $orden->numero_noticia_criminal)
+            @if ($orden->proceso || $orden->cliente || $orden->direccion || $orden->numero_noticia_criminal)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                         Orden
                     </h3>
                     <dl class="space-y-2">
+                        @if ($orden->proceso)
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Proceso</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ $orden->proceso->nombre }}
+                                </dd>
+                            </div>
+                        @endif
                         @if ($orden->cliente)
                             <div>
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Cliente /
