@@ -9,6 +9,7 @@ use App\Enums\TipoServicio;
 use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
 use App\Models\personals;
+use App\Models\Proceso;
 use App\Models\TipologiaOrden;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -137,8 +138,17 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         collect(PrioridadOrden::cases())
                             ->mapWithKeys(fn (PrioridadOrden $case) => [$case->value => $case->label()])
                     ),
-                Tables\Filters\TernaryFilter::make('estado_servicio')
-                    ->label('Servicio Activo'),
+                Tables\Filters\SelectFilter::make('tipo_servicio')
+                    ->label('Servicio')
+                    ->options(
+                        collect(TipoServicio::cases())
+                            ->mapWithKeys(fn (TipoServicio $case) => [$case->value => $case->label()])
+                    ),
+                Tables\Filters\SelectFilter::make('proceso_id')
+                    ->label('Proceso')
+                    ->options(
+                        Proceso::query()->orderBy('nombre')->pluck('nombre', 'id')
+                    ),
             ])
             ->headerActions([
                 Action::make('create')
