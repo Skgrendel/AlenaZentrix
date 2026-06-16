@@ -7,24 +7,6 @@
     {{-- Panel de filtros --}}
     <div class="rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-900 space-y-5">
 
-        {{-- Tipo de Informe --}}
-        @if($puedeSeleccionarTipo)
-        <div>
-            <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">Tipo de Informe</p>
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                @foreach($tiposDisponibles as $value => $label)
-                <button wire:click="$set('tipoInforme', '{{ $value }}')"
-                    class="rounded-lg border px-4 py-3 text-sm font-medium transition
-                        {{ $tipoEfectivo === $value
-                            ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300'
-                            : 'border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700' }}">
-                    {{ $label }}
-                </button>
-                @endforeach
-            </div>
-        </div>
-        @endif
-
         {{-- Filtros + Periodo en una sola fila --}}
         <div>
             <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">Filtros</p>
