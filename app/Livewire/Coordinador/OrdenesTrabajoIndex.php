@@ -110,7 +110,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('fecha_limite')
                     ->label('Fecha Límite')
-                    ->date('d/m/Y')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('fecha_completado')
@@ -121,7 +121,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Creado')
-                    ->date('d/m/Y')
+                    ->dateTime('d/m/Y H:i')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
