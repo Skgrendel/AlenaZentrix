@@ -104,6 +104,9 @@ class AuditoriaRevisar extends Component implements HasForms
                             ->numeric()
                             ->minValue(0)
                             ->nullable(),
+                        Forms\Components\TextInput::make('contrato')
+                            ->label('Numero de Contrato')
+                            ->nullable(),
                         Forms\Components\Textarea::make('observaciones')
                             ->label('Observaciones')
                             ->rows(4),
@@ -126,6 +129,10 @@ class AuditoriaRevisar extends Component implements HasForms
             'auditado_por_id' => auth()->id(),
             'fecha_auditoria' => now(),
         ]);
+
+        if (! empty($data['contrato'])) {
+            $this->auditoria->reporte?->ordenJob?->update(['contrato' => $data['contrato']]);
+        }
 
         session()->flash('success', "Auditoría de la orden {$this->auditoria->reporte?->ordenJob?->numero_orden} registrada correctamente.");
 
