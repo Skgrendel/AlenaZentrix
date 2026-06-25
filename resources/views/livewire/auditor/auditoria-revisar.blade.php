@@ -20,9 +20,16 @@
                 @endif
             </flux:text>
         </div>
-        <flux:button href="{{ $this->volverUrl() }}" icon="arrow-left" variant="ghost" wire:navigate>
-            Volver
-        </flux:button>
+        <div class="flex items-center gap-3">
+            @if ($auditoria->estado === \App\Enums\EstadoAuditoria::PendienteAuditoria)
+                <flux:modal.trigger name="registrar-auditoria">
+                    <flux:button variant="primary" icon="check-circle">Registrar Resultado</flux:button>
+                </flux:modal.trigger>
+            @endif
+            <flux:button href="{{ $this->volverUrl() }}" icon="arrow-left" variant="ghost" wire:navigate>
+                Volver
+            </flux:button>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -835,21 +842,8 @@
                 </div>
             @endif
 
-            {{-- Formulario o resultado de auditoría --}}
-            @if ($auditoria->estado === \App\Enums\EstadoAuditoria::PendienteAuditoria)
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                        Registrar Auditoría</h3>
-                    <form wire:submit="guardar" class="space-y-4">
-                        {{ $this->form }}
-                        <flux:button type="submit" variant="primary" icon="check-circle" class="w-full justify-center"
-                            wire:loading.attr="disabled">
-                            <span wire:loading.remove wire:target="guardar">Guardar Auditoría</span>
-                            <span wire:loading wire:target="guardar">Guardando...</span>
-                        </flux:button>
-                    </form>
-                </div>
-            @else
+            {{-- Resultado de auditoría (solo si ya fue procesada) --}}
+            @if ($auditoria->estado !== \App\Enums\EstadoAuditoria::PendienteAuditoria)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                         Resultado de la Auditoría</h3>
@@ -876,6 +870,20 @@
                                 <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
                                     {{ $auditoria->auditadoPor->fullName() }}
                                 </dd>
+                            </div>
+                        @endif
+                        @if ($auditoria->tipoAnomalia)
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Anomalía</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ $auditoria->tipoAnomalia->nombre }}</dd>
+                            </div>
+                        @endif
+                        @if ($auditoria->metros_cubicos_recuperados !== null)
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">M³ Recuperados</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ number_format((float) $auditoria->metros_cubicos_recuperados, 4) }}</dd>
                             </div>
                         @endif
                         @if ($auditoria->observaciones)
@@ -911,6 +919,20 @@
 
         </div>
     </div>
+
+    {{-- Modal: Registrar Auditoría --}}
+    <flux:modal name="registrar-auditoria" class="w-full max-w-lg">
+        <div class="space-y-5">
+            <form wire:submit="guardar" class="space-y-4">
+                {{ $this->form }}
+                <flux:button type="submit" variant="primary" icon="check-circle" class="w-full justify-center"
+                    wire:loading.attr="disabled">
+                    <span wire:loading.remove wire:target="guardar">Guardar Auditoría</span>
+                    <span wire:loading wire:target="guardar">Guardando...</span>
+                </flux:button>
+            </form>
+        </div>
+    </flux:modal>
 
     <x-filament-actions::modals />
 </div>

@@ -597,6 +597,18 @@
                                 </div>
                             @endif
                         @endif
+                        @if ($auditoria->tipoAnomalia)
+                            <div class="info-row">
+                                <div class="info-label">Tipo de Anomalía:</div>
+                                <div class="info-value">{{ $auditoria->tipoAnomalia->nombre }}</div>
+                            </div>
+                        @endif
+                        @if ($auditoria->metros_cubicos_recuperados !== null)
+                            <div class="info-row">
+                                <div class="info-label">M³ Recuperados:</div>
+                                <div class="info-value">{{ number_format((float) $auditoria->metros_cubicos_recuperados, 4) }}</div>
+                            </div>
+                        @endif
                         @if ($auditoria->observaciones)
                             <div class="info-row">
                                 <div class="info-label">Observaciones:</div>
@@ -605,6 +617,36 @@
                         @endif
                     </div>
                 </div>
+                @if (!empty($auditoriaImagenes) || !empty($auditoriaDocs))
+                    <div style="margin-top:10px;">
+                        <div style="font-size:8pt; font-weight:bold; color:#003E72; margin-bottom:6px;">Evidencias de la Auditoría:</div>
+                        @if (!empty($auditoriaImagenes))
+                            @php $audRows = array_chunk($auditoriaImagenes, 2); @endphp
+                            <table class="evidencias-tabla">
+                                @foreach ($audRows as $rowIndex => $row)
+                                    <tr>
+                                        @foreach ($row as $colIndex => $imgSrc)
+                                            <td class="evidencia-td">
+                                                <img src="{{ $imgSrc }}" class="evidencia-img" alt="Evidencia auditoría">
+                                                <div class="evidencia-num">Evidencia {{ $rowIndex * 2 + $colIndex + 1 }}</div>
+                                            </td>
+                                        @endforeach
+                                        @if (count($row) === 1)
+                                            <td class="evidencia-td"></td>
+                                        @endif
+                                    </tr>
+                                @endforeach
+                            </table>
+                        @endif
+                        @if (!empty($auditoriaDocs))
+                            <div style="margin-top:6px;">
+                                @foreach ($auditoriaDocs as $doc)
+                                    <div style="font-size:8pt; padding:2px 0; color:#333;">&#128196; {{ $doc }}</div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
+                @endif
             </div>
         @endif
 

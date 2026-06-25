@@ -38,6 +38,7 @@ class ReportePdfController extends Controller
             'marcaRegulador',
             'tipoNotificacionAlerta',
             'auditoria.auditadoPor.personal',
+            'auditoria.tipoAnomalia',
         ]);
 
         $reporte = $reporteId
@@ -52,6 +53,17 @@ class ReportePdfController extends Controller
         $logoProderi = $this->fileToBase64(public_path('assets/image/LOGO PRODERI CON SLOGAN.png'), 'image/png');
 
         $imagenes = $this->resolveImagenes($reporte->imagenes ?? []);
+
+        $imageExtensions = ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'heic', 'heif', 'avif'];
+        $auditoriaEvidencias = collect($reporte->auditoria?->evidencias ?? []);
+        $auditoriaImagenes = $this->resolveImagenes(
+            $auditoriaEvidencias->filter(fn (string $p) => in_array(strtolower(pathinfo($p, PATHINFO_EXTENSION)), $imageExtensions))->values()->all()
+        );
+        $auditoriaDocs = $auditoriaEvidencias
+            ->filter(fn (string $p) => ! in_array(strtolower(pathinfo($p, PATHINFO_EXTENSION)), $imageExtensions))
+            ->map(fn (string $p) => basename($p))
+            ->values()
+            ->all();
 
         /** @var User $firmante */
         $firmante = auth()->user();
@@ -73,6 +85,8 @@ class ReportePdfController extends Controller
             'anomalias' => $anomalias,
             'logoProderi' => $logoProderi,
             'imagenes' => $imagenes,
+            'auditoriaImagenes' => $auditoriaImagenes,
+            'auditoriaDocs' => $auditoriaDocs,
             'fechaGeneracion' => now()->format('d-m-Y'),
             'firma' => $firma,
             'objetivos' => $objetivos,

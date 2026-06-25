@@ -7,6 +7,7 @@ use App\Enums\TipoServicio;
 use App\Models\auditoria;
 use App\Models\Convencion;
 use App\Models\ResultadoReporte;
+use App\Models\TipoAnomalia;
 use App\Models\TipoComercio;
 use App\Models\TipologiaOrden;
 use Filament\Forms;
@@ -40,7 +41,8 @@ class AuditoriaRevisar extends Component implements HasForms
     public function mount(auditoria $auditoria): void
     {
         $from = request()->query('from', 'auditorias');
-        $this->from = in_array($from, ['auditorias', 'ordenes']) ? $from : 'auditorias';
+        $this->from = in_array($from, ['auditorias', 'ordenes', 'mis-ordenes']) ? $from : 'auditorias';
+
         abort_unless(in_array($auditoria->estado, [
             EstadoAuditoria::PendienteAuditoria,
             EstadoAuditoria::Confirmado,
@@ -59,6 +61,14 @@ class AuditoriaRevisar extends Component implements HasForms
             'reporte.ubicacion',
             'auditadoPor.personal',
         ]);
+
+        // Técnicos sin permiso auditorias.ver solo pueden acceder a auditorías de sus propias órdenes
+        if (! auth()->user()->can('auditorias.ver')) {
+            abort_unless(
+                $this->auditoria->reporte?->ordenJob?->personals_id === auth()->user()->personals_id,
+                403
+            );
+        }
 
         $this->form->fill();
     }
@@ -84,6 +94,16 @@ class AuditoriaRevisar extends Component implements HasForms
                                 EstadoAuditoria::Negativo->value => EstadoAuditoria::Negativo->label(),
                             ])
                             ->required(),
+                        Forms\Components\Select::make('tipo_anomalia_id')
+                            ->label('Tipo de Anomalía')
+                            ->options(fn () => TipoAnomalia::where('activo', true)->pluck('nombre', 'id'))
+                            ->searchable()
+                            ->nullable(),
+                        Forms\Components\TextInput::make('metros_cubicos_recuperados')
+                            ->label('Metros Cúbicos Recuperados')
+                            ->numeric()
+                            ->minValue(0)
+                            ->nullable(),
                         Forms\Components\Textarea::make('observaciones')
                             ->label('Observaciones')
                             ->rows(4),
@@ -101,6 +121,8 @@ class AuditoriaRevisar extends Component implements HasForms
             'evidencias' => $data['evidencias'],
             'estado' => $data['resultado'],
             'observaciones' => $data['observaciones'] ?? null,
+            'tipo_anomalia_id' => $data['tipo_anomalia_id'] ?? null,
+            'metros_cubicos_recuperados' => $data['metros_cubicos_recuperados'] ?? null,
             'auditado_por_id' => auth()->id(),
             'fecha_auditoria' => now(),
         ]);
@@ -114,6 +136,7 @@ class AuditoriaRevisar extends Component implements HasForms
     {
         return match ($this->from) {
             'ordenes' => route('operaciones.ordenes-trabajo'),
+            'mis-ordenes' => route('tecnico.mis-ordenes'),
             default => route('auditor.auditorias'),
         };
     }

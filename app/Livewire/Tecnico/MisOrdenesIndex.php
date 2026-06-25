@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Tecnico;
 
+use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
 use App\Enums\TipoServicio;
@@ -45,6 +46,7 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
         return $table
             ->query(function () {
                 $query = OrdenJob::query()
+                    ->with(['reportes.auditoria'])
                     ->whereIn('estado', [
                         EstadoOrden::Pendiente->value,
                         EstadoOrden::Asignada->value,
@@ -166,6 +168,27 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                         $record->tipo_servicio !== TipoServicio::Vigilancia
                     )
                     ->url(fn (OrdenJob $record): string => route('tecnico.ordenes.reporte.editar', $record)),
+
+                Action::make('registrar_auditoria')
+                    ->label('Registrar Auditoría')
+                    ->icon('heroicon-o-shield-check')
+                    ->color('warning')
+                    ->visible(function (OrdenJob $record): bool {
+                        if ($record->estado !== EstadoOrden::Completada) {
+                            return false;
+                        }
+
+                        return $record->reportes->contains(
+                            fn ($r) => $r->auditoria?->estado === EstadoAuditoria::PendienteAuditoria
+                        );
+                    })
+                    ->url(function (OrdenJob $record): string {
+                        $auditoria = $record->reportes
+                            ->first(fn ($r) => $r->auditoria?->estado === EstadoAuditoria::PendienteAuditoria)
+                            ?->auditoria;
+
+                        return route('tecnico.mis-ordenes.auditar', $auditoria).'?from=mis-ordenes';
+                    }),
             ])
             ->stackedOnMobile()
             ->emptyStateHeading('Sin órdenes asignadas')

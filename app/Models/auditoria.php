@@ -25,6 +25,8 @@ class auditoria extends Model
         'estado',
         'evidencias',
         'observaciones',
+        'tipo_anomalia_id',
+        'metros_cubicos_recuperados',
         'fecha_auditoria',
     ];
 
@@ -32,6 +34,7 @@ class auditoria extends Model
         'estado' => EstadoAuditoria::class,
         'evidencias' => 'array',
         'fecha_auditoria' => 'datetime',
+        'metros_cubicos_recuperados' => 'decimal:4',
     ];
 
     public function reporte(): BelongsTo
@@ -42,5 +45,10 @@ class auditoria extends Model
     public function auditadoPor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'auditado_por_id');
+    }
+
+    public function tipoAnomalia(): BelongsTo
+    {
+        return $this->belongsTo(TipoAnomalia::class, 'tipo_anomalia_id');
     }
 }
