@@ -8,7 +8,6 @@ use App\Enums\TipoServicio;
 use App\Models\auditoria;
 use App\Models\OrdenJob;
 use App\Models\Proceso;
-use App\Models\reportes as Reporte;
 use App\Models\TipologiaOrden;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -21,13 +20,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 #[Layout('layouts.app')]
 #[Title('Informes')]
 /**
- * Módulo de generación y descarga de informes en Excel.
- * Los tipos disponibles (órdenes, reportes, auditorías) se filtran por los permisos del usuario.
+ * Módulo de generación y descarga del informe unificado en Excel.
+ * Cada fila contiene la orden, su reporte de campo (si existe) y la auditoría (si existe).
  */
 class InformesIndex extends Component
 {
-    public string $tipoInforme = 'ordenes';
-
     public string $fechaInicio = '';
 
     public string $fechaFin = '';
@@ -44,67 +41,8 @@ class InformesIndex extends Component
 
     public array $preview = [];
 
-    public function mount(): void
-    {
-        $this->tipoInforme = $this->defaultTipo();
-    }
-
-    /**
-     * Retorna solo los tipos de informe que el usuario autenticado tiene permiso de ver.
-     *
-     * @return array<string, string>
-     */
-    public function tiposDisponibles(): array
-    {
-        $user = auth()->user();
-        $tipos = [];
-
-        if ($user->can('informes.ordenes')) {
-            $tipos['ordenes'] = 'Órdenes de Trabajo';
-        }
-        if ($user->can('informes.tecnico')) {
-            $tipos['reportes'] = 'Reportes de Campo';
-        }
-        if ($user->can('informes.auditorias')) {
-            $tipos['auditorias'] = 'Auditorías de Calidad';
-        }
-
-        return $tipos;
-    }
-
-    public function puedeSeleccionarTipo(): bool
-    {
-        return count($this->tiposDisponibles()) > 1;
-    }
-
-    private function defaultTipo(): string
-    {
-        return array_key_first($this->tiposDisponibles()) ?? 'ordenes';
-    }
-
-    /**
-     * Valida que el tipo seleccionado sea uno disponible para el usuario.
-     * Si no lo es, devuelve el primero disponible para evitar acceso indebido.
-     */
-    public function tipoEfectivo(): string
-    {
-        $disponibles = $this->tiposDisponibles();
-
-        if (isset($disponibles[$this->tipoInforme])) {
-            return $this->tipoInforme;
-        }
-
-        return array_key_first($disponibles) ?? 'ordenes';
-    }
-
     public function estadoOptions(): array
     {
-        if ($this->tipoEfectivo() === 'auditorias') {
-            return collect(EstadoAuditoria::cases())
-                ->mapWithKeys(fn ($c) => [$c->value => $c->label()])
-                ->all();
-        }
-
         return collect(EstadoOrden::cases())
             ->mapWithKeys(fn ($c) => [$c->value => $c->label()])
             ->all();
@@ -143,16 +81,6 @@ class InformesIndex extends Component
             ->toArray();
     }
 
-    public function updatedTipoInforme(): void
-    {
-        $this->estado = '';
-        $this->servicio = '';
-        $this->subTipo = '';
-        $this->proceso = '';
-        $this->preview = [];
-        $this->previewGenerado = false;
-    }
-
     public function updatedServicio(): void
     {
         $this->subTipo = '';
@@ -166,20 +94,9 @@ class InformesIndex extends Component
         $this->previewGenerado = true;
     }
 
-    /**
-     * Genera y descarga el archivo Excel correspondiente al tipo de informe activo.
-     * Usa OpenSpout para escribir el archivo directamente a la salida sin cargar en memoria.
-     */
     public function download(): StreamedResponse
     {
-        $tipo = $this->tipoEfectivo();
-        $user = auth()->user();
-
-        [$headers, $rows, $filename] = match ($tipo) {
-            'ordenes' => $this->xlsxOrdenes(),
-            'reportes' => $this->xlsxReportes($user),
-            'auditorias' => $this->xlsxAuditorias(),
-        };
+        [$headers, $rows, $filename] = $this->xlsxUnificado();
 
         return response()->streamDownload(function () use ($headers, $rows) {
             $writer = new Writer;
@@ -194,10 +111,19 @@ class InformesIndex extends Component
         ]);
     }
 
-    private function xlsxOrdenes(): array
+    private function baseQuery()
     {
-        $rows = OrdenJob::query()
-            ->with(['personal', 'proceso'])
+        return OrdenJob::query()
+            ->with([
+                'personal',
+                'proceso',
+                'reportes' => fn ($q) => $q->latest()->with([
+                    'auditoria',
+                    'comercio.tipoComercio',
+                    'tipoImposibilidad',
+                    'tipoRegulador',
+                ]),
+            ])
             ->when($this->fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaInicio))
             ->when($this->fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaFin))
             ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
@@ -210,282 +136,106 @@ class InformesIndex extends Component
                     default => null,
                 };
             })
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(fn (OrdenJob $o) => [
-                $o->numero_orden,
-                $o->proceso?->nombre ?? '',
-                $o->tipo_servicio->label(),
-                $o->subtipoLabel(),
-                $o->estado->label(),
-                $o->prioridad->label(),
-                $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '',
-                $o->cliente ?? '',
-                $o->contrato ?? '',
-                $o->direccion ?? '',
-                $o->barrio ?? '',
-                $o->medidor ?? '',
-                $o->objetivo ?? '',
-                $o->numero_noticia_criminal ?? '',
-                $o->fecha_asignacion?->format('d/m/Y H:i') ?? '',
-                $o->fecha_limite?->format('d/m/Y') ?? '',
-                $o->fecha_completado?->format('d/m/Y H:i') ?? '',
-            ])
-            ->all();
+            ->orderBy('created_at', 'desc');
+    }
+
+    private function mapRow(OrdenJob $o): array
+    {
+        $reporte = $o->reportes->first();
+        $auditoria = $reporte?->auditoria;
 
         return [
-            ['N° Orden', 'Proceso', 'Servicio', 'Sub-tipo', 'Estado', 'Prioridad', 'Investigador', 'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Objetivo', 'N° Noticia Criminal', 'Fecha Asignación', 'Fecha Límite', 'Fecha Completado'],
-            $rows,
-            'ordenes-asignadas-'.now()->format('Y-m-d'),
+            // Orden
+            $o->numero_orden,
+            $o->proceso?->nombre ?? '',
+            $o->tipo_servicio->label(),
+            $o->subtipoLabel(),
+            $o->estado->label(),
+            $o->prioridad->label(),
+            $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '',
+            $o->cliente ?? '',
+            $o->contrato ?? '',
+            $o->direccion ?? '',
+            $o->barrio ?? '',
+            $o->medidor ?? '',
+            $o->objetivo ?? '',
+            $o->numero_noticia_criminal ?? '',
+            $o->fecha_asignacion?->format('d/m/Y H:i') ?? '',
+            $o->fecha_limite?->format('d/m/Y') ?? '',
+            $o->fecha_completado?->format('d/m/Y H:i') ?? '',
+            // Reporte del técnico
+            $reporte ? 'Sí' : 'No',
+            $reporte?->lectura ?? '',
+            $reporte?->numero_medidor ?? '',
+            $reporte?->comercio?->nombre_comercio ?? '',
+            $reporte?->tipoImposibilidad?->nombre ?? '',
+            $reporte?->tipoRegulador?->nombre ?? '',
+            $reporte ? implode(' | ', array_column($reporte->actividades ?? [], 'actividades')) : '',
+            $reporte?->observaciones ?? '',
+            $reporte?->conclusion ?? '',
+            $reporte?->created_at?->format('d/m/Y H:i') ?? '',
+            // Auditoría
+            $auditoria instanceof auditoria
+                ? ($auditoria->estado instanceof EstadoAuditoria ? $auditoria->estado->label() : ($auditoria->estado ?? ''))
+                : 'Sin auditoría',
+            $auditoria?->observaciones ?? '',
+            $auditoria?->fecha_auditoria?->format('d/m/Y H:i') ?? '',
         ];
     }
 
-    private function xlsxReportes($user): array
+    private function xlsxUnificado(): array
     {
-        $rows = Reporte::query()
-            ->with(['ordenJob.personal', 'ordenJob.proceso', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador'])
-            ->when(! $user->can('ordenes.ver'), fn ($q) => $q->whereHas(
-                'ordenJob', fn ($q2) => $q2->where('personals_id', $user->personals_id)
-            ))
-            ->when($this->fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaInicio))
-            ->when($this->fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaFin))
-            ->when($this->estado, fn ($q) => $q->whereHas(
-                'ordenJob', fn ($q2) => $q2->where('estado', $this->estado)
-            ))
-            ->when($this->servicio, fn ($q) => $q->whereHas(
-                'ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
-            ))
-            ->when($this->proceso, fn ($q) => $q->whereHas(
-                'ordenJob', fn ($q2) => $q2->where('proceso_id', $this->proceso)
-            ))
-            ->when($this->subTipo, fn ($q) => $q->whereHas('ordenJob', function ($inner) {
-                match ($this->servicio) {
-                    TipoServicio::GestionLegal->value => $inner->where('tipo_gestion_legal', $this->subTipo),
-                    TipoServicio::Investigacion->value => $inner->where('tipo_investigacion', $this->subTipo),
-                    default => null,
-                };
-            }))
-            ->orderBy('created_at', 'desc')
+        $headers = [
+            'N° Orden', 'Proceso', 'Servicio', 'Sub-tipo', 'Estado', 'Prioridad', 'Investigador',
+            'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Objetivo', 'N° Noticia Criminal',
+            'Fecha Asignación', 'Fecha Límite', 'Fecha Completado',
+            'Tiene Reporte', 'Lectura', 'N° Medidor Reporte', 'Comercio', 'Imposibilidad',
+            'Tipo Regulador', 'Actividades', 'Observaciones Técnico', 'Conclusión', 'Fecha Reporte',
+            'Estado Auditoría', 'Observaciones Auditoría', 'Fecha Auditoría',
+        ];
+
+        $rows = $this->baseQuery()
             ->get()
-            ->map(fn (Reporte $r) => [
-                $r->ordenJob?->numero_orden ?? '',
-                $r->ordenJob?->proceso?->nombre ?? '',
-                $r->ordenJob?->tipo_servicio?->label() ?? '',
-                $r->ordenJob?->subtipoLabel() ?? '—',
-                $r->ordenJob?->estado?->label() ?? '',
-                $r->ordenJob?->personal ? "{$r->ordenJob->personal->nombres} {$r->ordenJob->personal->apellidos}" : '',
-                $r->ordenJob?->direccion ?? '',
-                $r->ordenJob?->barrio ?? '',
-                $r->ordenJob?->cliente ?? '',
-                $r->ordenJob?->contrato ?? '',
-                $r->lectura ?? '',
-                $r->numero_medidor ?? '',
-                $r->comercio?->nombre_comercio ?? '',
-                $r->tipoImposibilidad?->nombre ?? '',
-                $r->tipoRegulador?->nombre ?? '',
-                $r->cau ?? '',
-                implode(' | ', array_column($r->actividades ?? [], 'actividades')),
-                $r->observaciones ?? '',
-                $r->conclusion ?? '',
-                $r->created_at?->format('d/m/Y H:i') ?? '',
-            ])
+            ->map(fn (OrdenJob $o) => $this->mapRow($o))
             ->all();
 
-        return [
-            ['N° Orden', 'Proceso', 'Servicio', 'Sub-tipo', 'Estado Orden', 'Investigador', 'Dirección', 'Barrio', 'Cliente', 'Contrato', 'Lectura', 'N° Medidor', 'Comercio', 'Imposibilidad', 'Tipo Regulador', 'CAU', 'Actividades', 'Observaciones', 'Conclusión', 'Fecha Reporte'],
-            $rows,
-            'respuestas-tecnico-'.now()->format('Y-m-d'),
-        ];
-    }
-
-    private function xlsxAuditorias(): array
-    {
-        $rows = auditoria::query()
-            ->with(['reporte.ordenJob.personal', 'reporte.ordenJob.proceso'])
-            ->when($this->fechaInicio, fn ($q) => $q->whereDate('fecha_auditoria', '>=', $this->fechaInicio))
-            ->when($this->fechaFin, fn ($q) => $q->whereDate('fecha_auditoria', '<=', $this->fechaFin))
-            ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
-            ->when($this->servicio, fn ($q) => $q->whereHas(
-                'reporte.ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
-            ))
-            ->when($this->proceso, fn ($q) => $q->whereHas(
-                'reporte.ordenJob', fn ($q2) => $q2->where('proceso_id', $this->proceso)
-            ))
-            ->when($this->subTipo, fn ($q) => $q->whereHas('reporte.ordenJob', function ($inner) {
-                match ($this->servicio) {
-                    TipoServicio::GestionLegal->value => $inner->where('tipo_gestion_legal', $this->subTipo),
-                    TipoServicio::Investigacion->value => $inner->where('tipo_investigacion', $this->subTipo),
-                    default => null,
-                };
-            }))
-            ->orderBy('fecha_auditoria', 'desc')
-            ->get()
-            ->map(fn (auditoria $a) => [
-                $a->reporte?->ordenJob?->numero_orden ?? '',
-                $a->reporte?->ordenJob?->proceso?->nombre ?? '',
-                $a->reporte?->ordenJob?->tipo_servicio?->label() ?? '',
-                $a->reporte?->ordenJob?->estado?->label() ?? '',
-                $a->reporte?->ordenJob?->cliente ?? '',
-                $a->reporte?->ordenJob?->contrato ?? '',
-                $a->reporte?->ordenJob?->medidor ?? '',
-                $a->reporte?->ordenJob?->barrio ?? '',
-                $a->reporte?->ordenJob?->personal
-                    ? "{$a->reporte->ordenJob->personal->nombres} {$a->reporte->ordenJob->personal->apellidos}"
-                    : '',
-                $a->estado instanceof EstadoAuditoria ? $a->estado->label() : ($a->estado ?? ''),
-                $a->observaciones ?? '',
-                $a->reporte?->ordenJob?->fecha_completado?->format('d/m/Y H:i') ?? '',
-                $a->fecha_auditoria?->format('d/m/Y H:i') ?? '',
-            ])
-            ->all();
-
-        return [
-            ['N° Orden', 'Proceso', 'Servicio', 'Estado Orden', 'Cliente', 'Contrato', 'Medidor', 'Barrio', 'Investigador', 'Estado Auditoría', 'Observaciones', 'Fecha Completado Orden', 'Fecha Auditoría'],
-            $rows,
-            'respuestas-auditor-'.now()->format('Y-m-d'),
-        ];
+        return [$headers, $rows, 'informe-unificado-'.now()->format('Y-m-d')];
     }
 
     protected function buildPreviewData(): array
     {
-        $tipo = $this->tipoEfectivo();
-        $user = auth()->user();
+        return $this->baseQuery()
+            ->limit(50)
+            ->get()
+            ->map(function (OrdenJob $o) {
+                $reporte = $o->reportes->first();
+                $auditoria = $reporte?->auditoria;
 
-        if ($tipo === 'ordenes') {
-            return OrdenJob::query()
-                ->with(['personal', 'proceso'])
-                ->when($this->fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaInicio))
-                ->when($this->fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaFin))
-                ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
-                ->when($this->servicio, fn ($q) => $q->where('tipo_servicio', $this->servicio))
-                ->when($this->proceso, fn ($q) => $q->where('proceso_id', $this->proceso))
-                ->when($this->subTipo, function ($q) {
-                    match ($this->servicio) {
-                        TipoServicio::GestionLegal->value => $q->where('tipo_gestion_legal', $this->subTipo),
-                        TipoServicio::Investigacion->value => $q->where('tipo_investigacion', $this->subTipo),
-                        default => null,
-                    };
-                })
-                ->orderBy('created_at', 'desc')
-                ->limit(50)
-                ->get()
-                ->map(fn (OrdenJob $o) => [
+                return [
                     'N° Orden' => $o->numero_orden,
                     'Proceso' => $o->proceso?->nombre ?? '—',
                     'Servicio' => $o->tipo_servicio->label(),
-                    'Sub-tipo' => $o->subtipoLabel(),
                     'Estado' => $o->estado->label(),
-                    'Prioridad' => $o->prioridad->label(),
                     'Investigador' => $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '—',
                     'Cliente' => $o->cliente ?? '—',
-                    'Objetivo' => $o->objetivo ?? '—',
-                    'N° Noticia Criminal' => $o->numero_noticia_criminal ?? '—',
-                    'Fecha Límite' => $o->fecha_limite?->format('d/m/Y') ?? '—',
+                    'Tiene Reporte' => $reporte ? 'Sí' : 'No',
+                    'Conclusión' => $reporte?->conclusion ?? '—',
+                    'Estado Auditoría' => $auditoria instanceof auditoria
+                        ? ($auditoria->estado instanceof EstadoAuditoria ? $auditoria->estado->label() : ($auditoria->estado ?? '—'))
+                        : 'Sin auditoría',
                     'Fecha Completado' => $o->fecha_completado?->format('d/m/Y') ?? '—',
-                ])
-                ->all();
-        }
-
-        if ($tipo === 'reportes') {
-            return Reporte::query()
-                ->with(['ordenJob.personal', 'ordenJob.proceso', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador'])
-                ->when(! $user->can('ordenes.ver'), fn ($q) => $q->whereHas(
-                    'ordenJob', fn ($q2) => $q2->where('personals_id', $user->personals_id)
-                ))
-                ->when($this->fechaInicio, fn ($q) => $q->whereDate('created_at', '>=', $this->fechaInicio))
-                ->when($this->fechaFin, fn ($q) => $q->whereDate('created_at', '<=', $this->fechaFin))
-                ->when($this->estado, fn ($q) => $q->whereHas(
-                    'ordenJob', fn ($q2) => $q2->where('estado', $this->estado)
-                ))
-                ->when($this->servicio, fn ($q) => $q->whereHas(
-                    'ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
-                ))
-                ->when($this->proceso, fn ($q) => $q->whereHas(
-                    'ordenJob', fn ($q2) => $q2->where('proceso_id', $this->proceso)
-                ))
-                ->when($this->subTipo, fn ($q) => $q->whereHas('ordenJob', function ($inner) {
-                    match ($this->servicio) {
-                        TipoServicio::GestionLegal->value => $inner->where('tipo_gestion_legal', $this->subTipo),
-                        TipoServicio::Investigacion->value => $inner->where('tipo_investigacion', $this->subTipo),
-                        default => null,
-                    };
-                }))
-                ->orderBy('created_at', 'desc')
-                ->limit(50)
-                ->get()
-                ->map(fn (Reporte $r) => [
-                    'N° Orden' => $r->ordenJob?->numero_orden ?? '—',
-                    'Proceso' => $r->ordenJob?->proceso?->nombre ?? '—',
-                    'Servicio' => $r->ordenJob?->tipo_servicio?->label() ?? '—',
-                    'Sub-tipo' => $r->ordenJob?->subtipoLabel() ?? '—',
-                    'Estado Orden' => $r->ordenJob?->estado?->label() ?? '—',
-                    'Investigador' => $r->ordenJob?->personal
-                        ? "{$r->ordenJob->personal->nombres} {$r->ordenJob->personal->apellidos}"
-                        : '—',
-                    'Cliente' => $r->ordenJob?->cliente ?? '—',
-                    'Barrio' => $r->ordenJob?->barrio ?? '—',
-                    'Actividades' => implode(' | ', array_column($r->actividades ?? [], 'actividades')) ?: '—',
-                    'Observaciones' => $r->observaciones ?? '—',
-                    'Conclusión' => $r->conclusion ?? '—',
-                    'Fecha Reporte' => $r->created_at?->format('d/m/Y H:i') ?? '—',
-                ])
-                ->all();
-        }
-
-        if ($tipo === 'auditorias') {
-            return auditoria::query()
-                ->with(['reporte.ordenJob.personal', 'reporte.ordenJob.proceso'])
-                ->when($this->fechaInicio, fn ($q) => $q->whereDate('fecha_auditoria', '>=', $this->fechaInicio))
-                ->when($this->fechaFin, fn ($q) => $q->whereDate('fecha_auditoria', '<=', $this->fechaFin))
-                ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
-                ->when($this->servicio, fn ($q) => $q->whereHas(
-                    'reporte.ordenJob', fn ($q2) => $q2->where('tipo_servicio', $this->servicio)
-                ))
-                ->when($this->proceso, fn ($q) => $q->whereHas(
-                    'reporte.ordenJob', fn ($q2) => $q2->where('proceso_id', $this->proceso)
-                ))
-                ->when($this->subTipo, fn ($q) => $q->whereHas('reporte.ordenJob', function ($inner) {
-                    match ($this->servicio) {
-                        TipoServicio::GestionLegal->value => $inner->where('tipo_gestion_legal', $this->subTipo),
-                        TipoServicio::Investigacion->value => $inner->where('tipo_investigacion', $this->subTipo),
-                        default => null,
-                    };
-                }))
-                ->orderBy('fecha_auditoria', 'desc')
-                ->limit(50)
-                ->get()
-                ->map(fn (auditoria $a) => [
-                    'N° Orden' => $a->reporte?->ordenJob?->numero_orden ?? '—',
-                    'Proceso' => $a->reporte?->ordenJob?->proceso?->nombre ?? '—',
-                    'Servicio' => $a->reporte?->ordenJob?->tipo_servicio?->label() ?? '—',
-                    'Estado Orden' => $a->reporte?->ordenJob?->estado?->label() ?? '—',
-                    'Cliente' => $a->reporte?->ordenJob?->cliente ?? '—',
-                    'Contrato' => $a->reporte?->ordenJob?->contrato ?? '—',
-                    'Medidor' => $a->reporte?->ordenJob?->medidor ?? '—',
-                    'Barrio' => $a->reporte?->ordenJob?->barrio ?? '—',
-                    'Investigador' => $a->reporte?->ordenJob?->personal
-                        ? "{$a->reporte->ordenJob->personal->nombres} {$a->reporte->ordenJob->personal->apellidos}"
-                        : '—',
-                    'Estado Auditoría' => $a->estado instanceof EstadoAuditoria ? $a->estado->label() : ($a->estado ?? '—'),
-                    'Observaciones' => $a->observaciones ?? '—',
-                    'Fecha Auditoría' => $a->fecha_auditoria?->format('d/m/Y H:i') ?? '—',
-                ])
-                ->all();
-        }
-
-        return [];
+                ];
+            })
+            ->all();
     }
 
     public function render(): View
     {
         return view('livewire.informes.informes-index', [
-            'puedeSeleccionarTipo' => $this->puedeSeleccionarTipo(),
-            'tiposDisponibles' => $this->tiposDisponibles(),
             'estadoOptions' => $this->estadoOptions(),
             'servicioOptions' => $this->servicioOptions(),
             'subTipoOptions' => $this->subTipoOptions(),
             'procesoOptions' => $this->procesoOptions(),
-            'tipoEfectivo' => $this->tipoEfectivo(),
         ]);
     }
 }

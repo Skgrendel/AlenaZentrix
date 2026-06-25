@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\InformeController;
 use App\Http\Controllers\Api\Tecnico\OrdenController;
 use App\Http\Controllers\Api\Tecnico\ReporteController;
 use App\Http\Controllers\Api\UploadController;
+use App\Http\Middleware\SetTenantContext;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -53,4 +55,11 @@ Route::middleware('auth:sanctum')->group(function () {
      | Subida de archivos a S3
      */
     Route::post('/upload', [UploadController::class, 'store'])->name('api.upload');
+
+    /*
+     | Informes (Power BI)
+     */
+    Route::middleware(SetTenantContext::class)
+        ->post('/informes/reporte', [InformeController::class, 'reporte'])
+        ->name('api.informes.reporte');
 });

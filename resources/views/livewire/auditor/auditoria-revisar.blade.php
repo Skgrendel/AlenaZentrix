@@ -558,6 +558,7 @@
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">7. Autorización y Firmas</h3>
                     <p class="mb-4 text-sm"><span class="font-medium">Autoriza:</span>
                         {{ ($datosServicio['autoriza'] ?? false) ? 'SÍ' : 'NO' }}</p>
+                    @if ($datosServicio['autoriza'] ?? false)
                     <div class="grid grid-cols-2 gap-6">
                         <div>
                             <p class="mb-1 text-xs font-medium uppercase text-zinc-400">Firma del Usuario</p>
@@ -582,6 +583,7 @@
                             <p class="mt-1 text-xs text-zinc-500">Cédula: {{ $datosServicio['cedula_auditor'] ?? '—' }}</p>
                         </div>
                     </div>
+                    @endif
                 </div>
 
                 @if (!empty($datosServicio['urls_evidencia']))
