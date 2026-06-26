@@ -17,6 +17,11 @@ class ArchivoController extends Controller
     {
         $path = ltrim($path, '/');
 
+        $companyId = auth()->user()->company_id;
+        if (! str_starts_with($path, $companyId.'/')) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
         try {
             if (! Storage::disk('s3')->exists($path)) {
                 return response()->json(['message' => 'Archivo no encontrado.'], 404);

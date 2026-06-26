@@ -18,6 +18,7 @@
 7. [Referencia de campos por tipo de servicio](#7-referencia-de-campos-por-tipo-de-servicio)
 8. [Flujos completos de ejemplo](#8-flujos-completos-de-ejemplo)
 9. [Códigos de error](#9-códigos-de-error)
+10. [Usando con Postman y Bruno](#10-usando-con-postman-y-bruno)
 
 ---
 
@@ -460,7 +461,9 @@ Sube un archivo a S3 y devuelve la ruta guardada. **Llama a este endpoint antes 
 | Campo | Tipo | Obligatorio | Descripción |
 |---|---|---|---|
 | `archivo` | file | Sí | El archivo a subir |
-| `directorio` | string | No | Subdirectorio en S3. Default: `reportes/varios`. Recomendado: `reportes/ODT-000045` |
+| `directorio` | string | No | Subdirectorio relativo. Default: `reportes/varios`. Recomendado: `reportes/ODT-000045` |
+
+> ⚠️ **Importante (seguridad):** El servidor antepone automáticamente el `company_id` del usuario autenticado al directorio. El `path` devuelto siempre tendrá el formato `{company_id}/{directorio}/{filename}`. No es necesario que la app lo construya manualmente — simplemente usa el `path` que devuelve la respuesta tal como viene.
 
 **Tipos de archivo aceptados:**
 
@@ -475,23 +478,23 @@ Sube un archivo a S3 y devuelve la ruta guardada. **Llama a este endpoint antes 
 **Respuesta exitosa (201):**
 ```json
 {
-  "path": "reportes/ODT-000045/abc123.jpg"
+  "path": "f47ac10b-58cc-4372-a567-0e02b2c3d479/reportes/ODT-000045/abc123.jpg"
 }
 ```
 
-> Guarda este `path`. Es lo que debes incluir en el array `imagenes` (o en `foto_detector_fuga`) al crear el reporte.
+> Guarda este `path` exactamente como viene. Es lo que debes incluir en el array `imagenes` (o en `foto_detector_fuga`) al crear el reporte.
 
-**Ejemplo de flujo para subir 3 fotos:**
+**Ejemplo de flujo para subir 3 fotos** (donde `f47ac10b-...` es el `company_id` de tu empresa):
 ```
-POST /api/upload  → { "path": "reportes/ODT-000045/foto1.jpg" }
-POST /api/upload  → { "path": "reportes/ODT-000045/foto2.jpg" }
-POST /api/upload  → { "path": "reportes/ODT-000045/foto3.jpg" }
+POST /api/upload  → { "path": "f47ac10b-.../reportes/ODT-000045/foto1.jpg" }
+POST /api/upload  → { "path": "f47ac10b-.../reportes/ODT-000045/foto2.jpg" }
+POST /api/upload  → { "path": "f47ac10b-.../reportes/ODT-000045/foto3.jpg" }
 
 Luego en el reporte:
 "imagenes": [
-  "reportes/ODT-000045/foto1.jpg",
-  "reportes/ODT-000045/foto2.jpg",
-  "reportes/ODT-000045/foto3.jpg"
+  "f47ac10b-.../reportes/ODT-000045/foto1.jpg",
+  "f47ac10b-.../reportes/ODT-000045/foto2.jpg",
+  "f47ac10b-.../reportes/ODT-000045/foto3.jpg"
 ]
 ```
 
@@ -506,23 +509,26 @@ GET /api/archivos/{path}
 Genera una URL temporal pre-firmada (válida 15 minutos) para acceder a un archivo almacenado en S3.
 
 **Parámetros de ruta:**
-- `{path}` — La ruta del archivo tal como fue devuelta por `/api/upload` (ej: `reportes/ODT-000045/foto1.jpg`)
+- `{path}` — La ruta del archivo **exactamente como fue devuelta por `/api/upload`**. Incluye el `company_id` como prefijo.
+
+> ⚠️ **Importante (seguridad):** El servidor verifica que el `path` solicitado comience con el `company_id` del usuario autenticado. Si intentas acceder a una ruta de otra empresa recibirás `403`. Usa siempre el `path` devuelto por `/api/upload` sin modificarlo.
 
 **Ejemplo de petición:**
 ```
-GET /api/archivos/reportes/ODT-000045/foto1.jpg
+GET /api/archivos/f47ac10b-58cc-4372-a567-0e02b2c3d479/reportes/ODT-000045/foto1.jpg
 ```
 
 **Respuesta exitosa (200):**
 ```json
 {
-  "url": "https://tu-bucket.s3.amazonaws.com/reportes/ODT-000045/foto1.jpg?X-Amz-Signature=..."
+  "url": "https://tu-bucket.s3.amazonaws.com/f47ac10b-.../reportes/ODT-000045/foto1.jpg?X-Amz-Signature=..."
 }
 ```
 
 > Úsalo para mostrar imágenes y documentos en la app. La URL expira en 15 minutos, así que no la guardes de forma permanente.
 
 **Posibles errores:**
+- `403` — El path no pertenece a la empresa del usuario autenticado
 - `404` — Archivo no encontrado en S3
 
 ---
@@ -847,9 +853,10 @@ El formulario más extenso. Todos los campos van en `datos_servicio` (el servido
    → La orden pasa a "en_progreso"
 
 6. El técnico llena el formulario. Sube fotos mientras trabaja:
-   POST /api/upload  (foto del medidor)     → path1
-   POST /api/upload  (foto de la instalación) → path2
-   POST /api/upload  (foto del detector)    → path_detector
+   POST /api/upload  (foto del medidor)       → { "path": "COMPANY_ID/reportes/ODT-000045/foto1.jpg" }
+   POST /api/upload  (foto de la instalación) → { "path": "COMPANY_ID/reportes/ODT-000045/foto2.jpg" }
+   POST /api/upload  (foto del detector)      → { "path": "COMPANY_ID/reportes/ODT-000045/detector.jpg" }
+   (guarda los paths exactamente como vienen)
 
 7. Enviar el reporte
    POST /api/tecnico/ordenes/{id}/reporte
@@ -862,11 +869,14 @@ El formulario más extenso. Todos los campos van en `datos_servicio` (el servido
      "coincide_medidor": false,
      "lectura": "00234",
      "hay_fuga_gas": true,
-     "foto_detector_fuga": path_detector,
+     "foto_detector_fuga": "COMPANY_ID/reportes/ODT-000045/detector.jpg",
      "excede_capacidad": false,
      "anomalia": [],
      "observaciones": "Medidor no coincide. Se detectó fuga menor.",
-     "imagenes": [path1, path2]
+     "imagenes": [
+       "COMPANY_ID/reportes/ODT-000045/foto1.jpg",
+       "COMPANY_ID/reportes/ODT-000045/foto2.jpg"
+     ]
    }
    → La orden pasa a "en_revision"
    → Se envía correo al coordinador
@@ -943,13 +953,17 @@ El formulario más extenso. Todos los campos van en `datos_servicio` (el servido
 ### Flujo 4: Mostrar una foto en la app
 
 ```
-1. Tienes el path de una imagen del reporte: "reportes/ODT-000045/foto1.jpg"
+1. Tienes el path de una imagen guardado en el reporte
+   (viene directamente de la respuesta de /api/upload, incluye el company_id):
+   "f47ac10b-58cc-4372-a567-0e02b2c3d479/reportes/ODT-000045/foto1.jpg"
 
-2. Solicitar URL temporal
-   GET /api/archivos/reportes/ODT-000045/foto1.jpg
-   → { "url": "https://bucket.s3.amazonaws.com/reportes/ODT-000045/foto1.jpg?X-Amz-..." }
+2. Solicitar URL temporal — usa el path tal como está, sin modificarlo
+   GET /api/archivos/f47ac10b-58cc-4372-a567-0e02b2c3d479/reportes/ODT-000045/foto1.jpg
+   → { "url": "https://bucket.s3.amazonaws.com/f47ac10b-.../reportes/ODT-000045/foto1.jpg?X-Amz-..." }
 
 3. Cargar la imagen con esa URL (válida 15 minutos)
+
+⚠️ Si el path no comienza con el company_id del usuario autenticado, el servidor retorna 403.
 ```
 
 ---
@@ -959,7 +973,7 @@ El formulario más extenso. Todos los campos van en `datos_servicio` (el servido
 | Código HTTP | Significado |
 |---|---|
 | `401` | No autenticado — el token es inválido o no se envió |
-| `403` | No autorizado — el técnico no tiene acceso a esa orden |
+| `403` | No autorizado — sin permiso para el recurso solicitado (orden de otro técnico, archivo de otra empresa, etc.) |
 | `404` | Recurso no encontrado |
 | `422` | Error de validación — revisa el campo `errors` en la respuesta |
 | `500` | Error interno del servidor |
@@ -974,6 +988,326 @@ El formulario más extenso. Todos los campos van en `datos_servicio` (el servido
 | Crear reporte | `Esta orden ya tiene un reporte registrado.` | Solo uno por orden (excepto vigilancia) |
 | Editar reporte | `Solo se pueden editar reportes de órdenes rechazadas.` | Estado incorrecto |
 | Cerrar vigilancia | `Esta acción solo aplica a órdenes de Vigilancia.` | Tipo incorrecto |
+
+---
+
+---
+
+## 10. Usando con Postman y Bruno
+
+### ¿Cuál usar?
+
+| | **Bruno** | **Postman** |
+|---|---|---|
+| Licencia | Open source, gratuito | Gratuito con límites |
+| Colecciones | Archivos `.bru` en el repo | Exportación JSON |
+| Entornos | Archivos `.env` locales | Variables de entorno online |
+| Recomendado para | Equipos que usan Git | Uso individual / pruebas rápidas |
+
+---
+
+### 10.1 Bruno
+
+**Instalación:** [usebruno.com](https://www.usebruno.com/) o `winget install Bruno.Bruno`
+
+#### Estructura de colección sugerida
+
+```
+alena-api/
+├── environments/
+│   ├── local.env
+│   └── produccion.env
+├── auth/
+│   ├── login.bru
+│   └── logout.bru
+├── ordenes/
+│   ├── mis-ordenes.bru
+│   ├── ver-orden.bru
+│   ├── iniciar.bru
+│   └── cerrar-vigilancia.bru
+├── reportes/
+│   ├── crear-reporte.bru
+│   └── editar-reporte.bru
+├── archivos/
+│   ├── upload.bru
+│   └── get-url.bru
+└── catalogos/
+    └── tipos-comercio.bru
+```
+
+#### Archivo de entorno `environments/local.env`
+
+```
+BASE_URL=https://alenazentrix.test
+TOKEN=
+ORDEN_ID=
+```
+
+> Después de hacer login, copia el token en la variable `TOKEN`. Bruno no tiene scripts automáticos en la versión gratuita, pero puedes hacerlo manualmente.
+
+#### Ejemplo: `auth/login.bru`
+
+```
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{BASE_URL}}/api/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "tecnico@empresa.com",
+    "password": "tu_contraseña"
+  }
+}
+```
+
+#### Ejemplo: `ordenes/mis-ordenes.bru`
+
+```
+meta {
+  name: Mis Órdenes
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{BASE_URL}}/api/tecnico/mis-ordenes
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+```
+
+#### Ejemplo: `archivos/upload.bru`
+
+```
+meta {
+  name: Upload Archivo
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{BASE_URL}}/api/upload
+  body: multipart-form
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+
+body:multipart-form {
+  archivo: @file(/ruta/a/tu/foto.jpg)
+  directorio: reportes/ODT-000045
+}
+```
+
+> El `path` devuelto incluirá el `company_id` como prefijo: `{company_id}/reportes/ODT-000045/foto.jpg`. Cópialo para usarlo en `/api/archivos/`.
+
+#### Ejemplo: `archivos/get-url.bru`
+
+```
+meta {
+  name: Obtener URL Archivo
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{BASE_URL}}/api/archivos/{{PATH_ARCHIVO}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+```
+
+> Crea la variable `PATH_ARCHIVO` en tu entorno con el path completo devuelto por el upload (ej: `f47ac10b-.../reportes/ODT-000045/foto.jpg`).
+
+#### Ejemplo: `reportes/crear-reporte-fraudes.bru`
+
+```
+meta {
+  name: Crear Reporte - Fraudes
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{BASE_URL}}/api/tecnico/ordenes/{{ORDEN_ID}}/reporte
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{TOKEN}}
+}
+
+body:json {
+  {
+    "latitud": "4.6097",
+    "longitud": "-74.0817",
+    "nombre_comercio": "Panadería El Trigal",
+    "tipo_comercio_id": "uuid-tipo-comercio",
+    "numero_medidor": "MED-99821",
+    "coincide_medidor": false,
+    "lectura": "00234",
+    "hay_fuga_gas": false,
+    "excede_capacidad": false,
+    "anomalia": [],
+    "observaciones": "Sin novedad.",
+    "imagenes": []
+  }
+}
+```
+
+---
+
+### 10.2 Postman
+
+**Instalación:** [postman.com/downloads](https://www.postman.com/downloads/)
+
+#### Paso 1: Crear entorno
+
+1. En Postman, abre el panel lateral → **Environments** → **+**
+2. Nombre: `AlenaZentrix Local`
+3. Agrega estas variables:
+
+| Variable | Initial Value | Current Value |
+|---|---|---|
+| `BASE_URL` | `https://alenazentrix.test` | `https://alenazentrix.test` |
+| `TOKEN` | *(vacío)* | *(se llena después del login)* |
+| `ORDEN_ID` | *(vacío)* | *(UUID de la orden a probar)* |
+| `PATH_ARCHIVO` | *(vacío)* | *(path devuelto por /api/upload)* |
+
+4. Guarda y selecciona el entorno en el desplegable superior derecho.
+
+#### Paso 2: Crear colección
+
+1. **Collections** → **+** → **Blank Collection**
+2. Nombre: `AlenaZentrix API`
+3. En la pestaña **Authorization** de la colección elige `Bearer Token` y escribe `{{TOKEN}}`
+
+> Así todas las carpetas heredan la autenticación automáticamente — no hay que configurarla en cada request.
+
+#### Paso 3: Login y captura automática del token
+
+Crea la request de login y agrega este script en la pestaña **Tests**:
+
+```javascript
+if (pm.response.code === 200) {
+    const json = pm.response.json();
+    pm.environment.set("TOKEN", json.token);
+    pm.environment.set("COMPANY_ID", json.user.company_id ?? "");
+    console.log("Token guardado:", json.token.substring(0, 20) + "...");
+}
+```
+
+> Después de ejecutar el login, el token se guarda automáticamente en la variable de entorno y todas las demás requests lo usan sin que tengas que copiarlo a mano.
+
+#### Requests clave
+
+**Login**
+```
+POST {{BASE_URL}}/api/auth/login
+Body (raw JSON):
+{
+  "email": "tecnico@empresa.com",
+  "password": "tu_contraseña"
+}
+```
+
+**Mis órdenes**
+```
+GET {{BASE_URL}}/api/tecnico/mis-ordenes
+Authorization: Bearer {{TOKEN}}  (heredado de la colección)
+```
+
+**Iniciar orden**
+```
+POST {{BASE_URL}}/api/tecnico/ordenes/{{ORDEN_ID}}/iniciar
+Body: {} (vacío)
+```
+
+**Upload de archivo**
+```
+POST {{BASE_URL}}/api/upload
+Body: form-data
+  archivo → tipo File → selecciona el archivo
+  directorio → reportes/ODT-000045
+```
+
+Agrega este script en **Tests** para capturar el path:
+```javascript
+if (pm.response.code === 201) {
+    pm.environment.set("PATH_ARCHIVO", pm.response.json().path);
+}
+```
+
+**Obtener URL de archivo**
+```
+GET {{BASE_URL}}/api/archivos/{{PATH_ARCHIVO}}
+```
+> `{{PATH_ARCHIVO}}` ya contiene el `company_id` como prefijo si capturaste el valor del upload con el script anterior.
+
+**Crear reporte (Fraudes)**
+```
+POST {{BASE_URL}}/api/tecnico/ordenes/{{ORDEN_ID}}/reporte
+Body (raw JSON):
+{
+  "latitud": "4.6097",
+  "longitud": "-74.0817",
+  "nombre_comercio": "Panadería El Trigal",
+  "tipo_comercio_id": "{{TIPO_COMERCIO_ID}}",
+  "hay_fuga_gas": false,
+  "excede_capacidad": false,
+  "anomalia": [],
+  "observaciones": "Sin novedad.",
+  "imagenes": ["{{PATH_ARCHIVO}}"]
+}
+```
+
+#### Paso 4: Ejecutar un flujo completo con Collection Runner
+
+1. Click derecho en la colección → **Run collection**
+2. Ordena las requests en el orden del flujo:
+   - Login → Mis Órdenes → Ver Orden → Iniciar → Upload → Crear Reporte
+3. Activa **Save responses** para revisar cada paso
+4. Click **Run AlenaZentrix API**
+
+---
+
+### 10.3 Tips generales
+
+**Certificado SSL local (Herd):** Si recibes error de SSL en Postman o Bruno con `https://alenazentrix.test`, desactiva temporalmente la verificación:
+- **Postman:** Settings → General → SSL certificate verification → OFF
+- **Bruno:** Preferences → Request → Disable SSL Verification
+
+**Header obligatorio:** Siempre incluye `Accept: application/json`. Sin él, Laravel puede devolver HTML en lugar de JSON en los errores.
+
+En Postman puedes configurarlo a nivel de colección: pestaña **Headers** → agrega `Accept: application/json`.
+
+En Bruno, agrégalo en cada `.bru`:
+```
+headers {
+  Accept: application/json
+}
+```
+
+**Paths de archivos:** Recuerda que los paths devueltos por `/api/upload` siempre incluyen el `company_id` como prefijo. Úsalos directamente en el campo `imagenes` del reporte y en el endpoint `/api/archivos/` sin modificarlos.
 
 ---
 

@@ -18,8 +18,9 @@ class UploadController extends Controller
             'directorio' => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-Z0-9_\-\/]+$/'],
         ]);
 
-        $directorio = $request->input('directorio', 'reportes/varios');
-        $path = $request->file('archivo')->store($directorio, 's3');
+        $companyId = $request->user()->company_id;
+        $subdirectorio = $request->input('directorio', 'reportes/varios');
+        $path = $request->file('archivo')->store($companyId.'/'.$subdirectorio, 's3');
 
         return response()->json(['path' => $path], 201);
     }

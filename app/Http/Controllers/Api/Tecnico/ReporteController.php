@@ -29,8 +29,11 @@ class ReporteController extends Controller
         $user = $request->user();
         $esVigilancia = $orden->tipo_servicio === TipoServicio::Vigilancia;
 
-        if (
-            ! $esVigilancia &&
+        if ($esVigilancia) {
+            if (! $user->personals_id && ! $user->can('ordenes.ver')) {
+                return response()->json(['message' => 'No autorizado.'], 403);
+            }
+        } elseif (
             $user->personals_id !== $orden->personals_id &&
             ! $user->can('ordenes.ver')
         ) {

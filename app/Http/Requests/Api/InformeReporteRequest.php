@@ -11,7 +11,7 @@ class InformeReporteRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('informes');
     }
 
     public function rules(): array
