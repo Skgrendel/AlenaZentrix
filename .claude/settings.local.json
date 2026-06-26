@@ -6,5 +6,8 @@
       "Bash(php artisan *)",
       "Bash(vendor/bin/pint --dirty --format agent)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "laravel-boost"
+  ]
 }
