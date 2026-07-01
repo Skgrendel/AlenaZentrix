@@ -37,6 +37,15 @@
                     Descargar PDF
                 </flux:button>
             @endif
+            @if ($orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia && $orden->estado === \App\Enums\EstadoOrden::Completada && auth()->user()->can('informes'))
+                <flux:button
+                    href="{{ route('operaciones.ordenes-trabajo.reporte-vigilancia', $orden) }}"
+                    icon="arrow-down-tray"
+                    variant="filled"
+                >
+                    Descargar Informe PDF
+                </flux:button>
+            @endif
             <flux:button
                 href="{{ $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia ? route('operaciones.ordenes-trabajo.reportes', $orden) : route('operaciones.ordenes-trabajo') }}"
                 icon="arrow-left" variant="ghost" wire:navigate>
