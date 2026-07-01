@@ -28,6 +28,7 @@ class OrdenController extends Controller
                 EstadoOrden::EnProgreso->value,
                 EstadoOrden::EnRevision->value,
                 EstadoOrden::Rechazada->value,
+                EstadoOrden::Completada->value,
             ])
             ->where(function ($q) use ($user) {
                 $q->where('personals_id', $user->personals_id)
