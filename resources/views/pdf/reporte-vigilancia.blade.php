@@ -495,8 +495,7 @@
 
         {{-- ── Generador del informe ── --}}
         <div class="generador-info">
-            Informe generado el <strong>{{ $generador['fecha'] }}</strong> por
-            <strong>{{ $generador['nombre'] }}</strong> ({{ $generador['email'] }})
+            Informe generado el <strong>{{ $generador['fecha'] }}</strong>
         </div>
 
     </div>
