@@ -8,11 +8,10 @@ use App\Models\OrdenJob;
 use App\Models\personals;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
-
-use function Pest\Livewire\livewire;
 
 uses(RefreshDatabase::class);
 
@@ -211,7 +210,7 @@ test('created_at date filter only shows ordenes within the selected range', func
 
     $this->actingAs($user);
 
-    livewire(OrdenesTrabajoIndex::class)
+    Livewire::test(OrdenesTrabajoIndex::class)
         ->filterTable('created_at', [
             'creado_desde' => '2026-06-01',
             'creado_hasta' => '2026-06-30',

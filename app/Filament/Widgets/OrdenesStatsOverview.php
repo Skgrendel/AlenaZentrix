@@ -7,6 +7,7 @@ use App\Models\OrdenJob;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 
 /**
  * Widget de tarjetas de resumen en el dashboard. Muestra métricas distintas según
@@ -15,6 +16,17 @@ use Illuminate\Support\Facades\Auth;
 class OrdenesStatsOverview extends BaseWidget
 {
     protected ?string $pollingInterval = null;
+
+    public ?string $desde = null;
+
+    public ?string $hasta = null;
+
+    #[On('dashboard-fecha-filtrada')]
+    public function actualizarFiltroFecha(?string $desde, ?string $hasta): void
+    {
+        $this->desde = $desde;
+        $this->hasta = $hasta;
+    }
 
     protected function getStats(): array
     {
@@ -30,42 +42,60 @@ class OrdenesStatsOverview extends BaseWidget
     /** @return array<int, Stat> Estadísticas globales para el coordinador/admin. */
     private function statsCoordinador(): array
     {
-        $total = OrdenJob::count();
-        $pendientes = OrdenJob::where('estado', EstadoOrden::Pendiente)->count();
-        $enProgreso = OrdenJob::where('estado', EstadoOrden::EnProgreso)->count();
-        $enRevision = OrdenJob::where('estado', EstadoOrden::EnRevision)->count();
+        $enRango = fn () => OrdenJob::query()
+            ->when($this->desde, fn ($q, $desde) => $q->whereDate('created_at', '>=', $desde))
+            ->when($this->hasta, fn ($q, $hasta) => $q->whereDate('created_at', '<=', $hasta));
 
-        $completadasMes = OrdenJob::where('estado', EstadoOrden::Completada)
-            ->whereMonth('fecha_completado', now()->month)
-            ->whereYear('fecha_completado', now()->year)
-            ->count();
+        $filtroActivo = $this->desde || $this->hasta;
 
-        $completadasMesAnterior = OrdenJob::where('estado', EstadoOrden::Completada)
-            ->whereMonth('fecha_completado', now()->subMonth()->month)
-            ->whereYear('fecha_completado', now()->subMonth()->year)
-            ->count();
+        $total = $enRango()->count();
+        $pendientes = $enRango()->where('estado', EstadoOrden::Pendiente)->count();
+        $enProgreso = $enRango()->where('estado', EstadoOrden::EnProgreso)->count();
+        $enRevision = $enRango()->where('estado', EstadoOrden::EnRevision)->count();
 
-        $tendencia = $completadasMesAnterior > 0
-            ? round(($completadasMes - $completadasMesAnterior) / $completadasMesAnterior * 100)
-            : null;
-
-        $sparkline = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $d = now()->subMonths($i);
-            $sparkline[] = OrdenJob::where('estado', EstadoOrden::Completada)
-                ->whereYear('fecha_completado', $d->year)
-                ->whereMonth('fecha_completado', $d->month)
-                ->count();
-        }
-
-        $completadasTotal = OrdenJob::where('estado', EstadoOrden::Completada)->count();
-        $rechazadasTotal = OrdenJob::where('estado', EstadoOrden::Rechazada)->count();
+        $completadasTotal = $enRango()->where('estado', EstadoOrden::Completada)->count();
+        $rechazadasTotal = $enRango()->where('estado', EstadoOrden::Rechazada)->count();
         $cerradas = $completadasTotal + $rechazadasTotal;
         $eficiencia = $cerradas > 0 ? round($completadasTotal / $cerradas * 100) : null;
 
-        $tendenciaDesc = $tendencia !== null
-            ? ($tendencia >= 0 ? "+{$tendencia}% vs mes anterior" : "{$tendencia}% vs mes anterior")
-            : 'Este mes';
+        if ($filtroActivo) {
+            $completadas = $completadasTotal;
+            $tendenciaDesc = 'En el rango seleccionado';
+            $chart = [];
+            $chartColor = 'success';
+            $color = 'success';
+        } else {
+            $completadasMes = $enRango()->where('estado', EstadoOrden::Completada)
+                ->whereMonth('fecha_completado', now()->month)
+                ->whereYear('fecha_completado', now()->year)
+                ->count();
+
+            $completadasMesAnterior = OrdenJob::where('estado', EstadoOrden::Completada)
+                ->whereMonth('fecha_completado', now()->subMonth()->month)
+                ->whereYear('fecha_completado', now()->subMonth()->year)
+                ->count();
+
+            $tendencia = $completadasMesAnterior > 0
+                ? round(($completadasMes - $completadasMesAnterior) / $completadasMesAnterior * 100)
+                : null;
+
+            $sparkline = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $d = now()->subMonths($i);
+                $sparkline[] = OrdenJob::where('estado', EstadoOrden::Completada)
+                    ->whereYear('fecha_completado', $d->year)
+                    ->whereMonth('fecha_completado', $d->month)
+                    ->count();
+            }
+
+            $completadas = $completadasMes;
+            $tendenciaDesc = $tendencia !== null
+                ? ($tendencia >= 0 ? "+{$tendencia}% vs mes anterior" : "{$tendencia}% vs mes anterior")
+                : 'Este mes';
+            $chart = $sparkline;
+            $chartColor = 'success';
+            $color = $tendencia !== null && $tendencia < 0 ? 'danger' : 'success';
+        }
 
         return [
             Stat::make('Total Órdenes', $total)
@@ -84,12 +114,11 @@ class OrdenesStatsOverview extends BaseWidget
                 ->description('Esperando aprobación')
                 ->descriptionIcon('heroicon-m-document-magnifying-glass')
                 ->color('warning'),
-            Stat::make('Completadas', $completadasMes)
+            Stat::make('Completadas', $completadas)
                 ->description($tendenciaDesc)
-                ->descriptionIcon($tendencia !== null && $tendencia >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
-                ->chart($sparkline)
-                ->chartColor('success')
-                ->color($tendencia !== null && $tendencia < 0 ? 'danger' : 'success'),
+                ->descriptionIcon('heroicon-m-arrow-trending-up')
+                ->when($chart !== [], fn (Stat $stat) => $stat->chart($chart)->chartColor($chartColor))
+                ->color($color),
             Stat::make('Eficiencia', $eficiencia !== null ? "{$eficiencia}%" : 'N/D')
                 ->description('Completadas vs rechazadas')
                 ->descriptionIcon('heroicon-m-chart-bar')
@@ -108,16 +137,23 @@ class OrdenesStatsOverview extends BaseWidget
      */
     private function statsTecnico(?string $personalsId): array
     {
-        $base = OrdenJob::where('personals_id', $personalsId);
+        $base = OrdenJob::where('personals_id', $personalsId)
+            ->when($this->desde, fn ($q, $desde) => $q->whereDate('created_at', '>=', $desde))
+            ->when($this->hasta, fn ($q, $hasta) => $q->whereDate('created_at', '<=', $hasta));
+
+        $filtroActivo = $this->desde || $this->hasta;
 
         $asignadas = (clone $base)->where('estado', EstadoOrden::Asignada)->count();
         $enProgreso = (clone $base)->where('estado', EstadoOrden::EnProgreso)->count();
         $enRevision = (clone $base)->where('estado', EstadoOrden::EnRevision)->count();
-        $completadasMes = (clone $base)
-            ->where('estado', EstadoOrden::Completada)
-            ->whereMonth('fecha_completado', now()->month)
-            ->whereYear('fecha_completado', now()->year)
-            ->count();
+
+        $completadas = $filtroActivo
+            ? (clone $base)->where('estado', EstadoOrden::Completada)->count()
+            : (clone $base)
+                ->where('estado', EstadoOrden::Completada)
+                ->whereMonth('fecha_completado', now()->month)
+                ->whereYear('fecha_completado', now()->year)
+                ->count();
 
         return [
             Stat::make('Asignadas', $asignadas)
@@ -132,8 +168,8 @@ class OrdenesStatsOverview extends BaseWidget
                 ->description('Esperando aprobación')
                 ->descriptionIcon('heroicon-m-document-magnifying-glass')
                 ->color('warning'),
-            Stat::make('Completadas', $completadasMes)
-                ->description('Este mes')
+            Stat::make('Completadas', $completadas)
+                ->description($filtroActivo ? 'En el rango seleccionado' : 'Este mes')
                 ->descriptionIcon('heroicon-m-check-circle')
                 ->color('success'),
         ];
