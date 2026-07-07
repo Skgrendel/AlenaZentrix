@@ -3,6 +3,7 @@
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
 use App\Enums\TipoServicio;
+use App\Livewire\Coordinador\OrdenesTrabajoIndex;
 use App\Models\OrdenJob;
 use App\Models\personals;
 use App\Models\User;
@@ -10,6 +11,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
+
+use function Pest\Livewire\livewire;
 
 uses(RefreshDatabase::class);
 
@@ -197,4 +200,22 @@ test('changing tecnico on non-pendiente orden does not change estado', function 
     $orden->update(['personals_id' => $tecnico2->id]);
 
     expect($orden->fresh()->estado)->toBe(EstadoOrden::EnProgreso);
+});
+
+test('created_at date filter only shows ordenes within the selected range', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $dentroDelRango = OrdenJob::factory()->create(['created_at' => '2026-06-15']);
+    $fueraDelRango = OrdenJob::factory()->create(['created_at' => '2026-05-01']);
+
+    $this->actingAs($user);
+
+    livewire(OrdenesTrabajoIndex::class)
+        ->filterTable('created_at', [
+            'creado_desde' => '2026-06-01',
+            'creado_hasta' => '2026-06-30',
+        ])
+        ->assertCanSeeTableRecords([$dentroDelRango])
+        ->assertCanNotSeeTableRecords([$fueraDelRango]);
 });

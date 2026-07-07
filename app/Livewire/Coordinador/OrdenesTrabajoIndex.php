@@ -27,6 +27,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -149,6 +150,38 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->options(
                         Proceso::query()->orderBy('nombre')->pluck('nombre', 'id')
                     ),
+                Tables\Filters\Filter::make('created_at')
+                    ->label('Fecha de Creación')
+                    ->form([
+                        Forms\Components\DatePicker::make('creado_desde')
+                            ->label('Desde'),
+                        Forms\Components\DatePicker::make('creado_hasta')
+                            ->label('Hasta'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when(
+                                $data['creado_desde'] ?? null,
+                                fn ($query, $date) => $query->whereDate('created_at', '>=', $date)
+                            )
+                            ->when(
+                                $data['creado_hasta'] ?? null,
+                                fn ($query, $date) => $query->whereDate('created_at', '<=', $date)
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+
+                        if ($data['creado_desde'] ?? null) {
+                            $indicators['creado_desde'] = 'Creado desde '.Carbon::parse($data['creado_desde'])->format('d/m/Y');
+                        }
+
+                        if ($data['creado_hasta'] ?? null) {
+                            $indicators['creado_hasta'] = 'Creado hasta '.Carbon::parse($data['creado_hasta'])->format('d/m/Y');
+                        }
+
+                        return $indicators;
+                    }),
             ])
             ->headerActions([
                 Action::make('create')
