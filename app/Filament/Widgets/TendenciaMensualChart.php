@@ -31,11 +31,11 @@ class TendenciaMensualChart extends ChartWidget
         $fin = $this->hasta ? Carbon::parse($this->hasta)->startOfMonth() : now()->startOfMonth();
 
         if ($fin->lt($inicio)) {
-            $fin = $inicio->copy();
+            $fin = $inicio;
         }
 
         if ($inicio->diffInMonths($fin) > 24) {
-            $inicio = $fin->copy()->subMonths(24);
+            $inicio = $fin->subMonths(24);
         }
 
         $labels = [];
@@ -43,7 +43,7 @@ class TendenciaMensualChart extends ChartWidget
         $completadas = [];
         $rechazadas = [];
 
-        for ($date = $inicio->copy(); $date->lte($fin); $date->addMonth()) {
+        for ($date = $inicio; $date->lte($fin); $date = $date->addMonth()) {
             $labels[] = ucfirst($date->isoFormat('MMM YY'));
 
             $ingresadas[] = OrdenJob::whereYear('created_at', $date->year)
