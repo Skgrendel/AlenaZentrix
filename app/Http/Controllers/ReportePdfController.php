@@ -526,6 +526,61 @@ class ReportePdfController extends Controller
         return $pdf->download("reporte-gestion-riesgo-{$orden->numero_orden}.pdf");
     }
 
+    public function DownLoadInformeVigilancia(OrdenJob $orden): Response
+    {
+        abort_unless($orden->tipo_servicio === TipoServicio::Vigilancia, 403);
+        abort_unless(auth()->user()->can('informes'), 403);
+
+        ini_set('memory_limit', '256M');
+
+        $orden->load(['personal', 'creadoPor', 'proceso']);
+
+        $reportes = $orden->reportes()
+            ->with(['personal.usuario'])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $resultadoIds = $reportes
+            ->map(fn (reportes $r) => $r->datos_servicio['resultado_reporte_id'] ?? null)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $resultados = ResultadoReporte::whereIn('id', $resultadoIds)->pluck('nombre', 'id')->all();
+
+        $logoProderi = $this->fileToBase64(public_path('assets/image/LOGO PRODERI CON SLOGAN.png'), 'image/png');
+
+        $imagenesPerTurno = [];
+        foreach ($reportes as $reporte) {
+            $imagenesPerTurno[$reporte->id] = $this->resolveImagenes($reporte->imagenes ?? []);
+        }
+
+        /** @var User $generadorUser */
+        $generadorUser = auth()->user();
+        $generador = [
+            'nombre' => $generadorUser->fullName(),
+            'email' => $generadorUser->email,
+            'fecha' => now()->format('d/m/Y H:i:s'),
+        ];
+
+        $datosOrden = $this->buildDatosOrden($orden);
+
+        $pdf = Pdf::loadView('pdf.reporte-vigilancia', [
+            'orden' => $orden,
+            'reportes' => $reportes,
+            'resultados' => $resultados,
+            'logoProderi' => $logoProderi,
+            'imagenesPerTurno' => $imagenesPerTurno,
+            'fechaGeneracion' => now()->format('d-m-Y'),
+            'generador' => $generador,
+            'datosOrden' => $datosOrden,
+        ]);
+
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download("reporte-vigilancia-{$orden->numero_orden}.pdf");
+    }
+
     public function DownLoadInformeRevisionMedidores(OrdenJob $orden): Response
     {
         abort_unless($orden->tipo_servicio === TipoServicio::RevisionMedidores, 403);

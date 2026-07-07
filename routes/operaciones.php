@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified', 'permission:ordenes.ver'])
         Route::get('ordenes-trabajo/{orden}/reporte-gestion-legal', [ReportePdfController::class, 'DownLoadInformeGestionLegal'])->name('ordenes-trabajo.reporte-gestion-legal');
         Route::get('ordenes-trabajo/{orden}/reporte-auditoria-campo', [ReportePdfController::class, 'DownLoadInformeAuditoriaCampo'])->name('ordenes-trabajo.reporte-auditoria-campo');
         Route::get('ordenes-trabajo/{orden}/reporte-gestion-riesgo', [ReportePdfController::class, 'DownLoadInformeGestionRiesgo'])->name('ordenes-trabajo.reporte-gestion-riesgo');
+        Route::get('ordenes-trabajo/{orden}/reporte-vigilancia', [ReportePdfController::class, 'DownLoadInformeVigilancia'])->name('ordenes-trabajo.reporte-vigilancia');
         Route::get('ordenes-trabajo/{orden}/reportes', ReportesVigilanciaIndex::class)->name('ordenes-trabajo.reportes');
     });
 

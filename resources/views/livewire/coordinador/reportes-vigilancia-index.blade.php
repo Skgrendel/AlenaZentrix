@@ -31,9 +31,18 @@
                 </span>
             </div>
         </div>
-        <flux:button href="{{ route('operaciones.ordenes-trabajo') }}" icon="arrow-left" variant="ghost" wire:navigate>
-            Volver
-        </flux:button>
+        <div class="flex items-center gap-2">
+            @can('informes')
+                <flux:button
+                    href="{{ route('operaciones.ordenes-trabajo.reporte-vigilancia', $orden) }}"
+                    icon="arrow-down-tray" variant="filled" target="_blank">
+                    Descargar Informe PDF
+                </flux:button>
+            @endcan
+            <flux:button href="{{ route('operaciones.ordenes-trabajo') }}" icon="arrow-left" variant="ghost" wire:navigate>
+                Volver
+            </flux:button>
+        </div>
     </div>
 
     @if($orden->estado === \App\Enums\EstadoOrden::EnRevision)
