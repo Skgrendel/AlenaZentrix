@@ -175,10 +175,10 @@ Se crea al guardar el reporte de Fraudes. Guarda el comercio encontrado en el si
                                ▼                                 │
                           EN REVISIÓN                            │
                                │                                 │
-              ┌────────────────┴───────────────────┐            │
-              │ (coordinador aprueba)               │ (coordinador rechaza)
-              ▼                                     │            │
-          COMPLETADA                                ▼            │
+              ┌────────────────┴───────────────────┐             │
+              │ (coordinador aprueba)              │ (coordinador rechaza)
+              ▼                                    │             │
+          COMPLETADA                               ▼             │
               │                               RECHAZADA ─────────┘
               │                         (técnico edita reporte
               │                          y vuelve a enviar)
