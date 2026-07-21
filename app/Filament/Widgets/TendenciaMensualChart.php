@@ -5,6 +5,8 @@ namespace App\Filament\Widgets;
 use App\Enums\EstadoOrden;
 use App\Models\OrdenJob;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Carbon;
+use Livewire\Attributes\On;
 
 class TendenciaMensualChart extends ChartWidget
 {
@@ -12,15 +14,36 @@ class TendenciaMensualChart extends ChartWidget
 
     protected ?string $pollingInterval = null;
 
+    public ?string $desde = null;
+
+    public ?string $hasta = null;
+
+    #[On('dashboard-fecha-filtrada')]
+    public function actualizarFiltroFecha(?string $desde, ?string $hasta): void
+    {
+        $this->desde = $desde;
+        $this->hasta = $hasta;
+    }
+
     protected function getData(): array
     {
+        $inicio = $this->desde ? Carbon::parse($this->desde)->startOfMonth() : now()->subMonths(5)->startOfMonth();
+        $fin = $this->hasta ? Carbon::parse($this->hasta)->startOfMonth() : now()->startOfMonth();
+
+        if ($fin->lt($inicio)) {
+            $fin = $inicio;
+        }
+
+        if ($inicio->diffInMonths($fin) > 24) {
+            $inicio = $fin->subMonths(24);
+        }
+
         $labels = [];
         $ingresadas = [];
         $completadas = [];
         $rechazadas = [];
 
-        for ($i = 5; $i >= 0; $i--) {
-            $date = now()->subMonths($i);
+        for ($date = $inicio; $date->lte($fin); $date = $date->addMonth()) {
             $labels[] = ucfirst($date->isoFormat('MMM YY'));
 
             $ingresadas[] = OrdenJob::whereYear('created_at', $date->year)

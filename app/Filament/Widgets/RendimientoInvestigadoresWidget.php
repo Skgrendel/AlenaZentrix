@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class RendimientoInvestigadoresWidget extends Widget
 {
@@ -14,6 +15,17 @@ class RendimientoInvestigadoresWidget extends Widget
 
     protected int|string|array $columnSpan = 'full';
 
+    public ?string $desde = null;
+
+    public ?string $hasta = null;
+
+    #[On('dashboard-fecha-filtrada')]
+    public function actualizarFiltroFecha(?string $desde, ?string $hasta): void
+    {
+        $this->desde = $desde;
+        $this->hasta = $hasta;
+    }
+
     public function getInvestigadores(): Collection
     {
         $companyId = auth()->user()?->company_id;
@@ -21,7 +33,9 @@ class RendimientoInvestigadoresWidget extends Widget
         return DB::table('personals as p')
             ->leftJoin('orden_jobs as oj', function ($join) use ($companyId) {
                 $join->on('oj.personals_id', '=', 'p.id')
-                    ->where('oj.company_id', $companyId);
+                    ->where('oj.company_id', $companyId)
+                    ->when($this->desde, fn ($join, $desde) => $join->whereDate('oj.created_at', '>=', $desde))
+                    ->when($this->hasta, fn ($join, $hasta) => $join->whereDate('oj.created_at', '<=', $hasta));
             })
             ->where('p.company_id', $companyId)
             ->select([

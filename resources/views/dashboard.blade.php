@@ -32,6 +32,9 @@
             </div>
         </div>
 
+        {{-- Filtro de fechas --}}
+        @livewire(\App\Livewire\DashboardFiltroFechas::class)
+
         {{-- KPIs --}}
         @livewire(\App\Filament\Widgets\OrdenesStatsOverview::class)
 

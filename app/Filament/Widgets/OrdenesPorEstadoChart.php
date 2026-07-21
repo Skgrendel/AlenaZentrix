@@ -6,6 +6,7 @@ use App\Enums\EstadoOrden;
 use App\Models\OrdenJob;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 
 /**
  * Gráfico de barras que muestra la distribución de órdenes por estado.
@@ -19,6 +20,17 @@ class OrdenesPorEstadoChart extends ChartWidget
 
     protected int|string|array $columnSpan = 'full';
 
+    public ?string $desde = null;
+
+    public ?string $hasta = null;
+
+    #[On('dashboard-fecha-filtrada')]
+    public function actualizarFiltroFecha(?string $desde, ?string $hasta): void
+    {
+        $this->desde = $desde;
+        $this->hasta = $hasta;
+    }
+
     protected function getData(): array
     {
         $user = Auth::user();
@@ -27,7 +39,10 @@ class OrdenesPorEstadoChart extends ChartWidget
             ? OrdenJob::query()
             : OrdenJob::where('personals_id', $user->personals_id);
 
-        $counts = $base->selectRaw('estado, count(*) as total')
+        $counts = $base
+            ->when($this->desde, fn ($q, $desde) => $q->whereDate('created_at', '>=', $desde))
+            ->when($this->hasta, fn ($q, $hasta) => $q->whereDate('created_at', '<=', $hasta))
+            ->selectRaw('estado, count(*) as total')
             ->groupBy('estado')
             ->pluck('total', 'estado');
 
