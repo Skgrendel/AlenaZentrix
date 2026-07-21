@@ -3,6 +3,8 @@
 use App\Enums\EstadoOrden;
 use App\Enums\TipoServicio;
 use App\Models\OrdenJob;
+use App\Models\personals;
+use App\Models\reportes;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -130,4 +132,59 @@ test('POST reporte Vigilancia devuelve 403 si el usuario no tiene personals_id n
             'hora_fin' => '16:00',
         ])
         ->assertForbidden();
+});
+
+// ── Vuln 5: GET ordenes/{orden}/reporte solo accesible al técnico dueño o con permiso ──
+
+test('GET reporte devuelve 403 si el usuario no es el técnico asignado ni tiene permiso', function () {
+    [, $token] = tecnicoSeguridad();
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'estado' => EstadoOrden::Rechazada->value,
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $orden->personals_id,
+        'numero_orden' => $orden->numero_orden,
+    ]);
+
+    $this->withToken($token)
+        ->getJson("/api/tecnico/ordenes/{$orden->id}/reporte")
+        ->assertForbidden();
+});
+
+test('GET reporte devuelve los datos del reporte al técnico dueño de la orden', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::factory()->create(['personals_id' => $personal->id]);
+    $token = $user->createToken('test')->plainTextToken;
+
+    $orden = OrdenJob::factory()->create([
+        'company_id' => $user->company_id,
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'estado' => EstadoOrden::Rechazada->value,
+    ]);
+
+    reportes::create([
+        'company_id' => $user->company_id,
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'observaciones' => 'Observación de prueba.',
+    ]);
+
+    $this->withToken($token)
+        ->getJson("/api/tecnico/ordenes/{$orden->id}/reporte")
+        ->assertSuccessful()
+        ->assertJsonPath('data.observaciones', 'Observación de prueba.');
 });

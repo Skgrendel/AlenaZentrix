@@ -46,6 +46,9 @@ Route::middleware(['auth:sanctum', SetTenantContext::class])->group(function () 
         /*
          | Técnico: reportes
          */
+        Route::get('ordenes/{orden}/reporte', [ReporteController::class, 'show'])
+            ->name('ordenes.reporte.show');
+
         Route::post('ordenes/{orden}/reporte', [ReporteController::class, 'store'])
             ->name('ordenes.reporte.store');
 
