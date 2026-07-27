@@ -24,6 +24,22 @@ use League\Flysystem\UnableToCheckExistence;
 
 class ReporteController extends Controller
 {
+    public function show(Request $request, OrdenJob $orden): JsonResponse|ReporteResource
+    {
+        $user = $request->user();
+
+        if (
+            $user->personals_id !== $orden->personals_id &&
+            ! $user->can('ordenes.ver')
+        ) {
+            return response()->json(['message' => 'No autorizado.'], 403);
+        }
+
+        $reporte = $orden->reportes()->latest()->firstOrFail();
+
+        return new ReporteResource($reporte->load('ubicacion'));
+    }
+
     public function store(Request $request, OrdenJob $orden): JsonResponse
     {
         $user = $request->user();
