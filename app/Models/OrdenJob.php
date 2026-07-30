@@ -121,10 +121,11 @@ class OrdenJob extends Model
         });
 
         static::updated(function (self $model): void {
-            // Genera auditoría automática al completarse para todos los servicios
+            // Genera auditoría automática al completarse solo cuando el resultado es positivo
             if (
                 $model->wasChanged('estado') &&
-                $model->estado === EstadoOrden::Completada
+                $model->estado === EstadoOrden::Completada &&
+                $model->resultado === 'positivo'
             ) {
                 $reporte = $model->reportes()->latest()->first();
 

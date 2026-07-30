@@ -16,8 +16,9 @@ class GenerateMissingAuditorias extends Command
 
     public function handle()
     {
-        // Obtener todas las órdenes completadas
+        // Obtener todas las órdenes completadas con resultado positivo
         $ordenes = OrdenJob::where('estado', EstadoOrden::Completada)
+            ->where('resultado', 'positivo')
             ->get();
 
         if ($ordenes->isEmpty()) {

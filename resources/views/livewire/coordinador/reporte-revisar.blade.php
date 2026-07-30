@@ -1089,7 +1089,6 @@
                                 <option value="">Selecciona un resultado...</option>
                                 <option value="positivo">Positivo</option>
                                 <option value="negativo">Negativo</option>
-                                <option value="pendiente">Pendiente</option>
                             </select>
                             @error('resultado')
                                 <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>

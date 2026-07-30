@@ -20,6 +20,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -74,11 +75,12 @@ class ReporteRevisar extends Component implements HasActions, HasForms
     {
         $this->validate([
             'conclusion' => ['required', 'string', 'min:10'],
-            'resultado' => ['required', 'string'], // Agrega esta línea
+            'resultado' => ['required', 'string', Rule::in(['positivo', 'negativo'])],
         ], [
             'conclusion.required' => 'Debe ingresar una conclusión.',
             'conclusion.min' => 'La conclusión debe tener al menos 10 caracteres.',
             'resultado.required' => 'Debe seleccionar un resultado.',
+            'resultado.in' => 'El resultado debe ser Positivo o Negativo.',
         ]);
 
         // Actualizar el reporte con la conclusión y resultado, y marcar la orden como completada

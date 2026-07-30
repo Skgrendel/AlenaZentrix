@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\EstadoOrden;
 use App\Enums\TipoServicio;
 use App\Livewire\Auditor\AuditoriasIndex;
 use App\Models\auditoria;
@@ -87,4 +88,42 @@ it('auditor sin revision_medidores no ve auditorías de ese tipo', function () {
 
     Livewire::test(AuditoriasIndex::class)
         ->assertDontSee($orden->numero_orden);
+});
+
+it('no genera auditoria automatica cuando la orden se completa con resultado negativo', function () {
+    $personal = personals::factory()->create(['company_id' => $this->company->id]);
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::RevisionMedidores->value,
+        'company_id' => $this->company->id,
+        'personals_id' => $personal->id,
+        'estado' => EstadoOrden::EnRevision->value,
+    ]);
+    $reporte = reportes::factory()->create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+    ]);
+
+    $orden->update(['estado' => EstadoOrden::Completada->value, 'resultado' => 'negativo']);
+
+    expect(auditoria::where('reportes_id', $reporte->id)->exists())->toBeFalse();
+});
+
+it('genera auditoria automatica cuando la orden se completa con resultado positivo', function () {
+    $personal = personals::factory()->create(['company_id' => $this->company->id]);
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::RevisionMedidores->value,
+        'company_id' => $this->company->id,
+        'personals_id' => $personal->id,
+        'estado' => EstadoOrden::EnRevision->value,
+    ]);
+    $reporte = reportes::factory()->create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+    ]);
+
+    $orden->update(['estado' => EstadoOrden::Completada->value, 'resultado' => 'positivo']);
+
+    expect(auditoria::where('reportes_id', $reporte->id)->exists())->toBeTrue();
 });
