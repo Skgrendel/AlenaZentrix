@@ -17,8 +17,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('permission:evidencias.ver')
         ->get('operaciones/foto', function (Request $request) {
             $path = $request->query('path', '');
+            $companyPrefix = $request->user()->company_id.'/';
+            $prefijosValidos = ['ordenes/', 'reportes/', 'auditorias/'];
 
-            if (! str_starts_with($path, 'ordenes/') && ! str_starts_with($path, 'reportes/') && ! str_starts_with($path, 'auditorias/')) {
+            $esRutaValida = collect($prefijosValidos)->contains(
+                fn (string $prefijo) => str_starts_with($path, $prefijo) || str_starts_with($path, $companyPrefix.$prefijo)
+            );
+
+            if (! $esRutaValida) {
                 abort(403);
             }
 
@@ -37,7 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Intentar obtener el MIME desde el disco (S3). Si falla, usar extensión.
             try {
                 $mime = $disk->mimeType($path);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $mime = null;
             }
 
@@ -59,7 +65,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 [
                     'Content-Type' => $mime ?? ($isImage ? 'image/jpeg' : 'application/octet-stream'),
                     'Cache-Control' => 'max-age=3600, private',
-                    'Content-Disposition' => $disposition . '; filename="' . $basename . '"',
+                    'Content-Disposition' => $disposition.'; filename="'.$basename.'"',
                 ],
             );
         })->name('operaciones.foto');
