@@ -885,7 +885,7 @@
                             <div>
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">M³ Recuperados</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                    {{ number_format((float) $auditoria->metros_cubicos_recuperados, 4) }}</dd>
+                                    {{ number_format($auditoria->metros_cubicos_recuperados) }}</dd>
                             </div>
                         @endif
                         @if ($auditoria->observaciones)

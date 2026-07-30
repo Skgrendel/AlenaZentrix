@@ -102,6 +102,7 @@ class AuditoriaRevisar extends Component implements HasForms
                         Forms\Components\TextInput::make('metros_cubicos_recuperados')
                             ->label('Metros Cúbicos Recuperados')
                             ->numeric()
+                            ->step(1)
                             ->minValue(0)
                             ->nullable(),
                         Forms\Components\TextInput::make('contrato')

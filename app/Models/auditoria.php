@@ -34,7 +34,7 @@ class auditoria extends Model
         'estado' => EstadoAuditoria::class,
         'evidencias' => 'array',
         'fecha_auditoria' => 'datetime',
-        'metros_cubicos_recuperados' => 'decimal:4',
+        'metros_cubicos_recuperados' => 'integer',
     ];
 
     public function reporte(): BelongsTo

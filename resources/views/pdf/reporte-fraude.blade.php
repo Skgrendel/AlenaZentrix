@@ -606,7 +606,7 @@
                         @if ($auditoria->metros_cubicos_recuperados !== null)
                             <div class="info-row">
                                 <div class="info-label">M³ Recuperados:</div>
-                                <div class="info-value">{{ number_format((float) $auditoria->metros_cubicos_recuperados, 4) }}</div>
+                                <div class="info-value">{{ number_format($auditoria->metros_cubicos_recuperados) }}</div>
                             </div>
                         @endif
                         @if ($auditoria->observaciones)
