@@ -662,7 +662,6 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->required()
                         ->displayFormat('d/m/Y'),
                     Forms\Components\TimePicker::make('hora_inicio')
-                        ->previewable(false)
                         ->label('Hora de Inicio')
                         ->required(),
                     Forms\Components\TimePicker::make('hora_fin')
