@@ -109,8 +109,13 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             'comentarios.min' => 'El motivo debe tener al menos 10 caracteres.',
         ]);
 
-        // Actualizar el reporte con los comentarios del rechazo y marcar la orden como rechazada
-        $this->reporte->update(['comentarios' => $this->comentarios]);
+        // Actualizar el reporte con los comentarios del rechazo y marcarlo como el que requiere
+        // corrección, para que ReporteEdit sepa cuál cargar (una orden de Vigilancia puede tener
+        // varios reportes; sin esta marca se cargaría el más reciente en vez del rechazado).
+        $this->reporte->update([
+            'comentarios' => $this->comentarios,
+            'requiere_correccion' => true,
+        ]);
         // Guardar el motivo del rechazo en el reporte y actualizar el estado de la orden a Rechazada
         $this->orden->update(['estado' => EstadoOrden::Rechazada]);
         // Enviar notificación al técnico con el motivo del rechazo

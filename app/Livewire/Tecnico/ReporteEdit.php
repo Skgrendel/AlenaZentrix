@@ -75,7 +75,11 @@ class ReporteEdit extends Component implements HasActions, HasForms
         abort_unless($orden->estado === EstadoOrden::Rechazada, 403);
 
         $this->orden = $orden;
-        $this->reporte = $orden->reportes()->latest()->firstOrFail();
+        // Prioriza el reporte específico marcado como rechazado. El fallback a latest()
+        // cubre servicios de un solo reporte y órdenes ya rechazadas antes de este fix
+        // (donde ningún reporte quedó marcado).
+        $this->reporte = $orden->reportes()->where('requiere_correccion', true)->latest('updated_at')->first()
+            ?? $orden->reportes()->latest()->firstOrFail();
         $this->imagenesExistentes = $this->reporte->imagenes ?? [];
 
         if ($this->orden->tipo_servicio === TipoServicio::Fraudes || $this->orden->tipo_servicio === TipoServicio::RevisionMedidores) {
@@ -1053,6 +1057,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
         $this->reporte->update([
             ...$data,
             'imagenes' => $imagenes,
+            'requiere_correccion' => false,
         ]);
 
         $this->actualizarUbicacion();
@@ -1158,6 +1163,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
             'geo_referencia' => $data['geo_referencia'] ?? null,
             'datos_servicio' => $datosServicio,
             'actividades' => $data['actividades'] ?? null,
+            'requiere_correccion' => false,
         ]);
 
         $this->actualizarUbicacion();

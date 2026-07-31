@@ -155,4 +155,106 @@ test('editar reporte carga y guarda actividades en servicios genericos', functio
     ]);
 
     expect(collect($reporte->refresh()->actividades)->first()['actividades'])->toBe('Respuesta corregida');
+    expect($reporte->refresh()->requiere_correccion)->toBeFalse();
+});
+
+test('editar reporte carga el turno especifico marcado como requiere_correccion, no el mas reciente', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    // El modelo OrdenJob fuerza estado=EnProgreso al crear una orden de Vigilancia,
+    // por eso el estado Rechazada se aplica en un update() posterior a la creación.
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Vigilancia->value,
+    ]);
+    $orden->update(['estado' => EstadoOrden::Rechazada->value]);
+
+    // 'created_at' no es fillable, se fuerza tras crear para simular que el turno
+    // marcado como rechazado NO es el más reciente subido.
+    $turnoRechazado = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'datos_servicio' => ['fecha_turno' => '2026-07-10'],
+        'requiere_correccion' => true,
+    ]);
+    $turnoRechazado->forceFill(['created_at' => now()->subDays(5)])->save();
+
+    $turnoReciente = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'datos_servicio' => ['fecha_turno' => '2026-07-20'],
+        'requiere_correccion' => false,
+    ]);
+    $turnoReciente->forceFill(['created_at' => now()->subDay()])->save();
+
+    $component = Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden]);
+
+    expect($component->instance()->reporte->id)->toBe($turnoRechazado->id);
+});
+
+test('editar reporte usa el mas reciente si ningun reporte esta marcado (compatibilidad con datos previos al fix)', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    // El modelo OrdenJob fuerza estado=EnProgreso al crear una orden de Vigilancia,
+    // por eso el estado Rechazada se aplica en un update() posterior a la creación.
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Vigilancia->value,
+    ]);
+    $orden->update(['estado' => EstadoOrden::Rechazada->value]);
+
+    // 'created_at' no es fillable, se fuerza tras crear para garantizar el orden.
+    $masAntiguo = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'requiere_correccion' => false,
+    ]);
+    $masAntiguo->forceFill(['created_at' => now()->subDays(5)])->save();
+
+    $masReciente = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'requiere_correccion' => false,
+    ]);
+    $masReciente->forceFill(['created_at' => now()->subDay()])->save();
+
+    $component = Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden]);
+
+    expect($component->instance()->reporte->id)->toBe($masReciente->id);
 });
