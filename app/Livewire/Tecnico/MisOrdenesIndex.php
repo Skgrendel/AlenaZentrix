@@ -164,9 +164,7 @@ class MisOrdenesIndex extends Component implements HasActions, HasForms, HasTabl
                     ->label('Editar Reporte')
                     ->icon('heroicon-o-pencil-square')
                     ->color('danger')
-                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Rechazada &&
-                        $record->tipo_servicio !== TipoServicio::Vigilancia
-                    )
+                    ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Rechazada)
                     ->url(fn (OrdenJob $record): string => route('tecnico.ordenes.reporte.editar', $record)),
 
                 Action::make('registrar_auditoria')

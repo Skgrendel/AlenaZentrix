@@ -83,8 +83,7 @@ class OrdenResource extends JsonResource
                 ),
             'puede_cerrar_vigilancia' => $orden->tipo_servicio === TipoServicio::Vigilancia
                 && $orden->estado === EstadoOrden::EnProgreso,
-            'puede_editar_reporte' => $orden->estado === EstadoOrden::Rechazada
-                && $orden->tipo_servicio !== TipoServicio::Vigilancia,
+            'puede_editar_reporte' => $orden->estado === EstadoOrden::Rechazada,
         ];
     }
 }
