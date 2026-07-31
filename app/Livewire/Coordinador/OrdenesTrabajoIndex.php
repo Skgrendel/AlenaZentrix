@@ -150,6 +150,15 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->options(
                         Proceso::query()->orderBy('nombre')->pluck('nombre', 'id')
                     ),
+                Tables\Filters\SelectFilter::make('personals_id')
+                    ->label('Personal Asignado')
+                    ->options(
+                        personals::query()
+                            ->orderBy('nombres')
+                            ->get(['id', 'nombres', 'apellidos'])
+                            ->mapWithKeys(fn (personals $p) => [$p->id => "{$p->nombres} {$p->apellidos}"])
+                    )
+                    ->searchable(),
                 Tables\Filters\Filter::make('created_at')
                     ->label('Fecha de Creación')
                     ->form([

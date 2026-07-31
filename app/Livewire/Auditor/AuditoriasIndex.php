@@ -52,6 +52,8 @@ class AuditoriasIndex extends Component implements HasActions, HasForms, HasTabl
                     ->color(fn (auditoria $record): string => $record->reporte?->ordenJob?->tipo_servicio?->color() ?? 'gray'),
                 Tables\Columns\TextColumn::make('numero_orden')
                     ->label('N° Orden')
+                    ->searchable()
+                    ->sortable()
                     ->badge()
                     ->color('success')
                     ->getStateUsing(fn (auditoria $record): string => $record->reporte?->ordenJob?->numero_orden ?? '—'),
