@@ -104,6 +104,11 @@ class ReportesVigilanciaIndex extends Component implements HasActions, HasForms,
                     })
                     ->badge()
                     ->color('blue'),
+                Tables\Columns\TextColumn::make('estado_turno')
+                    ->label('Estado')
+                    ->state(fn (reportes $r): string => $r->requiere_correccion ? 'Requiere Corrección' : 'Sin Correcciones')
+                    ->badge()
+                    ->color(fn (reportes $r): string => $r->requiere_correccion ? 'danger' : 'gray'),
                 Tables\Columns\TextColumn::make('personal.nombres')
                     ->label('Registrado por')
                     ->state(fn (reportes $r): string => $r->personal

@@ -30,6 +30,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -52,7 +53,15 @@ class ReporteEdit extends Component implements HasActions, HasForms
 
     public OrdenJob $orden;
 
-    public reportes $reporte;
+    public ?reportes $reporte = null;
+
+    /**
+     * Turnos de Vigilancia marcados para corrección cuando hay más de uno pendiente.
+     * Si tiene valor, la vista muestra un selector en vez del formulario.
+     *
+     * @var Collection<int, reportes>|null
+     */
+    public ?Collection $turnosPendientes = null;
 
     /** @var array<int, string> */
     public array $imagenesExistentes = [];
@@ -72,14 +81,44 @@ class ReporteEdit extends Component implements HasActions, HasForms
             403
         );
 
-        abort_unless($orden->estado === EstadoOrden::Rechazada, 403);
-
         $this->orden = $orden;
-        // Prioriza el reporte específico marcado como rechazado. El fallback a latest()
-        // cubre servicios de un solo reporte y órdenes ya rechazadas antes de este fix
-        // (donde ningún reporte quedó marcado).
-        $this->reporte = $orden->reportes()->where('requiere_correccion', true)->latest('updated_at')->first()
-            ?? $orden->reportes()->latest()->firstOrFail();
+
+        $esVigilancia = $orden->tipo_servicio === TipoServicio::Vigilancia;
+        $tienePendientes = $esVigilancia && $orden->reportes()->where('requiere_correccion', true)->exists();
+
+        // Fuera de Vigilancia, cada orden tiene un solo reporte: rechazar bloquea toda la
+        // orden. En Vigilancia, un turno puede quedar marcado para corrección sin que la
+        // orden pase a Rechazada, así que también se permite entrar en ese caso.
+        abort_unless($orden->estado === EstadoOrden::Rechazada || $tienePendientes, 403);
+
+        $reporteId = request()->query('reporte');
+
+        if ($esVigilancia) {
+            $pendientes = $orden->reportes()->where('requiere_correccion', true)->latest('updated_at')->get();
+
+            if ($reporteId) {
+                $this->reporte = $pendientes->firstWhere('id', $reporteId);
+                abort_if(! $this->reporte, 404);
+            } elseif ($pendientes->count() === 1) {
+                $this->reporte = $pendientes->first();
+            } elseif ($pendientes->count() > 1) {
+                // Varios turnos requieren corrección: se muestra un selector en vez del
+                // formulario hasta que el técnico elija cuál editar.
+                $this->turnosPendientes = $pendientes;
+
+                return;
+            } else {
+                // Orden Rechazada sin ningún turno marcado (compatibilidad con datos
+                // previos a que existiera requiere_correccion): se edita el más reciente.
+                $this->reporte = $orden->reportes()->latest()->firstOrFail();
+            }
+        } else {
+            // Prioriza el reporte específico marcado como rechazado. El fallback a latest()
+            // cubre órdenes ya rechazadas antes de este fix (donde ningún reporte quedó marcado).
+            $this->reporte = $orden->reportes()->where('requiere_correccion', true)->latest('updated_at')->first()
+                ?? $orden->reportes()->latest()->firstOrFail();
+        }
+
         $this->imagenesExistentes = $this->reporte->imagenes ?? [];
 
         if ($this->orden->tipo_servicio === TipoServicio::Fraudes || $this->orden->tipo_servicio === TipoServicio::RevisionMedidores) {
@@ -1168,7 +1207,13 @@ class ReporteEdit extends Component implements HasActions, HasForms
 
         $this->actualizarUbicacion();
 
-        $this->orden->update(['estado' => EstadoOrden::EnRevision]);
+        // Vigilancia: si la orden sigue activa (En Progreso/En Revisión), la corrección de
+        // este turno no debe reabrir toda la orden a revisión ni afectar otros turnos. Solo
+        // se fuerza a En Revisión cuando la orden completa estaba Rechazada (flujo previo de
+        // un solo reporte marcado, o servicios que no son Vigilancia).
+        if (! ($this->orden->tipo_servicio === TipoServicio::Vigilancia && $this->orden->estado !== EstadoOrden::Rechazada)) {
+            $this->orden->update(['estado' => EstadoOrden::EnRevision]);
+        }
 
         $this->notificarCoordinador();
 

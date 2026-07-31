@@ -1,5 +1,39 @@
 
-<div class="space-y-6"
+<div class="space-y-6">
+@if ($turnosPendientes)
+    {{-- Varios turnos de Vigilancia requieren corrección: el técnico elige cuál editar --}}
+    <div class="flex items-center justify-between">
+        <div>
+            <flux:heading size="xl">Turnos por Corregir</flux:heading>
+            <flux:text class="mt-1 text-sm">
+                Orden: <span class="font-semibold">{{ $orden->numero_orden }}</span>
+                <flux:badge color="red" class="ml-2">{{ $turnosPendientes->count() }} turno(s) pendiente(s)</flux:badge>
+            </flux:text>
+        </div>
+        <flux:button href="{{ route('tecnico.mis-ordenes') }}" icon="arrow-left" variant="ghost" wire:navigate>
+            Volver
+        </flux:button>
+    </div>
+
+    <div class="divide-y divide-zinc-100 rounded-lg border border-zinc-200 bg-white dark:divide-zinc-800 dark:border-zinc-700 dark:bg-zinc-900">
+        @foreach ($turnosPendientes as $turno)
+            <a href="{{ route('tecnico.ordenes.reporte.editar', $orden) }}?reporte={{ $turno->id }}" wire:navigate
+                class="flex items-center justify-between gap-4 p-4 transition hover:bg-zinc-50 dark:hover:bg-zinc-800">
+                <div class="min-w-0">
+                    <p class="text-sm font-semibold text-zinc-900 dark:text-white">
+                        Turno del
+                        {{ ($turno->datos_servicio['fecha_turno'] ?? null) ? \Illuminate\Support\Carbon::parse($turno->datos_servicio['fecha_turno'])->format('d/m/Y') : $turno->created_at->format('d/m/Y') }}
+                    </p>
+                    @if ($turno->comentarios)
+                        <p class="mt-1 truncate text-xs text-red-600 dark:text-red-400">{{ $turno->comentarios }}</p>
+                    @endif
+                </div>
+                <flux:icon name="chevron-right" class="h-5 w-5 shrink-0 text-zinc-400" />
+            </a>
+        @endforeach
+    </div>
+@else
+<div
     x-data="{
         draftKey: 'rpt_edit_{{ $reporte->id }}',
         hasDraft: false,
@@ -68,7 +102,11 @@
                 Orden: <span class="font-semibold">{{ $orden->numero_orden }}</span>   @if ($orden->cliente)
                     —{{ $orden->cliente }}
                 @endif
-                <flux:badge color="red" class="ml-2">Rechazada</flux:badge>
+                @if ($orden->estado === \App\Enums\EstadoOrden::Rechazada)
+                    <flux:badge color="red" class="ml-2">Rechazada</flux:badge>
+                @else
+                    <flux:badge color="amber" class="ml-2">Turno con Corrección Pendiente</flux:badge>
+                @endif
             </flux:text>
         </div>
         <flux:button href="{{ route('tecnico.mis-ordenes') }}" icon="arrow-left" variant="ghost" wire:navigate>
@@ -237,5 +275,6 @@
             </flux:button>
         </div>
     </form>
-
+</div>
+@endif
 </div>

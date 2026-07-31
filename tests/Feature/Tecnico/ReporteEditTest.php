@@ -258,3 +258,152 @@ test('editar reporte usa el mas reciente si ningun reporte esta marcado (compati
 
     expect($component->instance()->reporte->id)->toBe($masReciente->id);
 });
+
+test('editar reporte muestra un selector cuando varios turnos de vigilancia requieren correccion', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    // La orden de Vigilancia arranca y permanece En Progreso: el rechazo puntual de un
+    // turno ya no bloquea toda la orden.
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Vigilancia->value,
+    ]);
+
+    $turno1 = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'comentarios' => 'Falta la descripción de la novedad.',
+        'requiere_correccion' => true,
+    ]);
+
+    $turno2 = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'comentarios' => 'La hora de inicio no coincide con el turno.',
+        'requiere_correccion' => true,
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden]);
+
+    expect($orden->fresh()->estado)->toBe(EstadoOrden::EnProgreso)
+        ->and($component->instance()->reporte)->toBeNull()
+        ->and($component->instance()->turnosPendientes)->not->toBeNull()
+        ->and($component->instance()->turnosPendientes->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$turno1->id, $turno2->id])->sort()->values()->all());
+});
+
+test('editar reporte carga el turno elegido por query param cuando hay varios pendientes', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Vigilancia->value,
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'requiere_correccion' => true,
+    ]);
+
+    $turno2 = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'requiere_correccion' => true,
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->withQueryParams(['reporte' => $turno2->id])
+        ->test(ReporteEdit::class, ['orden' => $orden]);
+
+    expect($component->instance()->reporte->id)->toBe($turno2->id)
+        ->and($component->instance()->turnosPendientes)->toBeNull();
+});
+
+test('editar reporte de vigilancia corrige solo el turno puntual sin afectar el estado de la orden ni otros turnos', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Vigilancia->value,
+    ]);
+
+    $turnoRechazado = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'requiere_correccion' => true,
+        'comentarios' => 'Falta la hora de fin del turno.',
+    ]);
+
+    $otroTurno = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'requiere_correccion' => false,
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->withQueryParams(['reporte' => $turnoRechazado->id])
+        ->test(ReporteEdit::class, ['orden' => $orden]);
+
+    $method = new ReflectionMethod($component->instance(), 'submitServicioGenerico');
+    $method->setAccessible(true);
+    $method->invoke($component->instance(), [
+        'observaciones' => 'Turno corregido con la hora de fin correcta.',
+    ]);
+
+    expect($turnoRechazado->fresh()->requiere_correccion)->toBeFalse()
+        ->and($otroTurno->fresh()->requiere_correccion)->toBeFalse()
+        ->and($orden->fresh()->estado)->toBe(EstadoOrden::EnProgreso);
+});

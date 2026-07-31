@@ -1051,8 +1051,54 @@
                 </div>
             @endif
 
-            {{-- ═══ Decisión (solo cuando está en revisión y no es Vigilancia — Vigilancia decide en el índice de reportes) ═══ --}}
+            {{-- ═══ Decisión: Vigilancia rechaza/edita por turno individual; el resto decide una vez por orden ═══ --}}
             @if (
+                $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia &&
+                    in_array($orden->estado, [\App\Enums\EstadoOrden::EnProgreso, \App\Enums\EstadoOrden::EnRevision], true))
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900"
+                    x-data="{ rechazo: @entangle('mostrarFormRechazo') }">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        Decisión del Turno</h3>
+
+                    @if ($reporte->requiere_correccion)
+                        <div
+                            class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+                            Este turno fue marcado para corrección. El investigador podrá editarlo sin afectar el
+                            resto de la orden.
+                        </div>
+                    @else
+                        <div x-show="!rechazo" class="flex flex-col gap-3">
+                            <flux:button variant="danger" icon="x-circle" class="w-full justify-center"
+                                @click="rechazo = true">
+                                Rechazar este Turno
+                            </flux:button>
+                        </div>
+
+                        <div x-show="rechazo" x-cloak>
+                            <p class="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
+                                Indica el motivo del rechazo. Solo este turno quedará marcado para corrección; el
+                                resto de la orden no se ve afectado y el investigador puede seguir agregando turnos.
+                            </p>
+                            <textarea wire:model="comentarios" rows="4"
+                                placeholder="Describe el motivo del rechazo..."
+                                class="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"></textarea>
+                            @error('comentarios')
+                                <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
+                            @enderror
+                            <div class="mt-3 flex gap-2">
+                                <flux:button variant="danger" class="flex-1" wire:click="rechazar"
+                                    wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="rechazar">Confirmar Rechazo</span>
+                                    <span wire:loading wire:target="rechazar">Enviando...</span>
+                                </flux:button>
+                                <flux:button variant="ghost" @click="rechazo = false; $wire.set('comentarios', '')">
+                                    Cancelar
+                                </flux:button>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            @elseif (
                 $orden->estado === \App\Enums\EstadoOrden::EnRevision &&
                     $orden->tipo_servicio !== \App\Enums\TipoServicio::Vigilancia)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900"
