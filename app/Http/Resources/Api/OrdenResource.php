@@ -58,6 +58,7 @@ class OrdenResource extends JsonResource
             'fecha_asignacion' => $orden->fecha_asignacion?->toISOString(),
             'fecha_limite' => $orden->fecha_limite?->toISOString(),
             'fecha_completado' => $orden->fecha_completado?->toISOString(),
+            'sincronizado' => $orden->sincronizado,
             'tiene_reporte' => $this->when(
                 $request->routeIs('api.tecnico.ordenes.show'),
                 fn () => $orden->reportes()->exists()

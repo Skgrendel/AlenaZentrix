@@ -130,7 +130,8 @@ class ReporteRevisar extends Component implements HasActions, HasForms
         }
 
         // Servicios de un solo reporte: rechazar bloquea toda la orden hasta que se corrija.
-        $this->orden->update(['estado' => EstadoOrden::Rechazada]);
+        // sincronizado vuelve a false para que la app sepa que debe reenviar el reporte corregido.
+        $this->orden->update(['estado' => EstadoOrden::Rechazada, 'sincronizado' => false]);
 
         session()->flash('success', "Orden {$this->orden->numero_orden} rechazada. El técnico podrá corregir y reenviar el reporte.");
 

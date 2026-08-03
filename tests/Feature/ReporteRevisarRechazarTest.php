@@ -64,6 +64,7 @@ it('rechazar un reporte de un servicio de un solo reporte si bloquea toda la ord
         'company_id' => $company->id,
         'personals_id' => $personal->id,
         'estado' => EstadoOrden::EnRevision->value,
+        'sincronizado' => true,
     ]);
 
     $reporte = reportes::factory()->create([
@@ -78,5 +79,6 @@ it('rechazar un reporte de un servicio de un solo reporte si bloquea toda la ord
         ->assertHasNoErrors();
 
     expect($orden->fresh()->estado)->toBe(EstadoOrden::Rechazada)
-        ->and($reporte->fresh()->requiere_correccion)->toBeTrue();
+        ->and($reporte->fresh()->requiere_correccion)->toBeTrue()
+        ->and($orden->fresh()->sincronizado)->toBeFalse();
 });

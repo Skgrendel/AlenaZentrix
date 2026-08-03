@@ -2,6 +2,7 @@
 
 use App\Enums\EstadoOrden;
 use App\Enums\TipoServicio;
+use App\Models\Convencion;
 use App\Models\OrdenJob;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -160,4 +161,69 @@ test('POST cerrar-vigilancia falla si no es Vigilancia', function () {
     $this->withToken($token)
         ->postJson("/api/tecnico/ordenes/{$orden->id}/cerrar-vigilancia")
         ->assertStatus(422);
+});
+
+// ── Reportes: campo sincronizado / idempotencia ────────────────────────────────
+
+test('POST reporte marca la orden como sincronizada y la API lo expone', function () {
+    [$user, $token] = tecnicoConToken();
+    $orden = ordenAsignada($user, ['estado' => EstadoOrden::EnProgreso->value]);
+    $convencion = Convencion::create(['nombre' => 'Convención de prueba', 'company_id' => $user->company_id]);
+
+    $payload = ['convencion_id' => $convencion->id, 'tipo_investigado' => 'persona'];
+
+    $this->withToken($token)
+        ->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", $payload)
+        ->assertCreated();
+
+    expect($orden->fresh()->sincronizado)->toBeTrue();
+
+    $this->withToken($token)
+        ->getJson("/api/tecnico/ordenes/{$orden->id}")
+        ->assertJsonPath('data.sincronizado', true);
+});
+
+test('POST reporte reenviado en una orden ya sincronizada no duplica el reporte', function () {
+    [$user, $token] = tecnicoConToken();
+    $orden = ordenAsignada($user, ['estado' => EstadoOrden::EnProgreso->value]);
+    $convencion = Convencion::create(['nombre' => 'Convención de prueba', 'company_id' => $user->company_id]);
+
+    $payload = ['convencion_id' => $convencion->id, 'tipo_investigado' => 'persona'];
+
+    $this->withToken($token)->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", $payload)->assertCreated();
+
+    expect($orden->fresh()->reportes()->count())->toBe(1);
+
+    $this->withToken($token)
+        ->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", $payload)
+        ->assertOk()
+        ->assertJsonPath('message', 'Este reporte ya fue sincronizado previamente.');
+
+    expect($orden->fresh()->reportes()->count())->toBe(1);
+});
+
+test('POST reporte Vigilancia reenviado con el mismo turno no duplica el reporte', function () {
+    [$user, $token] = tecnicoConToken();
+    $orden = ordenAsignada($user, [
+        'tipo_servicio' => TipoServicio::Vigilancia->value,
+        'personals_id' => $user->personals_id,
+        'estado' => EstadoOrden::EnProgreso->value,
+    ]);
+
+    $payload = [
+        'fecha_turno' => now()->toDateString(),
+        'hora_inicio' => '08:00',
+        'hora_fin' => '16:00',
+    ];
+
+    $this->withToken($token)->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", $payload)->assertCreated();
+
+    expect($orden->fresh()->reportes()->count())->toBe(1);
+
+    $this->withToken($token)
+        ->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", $payload)
+        ->assertOk()
+        ->assertJsonPath('message', 'Este turno ya fue sincronizado previamente.');
+
+    expect($orden->fresh()->reportes()->count())->toBe(1);
 });

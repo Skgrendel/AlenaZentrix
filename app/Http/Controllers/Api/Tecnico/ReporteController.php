@@ -56,17 +56,46 @@ class ReporteController extends Controller
             return response()->json(['message' => 'No autorizado.'], 403);
         }
 
-        if ($orden->estado !== EstadoOrden::EnProgreso) {
-            return response()->json(['message' => 'La orden no está En Progreso.'], 422);
+        // Servicios de un solo reporte salen de "en progreso" en cuanto el reporte se guarda. Si
+        // la app reenvía el mismo reporte porque perdió la respuesta 201 por falla de red, la
+        // orden ya no estará en progreso: devolvemos el reporte ya sincronizado en vez de un error.
+        if (! $esVigilancia && $orden->sincronizado) {
+            $reporteExistente = $orden->reportes()->latest()->first();
+
+            if ($reporteExistente) {
+                return response()->json([
+                    'message' => 'Este reporte ya fue sincronizado previamente.',
+                    'reporte' => new ReporteResource($reporteExistente),
+                ], 200);
+            }
         }
 
-        if (! $esVigilancia && $orden->reportes()->exists()) {
-            return response()->json(['message' => 'Esta orden ya tiene un reporte registrado.'], 422);
+        if ($orden->estado !== EstadoOrden::EnProgreso) {
+            return response()->json(['message' => 'La orden no está En Progreso.'], 422);
         }
 
         $this->validar($request, $orden);
 
         $data = $this->normalizarActividades($request->all());
+
+        if ($esVigilancia) {
+            // Un turno se identifica por su fecha; si la app reenvía el mismo turno (p. ej. la
+            // respuesta anterior se perdió por falla de red), devolvemos el reporte ya guardado
+            // en vez de duplicarlo.
+            $reporteExistente = $orden->reportes()
+                ->where('datos_servicio->fecha_turno', $data['fecha_turno'] ?? null)
+                ->latest()
+                ->first();
+
+            if ($reporteExistente) {
+                return response()->json([
+                    'message' => 'Este turno ya fue sincronizado previamente.',
+                    'reporte' => new ReporteResource($reporteExistente),
+                ], 200);
+            }
+        } elseif ($orden->reportes()->exists()) {
+            return response()->json(['message' => 'Esta orden ya tiene un reporte registrado.'], 422);
+        }
 
         $reporte = match ($orden->tipo_servicio) {
             TipoServicio::Fraudes,
@@ -302,7 +331,7 @@ class ReporteController extends Controller
             'actividades' => $data['actividades'] ?? null,
         ]);
 
-        $orden->update(['estado' => EstadoOrden::EnRevision]);
+        $orden->update(['estado' => EstadoOrden::EnRevision, 'sincronizado' => true]);
         $this->notificarCoordinador($orden);
         $this->notificarIncidenciasIfApply($orden, $data, $fotoDetectorFuga, $fotoDetectorData, $fotoDetectorMimeType);
 
@@ -333,7 +362,7 @@ class ReporteController extends Controller
             'actividades' => $data['actividades'] ?? null,
         ]);
 
-        $orden->update(['estado' => EstadoOrden::EnRevision]);
+        $orden->update(['estado' => EstadoOrden::EnRevision, 'sincronizado' => true]);
         $this->notificarCoordinador($orden);
 
         return $reporte;
@@ -418,7 +447,7 @@ class ReporteController extends Controller
             'actividades' => $data['actividades'] ?? null,
         ]);
 
-        $orden->update(['estado' => EstadoOrden::EnRevision]);
+        $orden->update(['estado' => EstadoOrden::EnRevision, 'sincronizado' => true]);
         $this->notificarCoordinador($orden);
         $this->notificarIncidenciasIfApply($orden, $data, $fotoDetectorFuga, $fotoDetectorData, $fotoDetectorMimeType);
 
@@ -449,7 +478,7 @@ class ReporteController extends Controller
             'actividades' => $data['actividades'] ?? null,
         ]);
 
-        $orden->update(['estado' => EstadoOrden::EnRevision]);
+        $orden->update(['estado' => EstadoOrden::EnRevision, 'sincronizado' => true]);
         $this->notificarCoordinador($orden);
 
         return $reporte->fresh();
