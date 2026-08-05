@@ -102,6 +102,14 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state === 'positivo' ? 'Positiva' : ($state === 'negativo' ? 'Negativa' : '—'))
                     ->color(fn ($state) => $state === 'positivo' ? 'green' : ($state === 'negativo' ? 'red' : 'gray')),
+                Tables\Columns\TextColumn::make('estado_auditoria')
+                    ->label('Estado Auditoría')
+                    ->badge()
+                    ->state(fn (OrdenJob $record) => $record->tipo_servicio === TipoServicio::Fraudes
+                        ? $record->reportes->first()?->auditoria?->estado
+                        : null)
+                    ->formatStateUsing(fn ($state) => $state instanceof EstadoAuditoria ? $state->label() : '—')
+                    ->color(fn ($state) => $state instanceof EstadoAuditoria ? $state->color() : 'gray'),
                 Tables\Columns\TextColumn::make('personal.nombres')
                     ->label('Personal Asignado')
                     ->formatStateUsing(fn ($state, OrdenJob $record): string => $record->personal
