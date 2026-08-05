@@ -97,8 +97,10 @@ class ReporteRevisar extends Component implements HasActions, HasForms
     }
 
     /**
-     * Rechaza la orden con el motivo indicado. El técnico podrá corregir y reenviar el reporte.
-     * Los comentarios se persisten en el reporte para que el técnico conozca el motivo.
+     * Rechaza el reporte con el motivo indicado. En Vigilancia, el rechazo es puntual a este
+     * turno: la orden permanece activa (no pasa a Rechazada) y el resto de turnos no se ve
+     * afectado, para que el investigador pueda seguir agregando reportes mientras corrige este.
+     * En el resto de servicios (un solo reporte por orden), rechazar bloquea toda la orden.
      */
     public function rechazar(): void
     {
@@ -109,15 +111,30 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             'comentarios.min' => 'El motivo debe tener al menos 10 caracteres.',
         ]);
 
-        // Actualizar el reporte con los comentarios del rechazo y marcar la orden como rechazada
-        $this->reporte->update(['comentarios' => $this->comentarios]);
-        // Guardar el motivo del rechazo en el reporte y actualizar el estado de la orden a Rechazada
-        $this->orden->update(['estado' => EstadoOrden::Rechazada]);
-        // Enviar notificación al técnico con el motivo del rechazo
+        // Actualizar el reporte con los comentarios del rechazo y marcarlo como el que requiere
+        // corrección, para que ReporteEdit sepa cuál cargar (una orden de Vigilancia puede tener
+        // varios reportes; sin esta marca se cargaría el más reciente en vez del rechazado).
+        $this->reporte->update([
+            'comentarios' => $this->comentarios,
+            'requiere_correccion' => true,
+        ]);
+
         $this->notificarTecnico(new OrdenRechazada($this->orden, $this->orden->personal, $this->comentarios));
-        // Mostrar mensaje de éxito y redirigir al listado de órdenes
+
+        if ($this->orden->tipo_servicio === TipoServicio::Vigilancia) {
+            session()->flash('success', 'Turno marcado para corrección. El investigador podrá editarlo sin afectar el resto de la orden.');
+
+            $this->redirect(route('operaciones.ordenes-trabajo.reportes', $this->orden), navigate: true);
+
+            return;
+        }
+
+        // Servicios de un solo reporte: rechazar bloquea toda la orden hasta que se corrija.
+        // sincronizado vuelve a false para que la app sepa que debe reenviar el reporte corregido.
+        $this->orden->update(['estado' => EstadoOrden::Rechazada, 'sincronizado' => false]);
+
         session()->flash('success', "Orden {$this->orden->numero_orden} rechazada. El técnico podrá corregir y reenviar el reporte.");
-        // Redirigir al listado de órdenes después de rechazar la revisión
+
         $this->redirect(route('operaciones.ordenes-trabajo'), navigate: true);
     }
 

@@ -40,6 +40,7 @@ class reportes extends Model
         'geo_referencia',
         'observaciones',
         'comentarios',
+        'requiere_correccion',
         'conclusion',
         'datos_servicio',
         'revisado',
@@ -68,6 +69,7 @@ class reportes extends Model
         'excede_capacidad' => 'boolean',
         'revisado' => 'boolean',
         'confirmado' => 'boolean',
+        'requiere_correccion' => 'boolean',
     ];
 
     public function ordenJob()

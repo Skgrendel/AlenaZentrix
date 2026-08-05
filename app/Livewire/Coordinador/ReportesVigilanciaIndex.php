@@ -104,6 +104,11 @@ class ReportesVigilanciaIndex extends Component implements HasActions, HasForms,
                     })
                     ->badge()
                     ->color('blue'),
+                Tables\Columns\TextColumn::make('estado_turno')
+                    ->label('Estado')
+                    ->state(fn (reportes $r): string => $r->requiere_correccion ? 'Requiere Corrección' : 'Sin Correcciones')
+                    ->badge()
+                    ->color(fn (reportes $r): string => $r->requiere_correccion ? 'danger' : 'gray'),
                 Tables\Columns\TextColumn::make('personal.nombres')
                     ->label('Registrado por')
                     ->state(fn (reportes $r): string => $r->personal
@@ -150,6 +155,12 @@ class ReportesVigilanciaIndex extends Component implements HasActions, HasForms,
             });
     }
 
+    /**
+     * Rechaza la orden completa (todos los turnos acumulados) sin señalar un reporte puntual.
+     * A diferencia de ReporteRevisar::rechazar(), aquí no hay un reporte individual bajo
+     * revisión, por lo que ningún registro se marca con requiere_correccion; ReporteEdit
+     * recurrirá a su fallback (el reporte más reciente).
+     */
     public function rechazar(): void
     {
         $this->validate([

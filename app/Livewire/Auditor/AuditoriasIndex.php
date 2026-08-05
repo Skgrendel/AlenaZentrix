@@ -5,6 +5,7 @@ namespace App\Livewire\Auditor;
 use App\Enums\EstadoAuditoria;
 use App\Enums\TipoServicio;
 use App\Models\auditoria;
+use App\Models\OrdenJob;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -52,6 +53,18 @@ class AuditoriasIndex extends Component implements HasActions, HasForms, HasTabl
                     ->color(fn (auditoria $record): string => $record->reporte?->ordenJob?->tipo_servicio?->color() ?? 'gray'),
                 Tables\Columns\TextColumn::make('numero_orden')
                     ->label('N° Orden')
+                    ->searchable(query: fn ($query, string $search) => $query->whereHas(
+                        'reporte.ordenJob',
+                        fn ($q) => $q->where('numero_orden', 'like', "%{$search}%")
+                    ))
+                    ->sortable(query: fn ($query, string $direction) => $query->orderBy(
+                        OrdenJob::query()
+                            ->join('reportes', 'reportes.orden_job_id', '=', 'orden_jobs.id')
+                            ->whereColumn('reportes.id', 'auditorias.reportes_id')
+                            ->select('orden_jobs.numero_orden')
+                            ->limit(1),
+                        $direction
+                    ))
                     ->badge()
                     ->color('success')
                     ->getStateUsing(fn (auditoria $record): string => $record->reporte?->ordenJob?->numero_orden ?? '—'),

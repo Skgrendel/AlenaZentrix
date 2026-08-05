@@ -57,6 +57,7 @@ class OrdenJob extends Model
         'fecha_completado',
         'resultado',
         'proceso_id',
+        'sincronizado',
     ];
 
     protected $casts = [
@@ -71,6 +72,7 @@ class OrdenJob extends Model
         'fecha_limite' => 'datetime',
         'fecha_completado' => 'datetime',
         'resultado' => 'string',
+        'sincronizado' => 'boolean',
     ];
 
     protected static function booted(): void
