@@ -40,21 +40,24 @@
 
         @can('ordenes.ver')
 
-            {{-- Tendencia mensual + distribución por tipo de servicio --}}
+            {{-- Distribución por servicio, prioridad y resultado --}}
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <div class="lg:col-span-2">
-                    @livewire(\App\Filament\Widgets\TendenciaMensualChart::class)
-                </div>
-                <div class="lg:col-span-1">
-                    @livewire(\App\Filament\Widgets\OrdenesPorServicioChart::class)
-                </div>
+                @livewire(\App\Filament\Widgets\OrdenesPorServicioChart::class)
+                @livewire(\App\Filament\Widgets\OrdenesPorPrioridadChart::class)
+                @livewire(\App\Filament\Widgets\OrdenesPorResultadoChart::class)
             </div>
-
-            {{-- Rendimiento por investigador --}}
-            @livewire(\App\Filament\Widgets\RendimientoInvestigadoresWidget::class)
 
             {{-- Distribución actual por estado --}}
             @livewire(\App\Filament\Widgets\OrdenesPorEstadoChart::class)
+
+            {{-- Auditoría de Fraudes: estado y anomalías detectadas --}}
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                @livewire(\App\Filament\Widgets\AuditoriaPorEstadoChart::class)
+                @livewire(\App\Filament\Widgets\AnomaliasDetectadasChart::class)
+            </div>
+
+            {{-- Distribución por proceso --}}
+            @livewire(\App\Filament\Widgets\OrdenesPorProcesoChart::class)
 
         @else
 

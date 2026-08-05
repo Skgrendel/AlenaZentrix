@@ -82,4 +82,26 @@ trait FiltraPorDashboard
             ->when($this->desde, fn ($q, $v) => $q->whereDate('created_at', '>=', $v))
             ->when($this->hasta, fn ($q, $v) => $q->whereDate('created_at', '<=', $v));
     }
+
+    /**
+     * Aplica los filtros del panel a una consulta de auditoria::query(). Los criterios propios
+     * de la auditoría (estado, tipo de anomalía) se aplican directamente; el resto se aplica sobre
+     * la orden relacionada vía whereHas para evitar ambigüedad de columnas al agrupar/unir tablas.
+     */
+    protected function aplicarFiltrosAuditoria(Builder $query): Builder
+    {
+        return $query
+            ->when($this->estadoAuditoria, fn ($q, $v) => $q->where('estado', $v))
+            ->when($this->tipoAnomaliaId, fn ($q, $v) => $q->where('tipo_anomalia_id', $v))
+            ->whereHas('reporte.ordenJob', function ($q) {
+                $q->when($this->desde, fn ($qq, $v) => $qq->whereDate('created_at', '>=', $v))
+                    ->when($this->hasta, fn ($qq, $v) => $qq->whereDate('created_at', '<=', $v))
+                    ->when($this->estado, fn ($qq, $v) => $qq->where('estado', $v))
+                    ->when($this->prioridad, fn ($qq, $v) => $qq->where('prioridad', $v))
+                    ->when($this->tipoServicio, fn ($qq, $v) => $qq->where('tipo_servicio', $v))
+                    ->when($this->personalsId, fn ($qq, $v) => $qq->where('personals_id', $v))
+                    ->when($this->resultado, fn ($qq, $v) => $qq->where('resultado', $v))
+                    ->when($this->procesoId, fn ($qq, $v) => $qq->where('proceso_id', $v));
+            });
+    }
 }

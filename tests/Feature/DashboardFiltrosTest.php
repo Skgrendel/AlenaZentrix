@@ -1,13 +1,22 @@
 <?php
 
+use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
+use App\Enums\PrioridadOrden;
 use App\Enums\TipoServicio;
+use App\Filament\Widgets\AnomaliasDetectadasChart;
+use App\Filament\Widgets\AuditoriaPorEstadoChart;
+use App\Filament\Widgets\OrdenesPorPrioridadChart;
+use App\Filament\Widgets\OrdenesPorProcesoChart;
+use App\Filament\Widgets\OrdenesPorResultadoChart;
 use App\Filament\Widgets\OrdenesStatsOverview;
-use App\Filament\Widgets\RendimientoInvestigadoresWidget;
 use App\Livewire\DashboardFiltros;
+use App\Models\auditoria;
 use App\Models\Company;
 use App\Models\OrdenJob;
-use App\Models\personals;
+use App\Models\Proceso;
+use App\Models\reportes;
+use App\Models\TipoAnomalia;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -34,8 +43,7 @@ test('dashboard renders with the filter bar and every widget', function () {
         ->get(route('dashboard'))
         ->assertOk()
         ->assertSeeLivewire(DashboardFiltros::class)
-        ->assertSeeLivewire(OrdenesStatsOverview::class)
-        ->assertSeeLivewire(RendimientoInvestigadoresWidget::class);
+        ->assertSeeLivewire(OrdenesStatsOverview::class);
 });
 
 test('filtro del panel dispatches the dashboard event with every selected criterion on aplicar', function () {
@@ -98,53 +106,81 @@ test('ordenes stats overview only counts ordenes matching the selected tipo_serv
     expect($stats[0]->getValue())->toBe(1);
 });
 
-test('rendimiento investigadores widget only counts ordenes within the selected date range', function () {
-    $company = Company::factory()->create();
-    $user = User::factory()->create(['company_id' => $company->id]);
-    $user->assignRole('Coordinador');
-    $this->actingAs($user);
+test('ordenes por prioridad chart only counts ordenes matching the selected estado criterio', function () {
+    OrdenJob::factory()->create(['prioridad' => PrioridadOrden::Alta, 'estado' => EstadoOrden::Completada]);
+    OrdenJob::factory()->create(['prioridad' => PrioridadOrden::Alta, 'estado' => EstadoOrden::Pendiente]);
+    OrdenJob::factory()->create(['prioridad' => PrioridadOrden::Baja, 'estado' => EstadoOrden::Completada]);
 
-    $investigador = personals::factory()->create(['company_id' => $company->id]);
-
-    OrdenJob::factory()->create([
-        'company_id' => $company->id,
-        'personals_id' => $investigador->id,
-        'created_at' => '2026-06-15',
-    ]);
-    OrdenJob::factory()->create([
-        'company_id' => $company->id,
-        'personals_id' => $investigador->id,
-        'created_at' => '2026-05-01',
-    ]);
-
-    $widget = new RendimientoInvestigadoresWidget;
-    $widget->desde = '2026-06-01';
-    $widget->hasta = '2026-06-30';
-
-    $resultado = $widget->getInvestigadores()->firstWhere('nombres', $investigador->nombres);
-
-    expect((int) $resultado->total)->toBe(1);
-});
-
-test('rendimiento investigadores widget keeps every investigador with zero counts when estado criterio does not match', function () {
-    $company = Company::factory()->create();
-    $user = User::factory()->create(['company_id' => $company->id]);
-    $user->assignRole('Coordinador');
-    $this->actingAs($user);
-
-    $investigador = personals::factory()->create(['company_id' => $company->id]);
-
-    OrdenJob::factory()->create([
-        'company_id' => $company->id,
-        'personals_id' => $investigador->id,
-        'estado' => EstadoOrden::Pendiente,
-    ]);
-
-    $widget = new RendimientoInvestigadoresWidget;
+    $widget = new OrdenesPorPrioridadChart;
     $widget->estado = EstadoOrden::Completada->value;
 
-    $resultado = $widget->getInvestigadores()->firstWhere('nombres', $investigador->nombres);
+    $data = (fn () => $this->getData())->call($widget);
 
-    expect($resultado)->not->toBeNull()
-        ->and((int) $resultado->total)->toBe(0);
+    expect($data['labels'])->toBe(['Baja', 'Alta'])
+        ->and($data['datasets'][0]['data'])->toBe([1, 1]);
+});
+
+test('ordenes por resultado chart groups positiva negativa and sin resultado', function () {
+    OrdenJob::factory()->create(['resultado' => 'positivo']);
+    OrdenJob::factory()->create(['resultado' => 'negativo']);
+    OrdenJob::factory()->create(['resultado' => 'negativo']);
+    OrdenJob::factory()->create(['resultado' => 'pendiente']);
+
+    $widget = new OrdenesPorResultadoChart;
+
+    $data = (fn () => $this->getData())->call($widget);
+
+    expect($data['labels'])->toBe(['Positiva', 'Negativa', 'Sin Resultado'])
+        ->and($data['datasets'][0]['data'])->toBe([1, 2, 1]);
+});
+
+test('auditoria por estado chart only counts auditorias whose orden matches the selected criterio', function () {
+    $reporteCoincide = reportes::factory()->create();
+    auditoria::create(['reportes_id' => $reporteCoincide->id, 'estado' => EstadoAuditoria::Confirmado]);
+
+    $reporteNoCoincide = reportes::factory()->create();
+    $reporteNoCoincide->ordenJob->update(['tipo_servicio' => TipoServicio::Investigacion]);
+    auditoria::create(['reportes_id' => $reporteNoCoincide->id, 'estado' => EstadoAuditoria::Confirmado]);
+
+    $widget = new AuditoriaPorEstadoChart;
+    $widget->tipoServicio = TipoServicio::Fraudes->value;
+
+    $data = (fn () => $this->getData())->call($widget);
+
+    expect($data['labels'])->toBe(['Confirmado'])
+        ->and($data['datasets'][0]['data'])->toBe([1]);
+});
+
+test('anomalias detectadas chart lists the most frequent tipos de anomalia', function () {
+    $company = Company::factory()->create();
+    $bypass = TipoAnomalia::create(['nombre' => 'Bypass', 'company_id' => $company->id]);
+    $sellosRotos = TipoAnomalia::create(['nombre' => 'Sellos Rotos', 'company_id' => $company->id]);
+
+    auditoria::create(['reportes_id' => reportes::factory()->create()->id, 'estado' => EstadoAuditoria::Confirmado, 'tipo_anomalia_id' => $bypass->id]);
+    auditoria::create(['reportes_id' => reportes::factory()->create()->id, 'estado' => EstadoAuditoria::Confirmado, 'tipo_anomalia_id' => $bypass->id]);
+    auditoria::create(['reportes_id' => reportes::factory()->create()->id, 'estado' => EstadoAuditoria::Confirmado, 'tipo_anomalia_id' => $sellosRotos->id]);
+
+    $widget = new AnomaliasDetectadasChart;
+
+    $data = (fn () => $this->getData())->call($widget);
+
+    expect($data['labels'])->toBe(['Bypass', 'Sellos Rotos'])
+        ->and($data['datasets'][0]['data'])->toBe([2, 1]);
+});
+
+test('ordenes por proceso chart only counts ordenes matching the selected criterio', function () {
+    $procesoA = Proceso::create(['nombre' => 'Proceso A']);
+    $procesoB = Proceso::create(['nombre' => 'Proceso B']);
+
+    OrdenJob::factory()->create(['proceso_id' => $procesoA->id, 'estado' => EstadoOrden::Completada]);
+    OrdenJob::factory()->create(['proceso_id' => $procesoA->id, 'estado' => EstadoOrden::Pendiente]);
+    OrdenJob::factory()->create(['proceso_id' => $procesoB->id, 'estado' => EstadoOrden::Completada]);
+
+    $widget = new OrdenesPorProcesoChart;
+    $widget->estado = EstadoOrden::Completada->value;
+
+    $data = (fn () => $this->getData())->call($widget);
+
+    expect($data['labels'])->toBe(['Proceso A', 'Proceso B'])
+        ->and($data['datasets'][0]['data'])->toBe([1, 1]);
 });
