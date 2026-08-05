@@ -150,6 +150,12 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         collect(TipoServicio::cases())
                             ->mapWithKeys(fn (TipoServicio $case) => [$case->value => $case->label()])
                     ),
+                Tables\Filters\SelectFilter::make('resultado')
+                    ->label('Resultado')
+                    ->options([
+                        'positivo' => 'Positiva',
+                        'negativo' => 'Negativa',
+                    ]),
                 Tables\Filters\SelectFilter::make('proceso_id')
                     ->label('Proceso')
                     ->options(
