@@ -17,7 +17,7 @@
                     {{ now()->isoFormat('dddd, D [de] MMMM [de] YYYY') }}
                 </p>
             </div>
-            <div class="flex items-center">
+            <div class="flex items-center gap-4">
                 @if (Auth::user()->company?->logo)
                     <img
                         src="{!! Auth::user()->company->logo !!}"
@@ -29,6 +29,10 @@
                         {{ Auth::user()->company->nombre ?? '' }}
                     </span>
                 @endif
+
+                <flux:button variant="ghost" icon="printer" onclick="window.print()" class="print:hidden">
+                    Exportar PDF
+                </flux:button>
             </div>
         </div>
 
@@ -66,4 +70,26 @@
         @endcan
 
     </div>
+
+    @push('styles')
+        <style>
+            @media print {
+                [data-flux-sidebar],
+                [data-flux-header],
+                ui-toast-group {
+                    display: none !important;
+                }
+
+                [data-flux-main] {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                .fi-wi-chart,
+                .fi-wi-stats-overview {
+                    break-inside: avoid;
+                }
+            }
+        </style>
+    @endpush
 </x-layouts::app>
