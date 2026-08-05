@@ -19,6 +19,8 @@ class AuditoriaPorEstadoChart extends ChartWidget
 
     protected ?string $pollingInterval = null;
 
+    protected ?string $maxHeight = '240px';
+
     protected function getData(): array
     {
         $counts = $this->aplicarFiltrosAuditoria(auditoria::query())
