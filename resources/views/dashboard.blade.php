@@ -47,17 +47,17 @@
                 @livewire(\App\Filament\Widgets\OrdenesPorResultadoChart::class)
             </div>
 
-            {{-- Distribución actual por estado --}}
-            @livewire(\App\Filament\Widgets\OrdenesPorEstadoChart::class)
+            {{-- Distribución actual por estado y por proceso --}}
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                @livewire(\App\Filament\Widgets\OrdenesPorEstadoChart::class)
+                @livewire(\App\Filament\Widgets\OrdenesPorProcesoChart::class)
+            </div>
 
             {{-- Auditoría de Fraudes: estado y anomalías detectadas --}}
             <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 @livewire(\App\Filament\Widgets\AuditoriaPorEstadoChart::class)
                 @livewire(\App\Filament\Widgets\AnomaliasDetectadasChart::class)
             </div>
-
-            {{-- Distribución por proceso --}}
-            @livewire(\App\Filament\Widgets\OrdenesPorProcesoChart::class)
 
         @else
 

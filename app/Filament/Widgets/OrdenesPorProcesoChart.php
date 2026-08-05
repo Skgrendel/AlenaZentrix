@@ -19,7 +19,7 @@ class OrdenesPorProcesoChart extends ChartWidget
 
     protected ?string $pollingInterval = null;
 
-    protected int|string|array $columnSpan = 'full';
+    protected ?string $maxHeight = '280px';
 
     protected function getData(): array
     {
