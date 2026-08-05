@@ -48,7 +48,7 @@ it('el job se encola con los ids de las órdenes correctas', function () {
 it('la notificación usa los canales database y mail', function () {
     $notification = new ZipReportesListoNotification('https://example.com/zip', 3);
 
-    expect($notification->via(new \stdClass))->toBe(['database', 'mail']);
+    expect($notification->via(new stdClass))->toBe(['database', 'mail']);
 });
 
 it('la notificación tiene el asunto correcto en el correo', function () {

@@ -31,7 +31,7 @@ test('dashboard shows company name when user has a company', function () {
 test('dashboard shows company logo img when company has logo', function () {
     $company = Company::factory()->create([
         'nombre' => 'Gases del Caribe',
-        'logo'   => 'https://example.com/logo.svg',
+        'logo' => 'https://example.com/logo.svg',
     ]);
     $user = User::factory()->create(['company_id' => $company->id]);
     $this->actingAs($user);

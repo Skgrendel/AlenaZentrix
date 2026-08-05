@@ -3,7 +3,6 @@
 namespace App\Jobs;
 
 use App\Models\OrdenJob;
-use App\Models\reportes;
 use App\Models\TipoAnomalia;
 use App\Models\User;
 use App\Notifications\ZipReportesListoNotification;

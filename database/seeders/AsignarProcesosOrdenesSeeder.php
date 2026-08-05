@@ -11,7 +11,7 @@ class AsignarProcesosOrdenesSeeder extends Seeder
     public function run(): void
     {
         $ctv = Proceso::where('nombre', 'Construcciones y Trabajos Varios')->firstOrFail();
-        $sp  = Proceso::where('nombre', 'Servicios Periciales')->firstOrFail();
+        $sp = Proceso::where('nombre', 'Servicios Periciales')->firstOrFail();
 
         $n1 = OrdenJob::where('tipo_servicio', 'auditoria_campo')->whereNull('proceso_id')->update(['proceso_id' => $ctv->id]);
         $n2 = OrdenJob::whereIn('tipo_servicio', ['fraudes', 'investigacion', 'gestion_legal'])->whereNull('proceso_id')->update(['proceso_id' => $sp->id]);
