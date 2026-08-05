@@ -164,6 +164,19 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         'positivo' => 'Positiva',
                         'negativo' => 'Negativa',
                     ]),
+                Tables\Filters\SelectFilter::make('estado_auditoria')
+                    ->label('Estado Auditoría')
+                    ->options(
+                        collect(EstadoAuditoria::cases())
+                            ->mapWithKeys(fn (EstadoAuditoria $case) => [$case->value => $case->label()])
+                    )
+                    ->query(fn ($query, array $data) => $query->when(
+                        $data['value'] ?? null,
+                        fn ($query, $value) => $query->whereHas(
+                            'reportes.auditoria',
+                            fn ($q) => $q->where('estado', $value)
+                        )
+                    )),
                 Tables\Filters\SelectFilter::make('proceso_id')
                     ->label('Proceso')
                     ->options(
