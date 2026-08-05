@@ -2,29 +2,20 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Widgets\Concerns\FiltraPorDashboard;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Livewire\Attributes\On;
 
 class RendimientoInvestigadoresWidget extends Widget
 {
+    use FiltraPorDashboard;
+
     protected string $view = 'filament.widgets.rendimiento-investigadores-widget';
 
     protected ?string $pollingInterval = null;
 
     protected int|string|array $columnSpan = 'full';
-
-    public ?string $desde = null;
-
-    public ?string $hasta = null;
-
-    #[On('dashboard-fecha-filtrada')]
-    public function actualizarFiltroFecha(?string $desde, ?string $hasta): void
-    {
-        $this->desde = $desde;
-        $this->hasta = $hasta;
-    }
 
     public function getInvestigadores(): Collection
     {
@@ -35,9 +26,15 @@ class RendimientoInvestigadoresWidget extends Widget
                 $join->on('oj.personals_id', '=', 'p.id')
                     ->where('oj.company_id', $companyId)
                     ->when($this->desde, fn ($join, $desde) => $join->whereDate('oj.created_at', '>=', $desde))
-                    ->when($this->hasta, fn ($join, $hasta) => $join->whereDate('oj.created_at', '<=', $hasta));
+                    ->when($this->hasta, fn ($join, $hasta) => $join->whereDate('oj.created_at', '<=', $hasta))
+                    ->when($this->estado, fn ($join, $estado) => $join->where('oj.estado', $estado))
+                    ->when($this->prioridad, fn ($join, $prioridad) => $join->where('oj.prioridad', $prioridad))
+                    ->when($this->tipoServicio, fn ($join, $tipoServicio) => $join->where('oj.tipo_servicio', $tipoServicio))
+                    ->when($this->resultado, fn ($join, $resultado) => $join->where('oj.resultado', $resultado))
+                    ->when($this->procesoId, fn ($join, $procesoId) => $join->where('oj.proceso_id', $procesoId));
             })
             ->where('p.company_id', $companyId)
+            ->when($this->personalsId, fn ($query, $personalsId) => $query->where('p.id', $personalsId))
             ->select([
                 'p.nombres',
                 'p.apellidos',

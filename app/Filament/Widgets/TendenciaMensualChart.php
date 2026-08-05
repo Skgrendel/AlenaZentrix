@@ -3,27 +3,18 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\EstadoOrden;
+use App\Filament\Widgets\Concerns\FiltraPorDashboard;
 use App\Models\OrdenJob;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
-use Livewire\Attributes\On;
 
 class TendenciaMensualChart extends ChartWidget
 {
+    use FiltraPorDashboard;
+
     protected ?string $heading = 'Tendencia Mensual de Órdenes';
 
     protected ?string $pollingInterval = null;
-
-    public ?string $desde = null;
-
-    public ?string $hasta = null;
-
-    #[On('dashboard-fecha-filtrada')]
-    public function actualizarFiltroFecha(?string $desde, ?string $hasta): void
-    {
-        $this->desde = $desde;
-        $this->hasta = $hasta;
-    }
 
     protected function getData(): array
     {
@@ -46,16 +37,17 @@ class TendenciaMensualChart extends ChartWidget
         for ($date = $inicio; $date->lte($fin); $date = $date->addMonth()) {
             $labels[] = ucfirst($date->isoFormat('MMM YY'));
 
-            $ingresadas[] = OrdenJob::whereYear('created_at', $date->year)
+            $ingresadas[] = $this->aplicarCriteriosOrdenJob(OrdenJob::query())
+                ->whereYear('created_at', $date->year)
                 ->whereMonth('created_at', $date->month)
                 ->count();
 
-            $completadas[] = OrdenJob::where('estado', EstadoOrden::Completada)
+            $completadas[] = $this->aplicarCriteriosOrdenJob(OrdenJob::where('estado', EstadoOrden::Completada))
                 ->whereYear('fecha_completado', $date->year)
                 ->whereMonth('fecha_completado', $date->month)
                 ->count();
 
-            $rechazadas[] = OrdenJob::where('estado', EstadoOrden::Rechazada)
+            $rechazadas[] = $this->aplicarCriteriosOrdenJob(OrdenJob::where('estado', EstadoOrden::Rechazada))
                 ->whereYear('updated_at', $date->year)
                 ->whereMonth('updated_at', $date->month)
                 ->count();
