@@ -43,6 +43,15 @@ class ReporteResource extends JsonResource
                     'direccion' => $reporte->ubicacion->direccion,
                 ]
             ),
+            'comercio' => $this->when(
+                $reporte->relationLoaded('comercio') && $reporte->comercio,
+                fn () => [
+                    'nombre_comercio' => $reporte->comercio->nombre_comercio,
+                    'tipo_comercio' => $reporte->comercio->relationLoaded('tipoComercio')
+                        ? $reporte->comercio->tipoComercio?->nombre
+                        : null,
+                ]
+            ),
             'created_at' => $reporte->created_at->toISOString(),
         ];
     }

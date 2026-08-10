@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ArchivoController;
+use App\Http\Controllers\Api\AuditoriaController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogoController;
 use App\Http\Controllers\Api\InformeController;
@@ -54,6 +55,14 @@ Route::middleware(['auth:sanctum', SetTenantContext::class])->group(function () 
 
         Route::put('ordenes/{orden}/reporte', [ReporteController::class, 'update'])
             ->name('ordenes.reporte.update');
+    });
+
+    /*
+     | Auditorías (revisión de hallazgos de Fraudes/Revisión de Medidores)
+     */
+    Route::prefix('auditorias')->name('api.auditorias.')->group(function () {
+        Route::get('{auditoria}', [AuditoriaController::class, 'show'])->name('show');
+        Route::put('{auditoria}', [AuditoriaController::class, 'guardar'])->name('guardar');
     });
 
     /*
