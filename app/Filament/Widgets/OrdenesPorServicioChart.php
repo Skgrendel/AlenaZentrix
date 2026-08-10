@@ -3,9 +3,9 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\TipoServicio;
+use App\Filament\Widgets\Concerns\FiltraPorDashboard;
 use App\Models\OrdenJob;
 use Filament\Widgets\ChartWidget;
-use Livewire\Attributes\On;
 
 /**
  * Gráfico de dona que muestra la distribución de órdenes por tipo de servicio.
@@ -13,26 +13,17 @@ use Livewire\Attributes\On;
  */
 class OrdenesPorServicioChart extends ChartWidget
 {
+    use FiltraPorDashboard;
+
     protected ?string $heading = 'Por Tipo de Servicio';
 
     protected ?string $pollingInterval = null;
 
-    public ?string $desde = null;
-
-    public ?string $hasta = null;
-
-    #[On('dashboard-fecha-filtrada')]
-    public function actualizarFiltroFecha(?string $desde, ?string $hasta): void
-    {
-        $this->desde = $desde;
-        $this->hasta = $hasta;
-    }
+    protected ?string $maxHeight = '240px';
 
     protected function getData(): array
     {
-        $counts = OrdenJob::query()
-            ->when($this->desde, fn ($q, $desde) => $q->whereDate('created_at', '>=', $desde))
-            ->when($this->hasta, fn ($q, $hasta) => $q->whereDate('created_at', '<=', $hasta))
+        $counts = $this->aplicarFiltrosOrdenJob(OrdenJob::query())
             ->selectRaw('tipo_servicio, count(*) as total')
             ->groupBy('tipo_servicio')
             ->pluck('total', 'tipo_servicio');

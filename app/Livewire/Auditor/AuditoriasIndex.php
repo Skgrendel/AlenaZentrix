@@ -68,6 +68,13 @@ class AuditoriasIndex extends Component implements HasActions, HasForms, HasTabl
                     ->badge()
                     ->color('success')
                     ->getStateUsing(fn (auditoria $record): string => $record->reporte?->ordenJob?->numero_orden ?? '—'),
+                Tables\Columns\TextColumn::make('contrato')
+                    ->label('Contrato')
+                    ->searchable(query: fn ($query, string $search) => $query->whereHas(
+                        'reporte.ordenJob',
+                        fn ($q) => $q->where('contrato', 'like', "%{$search}%")
+                    ))
+                    ->getStateUsing(fn (auditoria $record): string => $record->reporte?->ordenJob?->contrato ?? '—'),
                 Tables\Columns\TextColumn::make('cliente')
                     ->label('Cliente')
                     ->getStateUsing(fn (auditoria $record): string => $record->reporte?->ordenJob?->cliente ?? '—'),

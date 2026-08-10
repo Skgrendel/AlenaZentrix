@@ -1,9 +1,11 @@
 <?php
-require __DIR__ . '/../vendor/autoload.php';
-$app = require_once __DIR__ . '/../bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+
+require __DIR__.'/../vendor/autoload.php';
+$app = require_once __DIR__.'/../bootstrap/app.php';
+$kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\Storage;
 
 $path = $argv[1] ?? 'ordenes/ODT-000016/01KSJWFYKN2AS4EFJKEX2M8QS5.jpeg';
@@ -13,7 +15,7 @@ echo "Path: $path\n";
 try {
     $exists = $disk->exists($path);
 } catch (Exception $e) {
-    echo "Error checking existence: " . $e->getMessage() . "\n";
+    echo 'Error checking existence: '.$e->getMessage()."\n";
     exit(1);
 }
 
@@ -34,8 +36,8 @@ try {
     $size = null;
 }
 
-echo "mimeType: " . ($mime ?? 'null') . "\n";
-echo "size: " . ($size ?? 'null') . "\n";
+echo 'mimeType: '.($mime ?? 'null')."\n";
+echo 'size: '.($size ?? 'null')."\n";
 
 // Read first bytes
 $stream = $disk->readStream($path);

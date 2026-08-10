@@ -89,6 +89,8 @@ class AuditoriaRevisar extends Component implements HasForms
                             ->maxFiles(10),
                         Forms\Components\Select::make('resultado')
                             ->label('Resultado')
+                            ->hint($this->auditoria->estado->label())
+                            ->hintColor($this->auditoria->estado->color())
                             ->options([
                                 EstadoAuditoria::Confirmado->value => EstadoAuditoria::Confirmado->label(),
                                 EstadoAuditoria::Negativo->value => EstadoAuditoria::Negativo->label(),

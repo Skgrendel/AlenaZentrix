@@ -10,6 +10,7 @@ use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
 use App\Models\personals;
 use App\Models\Proceso;
+use App\Models\TipoAnomalia;
 use App\Models\TipologiaOrden;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
@@ -55,7 +56,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
     public function table(Table $table): Table
     {
         return $table
-            ->query(OrdenJob::query()->with(['personal', 'reportes.auditoria', 'proceso']))
+            ->query(OrdenJob::query()->with(['personal', 'reportes.auditoria.tipoAnomalia', 'proceso']))
             ->columns([
                 Tables\Columns\TextColumn::make('numero_orden')
                     ->label('N° Orden')
@@ -97,6 +98,24 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state instanceof EstadoOrden ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof EstadoOrden ? $state->color() : 'gray'),
+                Tables\Columns\TextColumn::make('resultado')
+                    ->label('Resultado')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state === 'positivo' ? 'Positiva' : ($state === 'negativo' ? 'Negativa' : '—'))
+                    ->color(fn ($state) => $state === 'positivo' ? 'green' : ($state === 'negativo' ? 'red' : 'gray')),
+                Tables\Columns\TextColumn::make('estado_auditoria')
+                    ->label('Estado Auditoría')
+                    ->badge()
+                    ->state(fn (OrdenJob $record) => $record->tipo_servicio === TipoServicio::Fraudes
+                        ? $record->reportes->first()?->auditoria?->estado
+                        : null)
+                    ->formatStateUsing(fn ($state) => $state instanceof EstadoAuditoria ? $state->label() : '—')
+                    ->color(fn ($state) => $state instanceof EstadoAuditoria ? $state->color() : 'gray'),
+                Tables\Columns\TextColumn::make('reportes.auditoria.tipoAnomalia.nombre')
+                    ->label('Tipo de Anomalía')
+                    ->state(fn (OrdenJob $record) => $record->reportes->first()?->auditoria?->tipoAnomalia?->nombre)
+                    ->placeholder('—')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('personal.nombres')
                     ->label('Personal Asignado')
                     ->formatStateUsing(fn ($state, OrdenJob $record): string => $record->personal
@@ -145,6 +164,37 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         collect(TipoServicio::cases())
                             ->mapWithKeys(fn (TipoServicio $case) => [$case->value => $case->label()])
                     ),
+                Tables\Filters\SelectFilter::make('resultado')
+                    ->label('Resultado')
+                    ->options([
+                        'positivo' => 'Positiva',
+                        'negativo' => 'Negativa',
+                    ]),
+                Tables\Filters\SelectFilter::make('estado_auditoria')
+                    ->label('Estado Auditoría')
+                    ->options(
+                        collect(EstadoAuditoria::cases())
+                            ->mapWithKeys(fn (EstadoAuditoria $case) => [$case->value => $case->label()])
+                    )
+                    ->query(fn ($query, array $data) => $query->when(
+                        $data['value'] ?? null,
+                        fn ($query, $value) => $query->whereHas(
+                            'reportes.auditoria',
+                            fn ($q) => $q->where('estado', $value)
+                        )
+                    )),
+                Tables\Filters\SelectFilter::make('tipo_anomalia_id')
+                    ->label('Tipo de Anomalía')
+                    ->options(
+                        TipoAnomalia::query()->where('activo', true)->orderBy('nombre')->pluck('nombre', 'id')
+                    )
+                    ->query(fn ($query, array $data) => $query->when(
+                        $data['value'] ?? null,
+                        fn ($query, $value) => $query->whereHas(
+                            'reportes.auditoria',
+                            fn ($q) => $q->where('tipo_anomalia_id', $value)
+                        )
+                    )),
                 Tables\Filters\SelectFilter::make('proceso_id')
                     ->label('Proceso')
                     ->options(

@@ -3,11 +3,11 @@
 namespace App\Filament\Widgets;
 
 use App\Enums\EstadoOrden;
+use App\Filament\Widgets\Concerns\FiltraPorDashboard;
 use App\Models\OrdenJob;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\On;
 
 /**
  * Widget de tarjetas de resumen en el dashboard. Muestra métricas distintas según
@@ -15,18 +15,9 @@ use Livewire\Attributes\On;
  */
 class OrdenesStatsOverview extends BaseWidget
 {
+    use FiltraPorDashboard;
+
     protected ?string $pollingInterval = null;
-
-    public ?string $desde = null;
-
-    public ?string $hasta = null;
-
-    #[On('dashboard-fecha-filtrada')]
-    public function actualizarFiltroFecha(?string $desde, ?string $hasta): void
-    {
-        $this->desde = $desde;
-        $this->hasta = $hasta;
-    }
 
     protected function getStats(): array
     {
@@ -42,11 +33,11 @@ class OrdenesStatsOverview extends BaseWidget
     /** @return array<int, Stat> Estadísticas globales para el coordinador/admin. */
     private function statsCoordinador(): array
     {
-        $enRango = fn () => OrdenJob::query()
-            ->when($this->desde, fn ($q, $desde) => $q->whereDate('created_at', '>=', $desde))
-            ->when($this->hasta, fn ($q, $hasta) => $q->whereDate('created_at', '<=', $hasta));
+        $enRango = fn () => $this->aplicarFiltrosOrdenJob(OrdenJob::query());
 
-        $filtroActivo = $this->desde || $this->hasta;
+        $filtroActivo = $this->desde || $this->hasta || $this->estado || $this->prioridad
+            || $this->tipoServicio || $this->personalsId || $this->resultado
+            || $this->estadoAuditoria || $this->tipoAnomaliaId || $this->procesoId;
 
         $total = $enRango()->count();
         $pendientes = $enRango()->where('estado', EstadoOrden::Pendiente)->count();
@@ -137,9 +128,7 @@ class OrdenesStatsOverview extends BaseWidget
      */
     private function statsTecnico(?string $personalsId): array
     {
-        $base = OrdenJob::where('personals_id', $personalsId)
-            ->when($this->desde, fn ($q, $desde) => $q->whereDate('created_at', '>=', $desde))
-            ->when($this->hasta, fn ($q, $hasta) => $q->whereDate('created_at', '<=', $hasta));
+        $base = $this->aplicarFiltrosOrdenJob(OrdenJob::where('personals_id', $personalsId));
 
         $filtroActivo = $this->desde || $this->hasta;
 
