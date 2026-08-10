@@ -6,6 +6,7 @@ use App\Models\OrdenJob;
 use App\Models\personals;
 use App\Models\reportes;
 use App\Models\User;
+use App\Support\ArchivoUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -78,6 +79,44 @@ test('GET /api/archivos permite path del propio tenant', function () {
         ->getJson("/api/archivos/{$companyId}/foto.jpg");
 
     expect($response->status())->not->toBe(403);
+});
+
+test('GET /api/archivos rechaza traversal con .. para escapar al tenant propio', function () {
+    Storage::fake('s3');
+    [$user, $token] = tecnicoSeguridad();
+    $otroCompanyId = Str::uuid()->toString();
+
+    Storage::disk('s3')->put("{$otroCompanyId}/secreto.jpg", 'contenido de otra empresa');
+
+    $this->withToken($token)
+        ->getJson("/api/archivos/{$user->company_id}/../{$otroCompanyId}/secreto.jpg")
+        ->assertForbidden();
+});
+
+// ── Vuln 6: operaciones/foto exige firma válida ───────────────────────────────
+
+test('GET operaciones/foto sin firma válida devuelve 403', function () {
+    $user = User::factory()->create();
+    $user->givePermissionTo(crearPermiso('evidencias.ver'));
+
+    $this->actingAs($user)
+        ->get('/operaciones/foto?path='.urlencode("{$user->company_id}/reportes/foto.jpg"))
+        ->assertForbidden();
+});
+
+test('GET operaciones/foto con firma válida no devuelve 403 por firma', function () {
+    Storage::fake('s3');
+    $user = User::factory()->create();
+    $user->givePermissionTo(crearPermiso('evidencias.ver'));
+
+    $path = "{$user->company_id}/reportes/foto.jpg";
+    Storage::disk('s3')->put($path, 'contenido');
+
+    $url = ArchivoUrl::temporal($path);
+
+    $response = $this->actingAs($user)->get($url);
+
+    expect($response->getStatusCode())->not->toBe(403);
 });
 
 // ── Vuln 3: UploadController fuerza prefijo company_id ───────────────────────
@@ -153,6 +192,24 @@ test('GET reporte devuelve 403 si el usuario no es el técnico asignado ni tiene
     $this->withToken($token)
         ->getJson("/api/tecnico/ordenes/{$orden->id}/reporte")
         ->assertForbidden();
+});
+
+// ── Vuln 7: throttle dedicado en /api/auth/login ──────────────────────────────
+
+test('POST /api/auth/login bloquea después de 5 intentos fallidos en el mismo minuto', function () {
+    $user = User::factory()->create(['password' => bcrypt('password')]);
+
+    for ($i = 0; $i < 5; $i++) {
+        $this->postJson('/api/auth/login', [
+            'email' => $user->email,
+            'password' => 'incorrecta',
+        ])->assertStatus(401);
+    }
+
+    $this->postJson('/api/auth/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ])->assertStatus(429);
 });
 
 test('GET reporte devuelve los datos del reporte al técnico dueño de la orden', function () {

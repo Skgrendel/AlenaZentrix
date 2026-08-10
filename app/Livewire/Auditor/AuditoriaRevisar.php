@@ -10,6 +10,7 @@ use App\Models\ResultadoReporte;
 use App\Models\TipoAnomalia;
 use App\Models\TipoComercio;
 use App\Models\TipologiaOrden;
+use App\Support\ArchivoUrl;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -157,7 +158,7 @@ class AuditoriaRevisar extends Component implements HasForms
     public function imagenUrls(): array
     {
         return collect($this->auditoria->reporte?->imagenes ?? [])
-            ->map(fn (string $path) => route('operaciones.foto', ['path' => $path]))
+            ->map(fn (string $path) => ArchivoUrl::temporal($path))
             ->all();
     }
 
@@ -173,7 +174,7 @@ class AuditoriaRevisar extends Component implements HasForms
                 $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
                 return [
-                    'url' => route('operaciones.foto', ['path' => $path]),
+                    'url' => ArchivoUrl::temporal($path),
                     'nombre' => basename($path),
                     'es_imagen' => in_array($extension, $imageExtensions, true),
                 ];

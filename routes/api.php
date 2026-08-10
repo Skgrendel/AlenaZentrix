@@ -16,7 +16,9 @@ use Illuminate\Support\Facades\Route;
 | Autenticación (pública)
 |--------------------------------------------------------------------------
 */
-Route::post('/auth/login', [AuthController::class, 'login'])->name('api.auth.login');
+Route::post('/auth/login', [AuthController::class, 'login'])
+    ->middleware('throttle:login')
+    ->name('api.auth.login');
 
 /*
 |--------------------------------------------------------------------------

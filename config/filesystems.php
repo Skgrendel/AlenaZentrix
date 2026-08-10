@@ -60,6 +60,23 @@ return [
             'report' => false,
         ],
 
+        // Mismo bucket que 's3', pero como instancia de disco independiente: no pasa por el
+        // override de AppServiceProvider::configureS3TemporaryUrls() (que solo intercepta el
+        // disco 's3'), así que temporaryUrl() aquí devuelve una URL S3/DigitalOcean Spaces
+        // genuina, usable por clientes sin sesión de navegador (ej. la API para el móvil).
+        's3_directo' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AWS_BUCKET'),
+            'url' => env('AWS_URL'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*

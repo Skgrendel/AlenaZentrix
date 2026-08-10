@@ -168,7 +168,7 @@ class ReporteController extends Controller
             'longitud' => ['nullable', 'string'],
             'observaciones' => ['nullable', 'string'],
             'imagenes' => ['nullable', 'array'],
-            'imagenes.*' => ['string'],
+            'imagenes.*' => ['string', $this->reglaPathDeLaEmpresa($request)],
             'video' => ['nullable', 'url', 'max:500'],
             'geo_referencia' => ['nullable', 'url', 'max:500'],
             'actividades' => ['nullable', 'array'],
@@ -197,6 +197,7 @@ class ReporteController extends Controller
             'foto_detector_fuga' => [
                 'nullable', 'string',
                 $request->boolean('hay_fuga_gas') ? 'required' : 'nullable',
+                $this->reglaPathDeLaEmpresa($request),
             ],
             'excede_capacidad' => ['nullable', 'boolean'],
         ];
@@ -487,6 +488,22 @@ class ReporteController extends Controller
     // ─────────────────────────────────────────────────────────────
     //  Helpers
     // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Regla de validación: exige que un path de S3 pertenezca al company_id del usuario
+     * autenticado (todos los paths legítimos vienen de POST /api/upload, que ya antepone
+     * ese prefijo).
+     */
+    private function reglaPathDeLaEmpresa(Request $request): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($request): void {
+            $companyId = $request->user()->company_id;
+
+            if (! str_starts_with((string) $value, $companyId.'/')) {
+                $fail('El archivo debe pertenecer a tu empresa.');
+            }
+        };
+    }
 
     /**
      * Elimina del array los campos que se guardan en columnas propias del reporte,

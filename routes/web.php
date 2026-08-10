@@ -14,9 +14,15 @@ Route::get('/', function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');
 
-    Route::middleware('permission:evidencias.ver')
+    Route::middleware(['permission:evidencias.ver', 'signed'])
         ->get('operaciones/foto', function (Request $request) {
             $path = $request->query('path', '');
+
+            $segments = explode('/', $path);
+            if (in_array('.', $segments, true) || in_array('..', $segments, true)) {
+                abort(403);
+            }
+
             $companyPrefix = $request->user()->company_id.'/';
             $prefijosValidos = ['ordenes/', 'reportes/', 'auditorias/'];
 

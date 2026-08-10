@@ -5,11 +5,11 @@ namespace App\Providers;
 use App\Models\Company;
 use App\Observers\CompanyObserver;
 use App\Services\TenantService;
+use App\Support\ArchivoUrl;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -36,13 +36,10 @@ class AppServiceProvider extends ServiceProvider
     protected function configureS3TemporaryUrls(): void
     {
         Storage::disk('s3')->buildTemporaryUrlsUsing(
-            function (string $path, \DateTime $expiration, array $options): string {
-                return URL::temporarySignedRoute(
-                    'operaciones.foto',
-                    $expiration,
-                    ['path' => $path],
-                );
-            }
+            fn (string $path, \DateTime $expiration, array $options): string => ArchivoUrl::temporal(
+                $path,
+                now()->diffInMinutes($expiration),
+            )
         );
     }
 

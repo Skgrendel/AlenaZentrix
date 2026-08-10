@@ -3,6 +3,7 @@
 namespace App\Livewire\Tecnico;
 
 use App\Models\OrdenJob;
+use App\Support\ArchivoUrl;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -31,7 +32,7 @@ class OrdenShow extends Component
     public function documentoUrls(): array
     {
         return collect($this->orden->documentos ?? [])
-            ->map(fn (string $path) => route('operaciones.foto', ['path' => $path]))
+            ->map(fn (string $path) => ArchivoUrl::temporal($path))
             ->all();
     }
 

@@ -901,7 +901,7 @@
                                     Evidencias ({{ count($auditoria->evidencias) }})</dt>
                                 <dd class="space-y-2">
                                     @foreach ($auditoria->evidencias as $evidencia)
-                                        <a href="{{ route('operaciones.foto', ['path' => $evidencia]) }}"
+                                        <a href="{{ \App\Support\ArchivoUrl::temporal($evidencia) }}"
                                             target="_blank"
                                             class="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-blue-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-blue-400 dark:hover:bg-zinc-800">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none"

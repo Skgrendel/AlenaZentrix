@@ -17,6 +17,11 @@ class ArchivoController extends Controller
     {
         $path = ltrim($path, '/');
 
+        $segments = explode('/', $path);
+        if (in_array('.', $segments, true) || in_array('..', $segments, true)) {
+            return response()->json(['message' => 'Ruta inválida.'], 403);
+        }
+
         $companyId = auth()->user()->company_id;
         if (! str_starts_with($path, $companyId.'/')) {
             return response()->json(['message' => 'No autorizado.'], 403);
@@ -30,7 +35,7 @@ class ArchivoController extends Controller
             return response()->json(['message' => 'Archivo no encontrado.'], 404);
         }
 
-        $url = Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(15));
+        $url = Storage::disk('s3_directo')->temporaryUrl($path, now()->addMinutes(15));
 
         return response()->json(['url' => $url]);
     }

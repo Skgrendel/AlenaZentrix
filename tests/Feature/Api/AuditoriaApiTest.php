@@ -96,7 +96,7 @@ test('PUT /api/auditorias/{auditoria} guarda evidencias y resultado', function (
     $auditoriaRecord = auditoriaDeOrdenDelTecnico($user);
 
     $payload = [
-        'evidencias' => ['auditorias/evidencia1.jpg'],
+        'evidencias' => ["{$user->company_id}/auditorias/evidencia1.jpg"],
         'resultado' => EstadoAuditoria::Confirmado->value,
         'observaciones' => 'Hallazgo confirmado en sitio.',
     ];
@@ -108,7 +108,7 @@ test('PUT /api/auditorias/{auditoria} guarda evidencias y resultado', function (
 
     $auditoriaRecord->refresh();
     expect($auditoriaRecord->estado)->toBe(EstadoAuditoria::Confirmado);
-    expect($auditoriaRecord->evidencias)->toBe(['auditorias/evidencia1.jpg']);
+    expect($auditoriaRecord->evidencias)->toBe(["{$user->company_id}/auditorias/evidencia1.jpg"]);
     expect($auditoriaRecord->auditado_por_id)->toBe($user->id);
     expect($auditoriaRecord->fecha_auditoria)->not->toBeNull();
 });
@@ -118,7 +118,7 @@ test('PUT actualiza el contrato de la orden cuando se envía', function () {
     $auditoriaRecord = auditoriaDeOrdenDelTecnico($user);
 
     $payload = [
-        'evidencias' => ['auditorias/evidencia1.jpg'],
+        'evidencias' => ["{$user->company_id}/auditorias/evidencia1.jpg"],
         'resultado' => EstadoAuditoria::Negativo->value,
         'contrato' => '99887766',
     ];

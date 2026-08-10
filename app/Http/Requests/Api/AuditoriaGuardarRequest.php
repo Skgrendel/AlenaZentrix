@@ -4,6 +4,7 @@ namespace App\Http\Requests\Api;
 
 use App\Enums\EstadoAuditoria;
 use App\Models\auditoria;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,9 +23,18 @@ class AuditoriaGuardarRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
+        $companyId = $this->user()->company_id;
+
         return [
             'evidencias' => ['required', 'array', 'min:1'],
-            'evidencias.*' => ['string', 'max:500'],
+            'evidencias.*' => [
+                'string', 'max:500',
+                function (string $attribute, mixed $value, Closure $fail) use ($companyId): void {
+                    if (! str_starts_with((string) $value, $companyId.'/')) {
+                        $fail('La evidencia debe pertenecer a tu empresa.');
+                    }
+                },
+            ],
             'resultado' => ['required', Rule::in([
                 EstadoAuditoria::Confirmado->value,
                 EstadoAuditoria::Negativo->value,
