@@ -151,6 +151,11 @@ class InformesIndex extends Component
             $o->tipo_servicio->label(),
             $o->subtipoLabel(),
             $o->estado->label(),
+            match ($o->resultado) {
+                'positivo' => 'Positiva',
+                'negativo' => 'Negativa',
+                default => '',
+            },
             $o->prioridad->label(),
             $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '',
             $o->cliente ?? '',
@@ -186,7 +191,7 @@ class InformesIndex extends Component
     private function xlsxUnificado(): array
     {
         $headers = [
-            'N° Orden', 'Proceso', 'Servicio', 'Sub-tipo', 'Estado', 'Prioridad', 'Investigador',
+            'N° Orden', 'Proceso', 'Servicio', 'Sub-tipo', 'Estado', 'Resultado', 'Prioridad', 'Investigador',
             'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Objetivo', 'N° Noticia Criminal',
             'Fecha Asignación', 'Fecha Límite', 'Fecha Completado',
             'Tiene Reporte', 'Lectura', 'N° Medidor Reporte', 'Comercio', 'Imposibilidad',
@@ -216,6 +221,11 @@ class InformesIndex extends Component
                     'Proceso' => $o->proceso?->nombre ?? '—',
                     'Servicio' => $o->tipo_servicio->label(),
                     'Estado' => $o->estado->label(),
+                    'Resultado' => match ($o->resultado) {
+                        'positivo' => 'Positiva',
+                        'negativo' => 'Negativa',
+                        default => '—',
+                    },
                     'Investigador' => $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '—',
                     'Cliente' => $o->cliente ?? '—',
                     'Tiene Reporte' => $reporte ? 'Sí' : 'No',
