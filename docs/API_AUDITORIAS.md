@@ -84,6 +84,7 @@ Devuelve la lista de auditorías visibles para el usuario autenticado — mismo 
       "observaciones": null,
       "tipo_anomalia_id": null,
       "metros_cubicos_recuperados": null,
+      "capacidad_instalada": null,
       "fecha_auditoria": null,
       "reporte": { "...": "igual que en el detalle, ver sección 4" },
       "orden": { "...": "igual que en el detalle, ver sección 4" }
@@ -127,6 +128,7 @@ GET /api/auditorias/{id}
     "observaciones": null,
     "tipo_anomalia_id": null,
     "metros_cubicos_recuperados": null,
+    "capacidad_instalada": null,
     "fecha_auditoria": null,
     "reporte": {
       "id": "uuid-reporte",
@@ -195,7 +197,7 @@ GET /api/auditorias/{id}
 PUT /api/auditorias/{id}
 ```
 
-Guarda las evidencias y el resultado de la revisión. Se puede llamar más de una vez sobre la misma auditoría (por ejemplo, para corregir observaciones) — cada llamada sobrescribe `evidencias`, `estado`, `observaciones`, `tipo_anomalia_id` y `metros_cubicos_recuperados`, y actualiza `auditado_por_id` y `fecha_auditoria` al usuario/momento de la última llamada.
+Guarda las evidencias y el resultado de la revisión. Se puede llamar más de una vez sobre la misma auditoría (por ejemplo, para corregir observaciones) — cada llamada sobrescribe `evidencias`, `estado`, `observaciones`, `tipo_anomalia_id`, `metros_cubicos_recuperados` y `capacidad_instalada`, y actualiza `auditado_por_id` y `fecha_auditoria` al usuario/momento de la última llamada.
 
 **Body (JSON):**
 
@@ -204,7 +206,8 @@ Guarda las evidencias y el resultado de la revisión. Se puede llamar más de un
 | `evidencias` | array de strings (paths S3) | **Sí** (mínimo 1) | Rutas devueltas por `POST /api/upload`, igual que `imagenes` en el reporte. Recomendado: `directorio=auditorias` al subirlas. **Cada path debe empezar exactamente con `{company_id}/`** del usuario autenticado (ver nota de seguridad abajo). |
 | `resultado` | string | **Sí** | Solo acepta `"confirmado"` o `"negativo"`. **No** se puede volver a poner `"pendiente_auditoria"` vía API. |
 | `tipo_anomalia_id` | UUID | No | De catálogo — usa el mismo `GET /api/catalogos/tipos-anomalia` que ya conoces. |
-| `metros_cubicos_recuperados` | numérico (string o número) | No | Cantidad recuperada, si aplica. |
+| `metros_cubicos_recuperados` | numérico (string o número) | No | En el panel web se muestra como **"Posibles Metros Cúbicos Recuperados"** — el nombre del campo en la API no cambió, solo la etiqueta visible. |
+| `capacidad_instalada` | numérico (string o número) | No | **Campo nuevo.** Capacidad instalada relacionada al hallazgo, si aplica. |
 | `contrato` | string | No | Si se envía, además actualiza el campo `contrato` de la **orden** asociada (no solo de la auditoría). |
 | `observaciones` | string | No | Máximo 5000 caracteres. |
 
@@ -218,6 +221,7 @@ Guarda las evidencias y el resultado de la revisión. Se puede llamar más de un
   "resultado": "confirmado",
   "tipo_anomalia_id": "uuid-anomalia-bypass",
   "metros_cubicos_recuperados": "12.5",
+  "capacidad_instalada": "20",
   "contrato": "12345678",
   "observaciones": "Se confirma bypass en la instalación. Evidencia fotográfica adjunta."
 }
@@ -241,6 +245,7 @@ Guarda las evidencias y el resultado de la revisión. Se puede llamar más de un
     "observaciones": "Se confirma bypass en la instalación. Evidencia fotográfica adjunta.",
     "tipo_anomalia_id": "uuid-anomalia-bypass",
     "metros_cubicos_recuperados": "12.5",
+    "capacidad_instalada": "20",
     "fecha_auditoria": "2026-08-10T15:20:00.000000Z",
     "reporte": { "...": "igual que en el GET" },
     "orden": { "...": "igual que en el GET, con contrato ya actualizado si lo enviaste" }

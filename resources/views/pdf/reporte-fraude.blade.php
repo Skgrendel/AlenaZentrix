@@ -605,8 +605,14 @@
                         @endif
                         @if ($auditoria->metros_cubicos_recuperados !== null)
                             <div class="info-row">
-                                <div class="info-label">M³ Recuperados:</div>
+                                <div class="info-label">Posibles M³ Recuperados:</div>
                                 <div class="info-value">{{ $auditoria->metros_cubicos_recuperados }}</div>
+                            </div>
+                        @endif
+                        @if ($auditoria->capacidad_instalada !== null)
+                            <div class="info-row">
+                                <div class="info-label">Capacidad Instalada:</div>
+                                <div class="info-value">{{ $auditoria->capacidad_instalada }}</div>
                             </div>
                         @endif
                         @if ($auditoria->observaciones)

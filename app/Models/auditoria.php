@@ -27,6 +27,7 @@ class auditoria extends Model
         'observaciones',
         'tipo_anomalia_id',
         'metros_cubicos_recuperados',
+        'capacidad_instalada',
         'fecha_auditoria',
     ];
 

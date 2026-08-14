@@ -103,7 +103,13 @@ class AuditoriaRevisar extends Component implements HasForms
                             ->searchable()
                             ->nullable(),
                         Forms\Components\TextInput::make('metros_cubicos_recuperados')
-                            ->label('Metros Cúbicos Recuperados')
+                            ->label('Posibles Metros Cúbicos Recuperados')
+                            ->numeric()
+                            ->step('any')
+                            ->minValue(0)
+                            ->nullable(),
+                        Forms\Components\TextInput::make('capacidad_instalada')
+                            ->label('Capacidad Instalada')
                             ->numeric()
                             ->step('any')
                             ->minValue(0)
@@ -130,6 +136,7 @@ class AuditoriaRevisar extends Component implements HasForms
             'observaciones' => $data['observaciones'] ?? null,
             'tipo_anomalia_id' => $data['tipo_anomalia_id'] ?? null,
             'metros_cubicos_recuperados' => $data['metros_cubicos_recuperados'] ?? null,
+            'capacidad_instalada' => $data['capacidad_instalada'] ?? null,
             'auditado_por_id' => auth()->id(),
             'fecha_auditoria' => now(),
         ]);

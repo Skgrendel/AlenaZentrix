@@ -88,6 +88,7 @@ class AuditoriaController extends Controller
             'observaciones' => $data['observaciones'] ?? null,
             'tipo_anomalia_id' => $data['tipo_anomalia_id'] ?? null,
             'metros_cubicos_recuperados' => $data['metros_cubicos_recuperados'] ?? null,
+            'capacidad_instalada' => $data['capacidad_instalada'] ?? null,
             'auditado_por_id' => $request->user()->id,
             'fecha_auditoria' => now(),
         ]);

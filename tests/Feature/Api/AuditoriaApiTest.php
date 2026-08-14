@@ -186,6 +186,34 @@ test('PUT /api/auditorias/{auditoria} guarda evidencias y resultado', function (
     expect($auditoriaRecord->fecha_auditoria)->not->toBeNull();
 });
 
+test('PUT guarda capacidad_instalada cuando se envía y la deja en null cuando no', function () {
+    [$user, $token] = auditoriaConToken();
+    $auditoriaRecord = auditoriaDeOrdenDelTecnico($user);
+
+    $payload = [
+        'evidencias' => ["{$user->company_id}/auditorias/evidencia1.jpg"],
+        'resultado' => EstadoAuditoria::Confirmado->value,
+        'capacidad_instalada' => '20',
+    ];
+
+    $this->withToken($token)
+        ->putJson("/api/auditorias/{$auditoriaRecord->id}", $payload)
+        ->assertOk()
+        ->assertJsonPath('auditoria.capacidad_instalada', '20');
+
+    expect($auditoriaRecord->refresh()->capacidad_instalada)->toBe('20');
+
+    $otraAuditoria = auditoriaDeOrdenDelTecnico($user);
+
+    $this->withToken($token)
+        ->putJson("/api/auditorias/{$otraAuditoria->id}", [
+            'evidencias' => ["{$user->company_id}/auditorias/evidencia2.jpg"],
+            'resultado' => EstadoAuditoria::Negativo->value,
+        ])
+        ->assertOk()
+        ->assertJsonPath('auditoria.capacidad_instalada', null);
+});
+
 test('PUT actualiza el contrato de la orden cuando se envía', function () {
     [$user, $token] = auditoriaConToken();
     $auditoriaRecord = auditoriaDeOrdenDelTecnico($user);

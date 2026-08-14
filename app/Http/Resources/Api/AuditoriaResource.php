@@ -25,6 +25,7 @@ class AuditoriaResource extends JsonResource
             'observaciones' => $auditoria->observaciones,
             'tipo_anomalia_id' => $auditoria->tipo_anomalia_id,
             'metros_cubicos_recuperados' => $auditoria->metros_cubicos_recuperados,
+            'capacidad_instalada' => $auditoria->capacidad_instalada,
             'fecha_auditoria' => $auditoria->fecha_auditoria?->toISOString(),
             'reporte' => $this->when(
                 $auditoria->relationLoaded('reporte') && $auditoria->reporte,
