@@ -883,7 +883,7 @@
                         @endif
                         @if ($auditoria->metros_cubicos_recuperados !== null)
                             <div>
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">M³ Recuperados</dt>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Posibles M³ Recuperados</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
                                     {{ $auditoria->metros_cubicos_recuperados }}</dd>
                             </div>
@@ -895,6 +895,13 @@
                                         <flux:button size="sm" variant="ghost" icon="plus-circle">Agregar M³ Recuperados</flux:button>
                                     </flux:modal.trigger>
                                 </dd>
+                            </div>
+                        @endif
+                        @if ($auditoria->capacidad_instalada !== null)
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Capacidad Instalada</dt>
+                                <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                    {{ $auditoria->capacidad_instalada }}</dd>
                             </div>
                         @endif
                         @if ($auditoria->observaciones)

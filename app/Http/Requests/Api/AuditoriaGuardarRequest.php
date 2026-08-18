@@ -41,6 +41,7 @@ class AuditoriaGuardarRequest extends FormRequest
             ])],
             'tipo_anomalia_id' => ['nullable', 'uuid', 'exists:tipos_anomalia,id'],
             'metros_cubicos_recuperados' => ['nullable', 'numeric'],
+            'capacidad_instalada' => ['nullable', 'numeric'],
             'contrato' => ['nullable', 'string', 'max:255'],
             'observaciones' => ['nullable', 'string', 'max:5000'],
         ];

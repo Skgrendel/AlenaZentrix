@@ -13,18 +13,19 @@
 
 1. [¿Qué es una Auditoría?](#1-qué-es-una-auditoría)
 2. [Quién puede acceder](#2-quién-puede-acceder)
-3. [GET /api/auditorias/{id} — Ver detalle](#3-get-apiauditoriasid--ver-detalle)
-4. [PUT /api/auditorias/{id} — Registrar resultado](#4-put-apiauditoriasid--registrar-resultado)
-5. [Campos de referencia](#5-campos-de-referencia)
-6. [Flujo completo de ejemplo](#6-flujo-completo-de-ejemplo)
-7. [Códigos de error](#7-códigos-de-error)
-8. [Notas de implementación para la app](#8-notas-de-implementación-para-la-app)
+3. [GET /api/auditorias — Listar](#3-get-apiauditorias--listar)
+4. [GET /api/auditorias/{id} — Ver detalle](#4-get-apiauditoriasid--ver-detalle)
+5. [PUT /api/auditorias/{id} — Registrar resultado](#5-put-apiauditoriasid--registrar-resultado)
+6. [Campos de referencia](#6-campos-de-referencia)
+7. [Flujo completo de ejemplo](#7-flujo-completo-de-ejemplo)
+8. [Códigos de error](#8-códigos-de-error)
+9. [Notas de implementación para la app](#9-notas-de-implementación-para-la-app)
 
 ---
 
 ## 1. ¿Qué es una Auditoría?
 
-Cuando una orden de tipo `fraudes` o `revision_medidores` se completa con `resultado = "positivo"`, el sistema crea **automáticamente** un registro de `Auditoria` asociado al reporte de esa orden, en estado `pendiente_auditoria`.
+Cuando una orden se completa (`estado = "completada"`) con `resultado = "positivo"`, el sistema crea **automáticamente** un registro de `Auditoria` asociado al reporte más reciente de esa orden, en estado `pendiente_auditoria` (ver `OrdenJob::booted()`, hook `updated`). No depende del `tipo_servicio` de la orden — depende únicamente del `resultado`.
 
 Alguien —un Auditor, o el propio técnico dueño de la orden— debe revisar el hallazgo, adjuntar evidencias (fotos/PDFs) y marcar si el hallazgo se **confirma** o si resulta **negativo** (falso positivo).
 
@@ -45,11 +46,63 @@ Cualquiera de estas dos condiciones habilita el acceso a una auditoría concreta
 
 Si ninguna de las dos se cumple, la API responde `403`.
 
-> No hay un endpoint de "listar mis auditorías pendientes" todavía. Si lo necesitas para la pantalla de la app, avísame y lo agregamos — por ahora se asume que la app llega al `{id}` de la auditoría desde algún otro lugar (por ejemplo, si en el futuro se agrega el campo `auditoria_id` o similar a la orden en `/api/tecnico/mis-ordenes`).
+`GET /api/auditorias` (sección siguiente) aplica exactamente este mismo criterio para decidir qué lista de auditorías devuelve — no hace falta enviar ningún flag para indicar "modo técnico" o "modo auditor", la API lo decide sola según el usuario autenticado.
 
 ---
 
-## 3. GET /api/auditorias/{id} — Ver detalle
+## 3. GET /api/auditorias — Listar
+
+```
+GET /api/auditorias
+GET /api/auditorias?estado=pendiente_auditoria
+GET /api/auditorias?tipo_servicio=fraudes
+```
+
+Devuelve la lista de auditorías visibles para el usuario autenticado — mismo criterio de acceso que la sección 2:
+
+- **Auditor** (`auditorias.ver`): todas las auditorías cuya orden asociada tenga un `tipo_servicio` dentro de sus **servicios auditables** configurados (los mismos que filtran el listado del panel web en `/auditor/auditorias`). Si el usuario no tiene ningún servicio auditable asignado, la lista viene vacía.
+- **Técnico** (sin `auditorias.ver`): solo las auditorías cuya orden le pertenece (`orden.personals_id === personals_id` del usuario).
+
+**Query params (opcionales):**
+
+| Param | Tipo | Descripción |
+|---|---|---|
+| `estado` | string | Filtra por `pendiente_auditoria`, `confirmado` o `negativo`. Valor inválido → `422`. |
+| `tipo_servicio` | string | Filtra además por el tipo de servicio de la orden asociada (ej. `fraudes`, `revision_medidores`). |
+
+**Headers:** los de siempre (`Authorization: Bearer {token}`, `Accept: application/json`).
+
+**Respuesta exitosa (200):**
+
+```json
+{
+  "data": [
+    {
+      "id": "uuid-auditoria-1",
+      "estado": { "value": "pendiente_auditoria", "label": "Pendiente por auditar", "color": "warning" },
+      "evidencias": [],
+      "observaciones": null,
+      "tipo_anomalia_id": null,
+      "metros_cubicos_recuperados": null,
+      "capacidad_instalada": null,
+      "fecha_auditoria": null,
+      "reporte": { "...": "igual que en el detalle, ver sección 4" },
+      "orden": { "...": "igual que en el detalle, ver sección 4" }
+    },
+    { "...": "siguiente auditoría" }
+  ]
+}
+```
+
+No está paginado — devuelve la lista completa en `data` (igual que `GET /api/tecnico/mis-ordenes`, no como un `paginate()` con `links`/`meta`). Cada elemento tiene exactamente la misma forma que la respuesta de `GET /api/auditorias/{id}` (sección 4).
+
+**Errores posibles:**
+- `401` — no autenticado.
+- `422` — `estado` con un valor que no es `pendiente_auditoria`/`confirmado`/`negativo`.
+
+---
+
+## 4. GET /api/auditorias/{id} — Ver detalle
 
 ```
 GET /api/auditorias/{id}
@@ -75,6 +128,7 @@ GET /api/auditorias/{id}
     "observaciones": null,
     "tipo_anomalia_id": null,
     "metros_cubicos_recuperados": null,
+    "capacidad_instalada": null,
     "fecha_auditoria": null,
     "reporte": {
       "id": "uuid-reporte",
@@ -137,22 +191,23 @@ GET /api/auditorias/{id}
 
 ---
 
-## 4. PUT /api/auditorias/{id} — Registrar resultado
+## 5. PUT /api/auditorias/{id} — Registrar resultado
 
 ```
 PUT /api/auditorias/{id}
 ```
 
-Guarda las evidencias y el resultado de la revisión. Se puede llamar más de una vez sobre la misma auditoría (por ejemplo, para corregir observaciones) — cada llamada sobrescribe `evidencias`, `estado`, `observaciones`, `tipo_anomalia_id` y `metros_cubicos_recuperados`, y actualiza `auditado_por_id` y `fecha_auditoria` al usuario/momento de la última llamada.
+Guarda las evidencias y el resultado de la revisión. Se puede llamar más de una vez sobre la misma auditoría (por ejemplo, para corregir observaciones) — cada llamada sobrescribe `evidencias`, `estado`, `observaciones`, `tipo_anomalia_id`, `metros_cubicos_recuperados` y `capacidad_instalada`, y actualiza `auditado_por_id` y `fecha_auditoria` al usuario/momento de la última llamada.
 
 **Body (JSON):**
 
 | Campo | Tipo | Obligatorio | Descripción |
 |---|---|---|---|
-| `evidencias` | array de strings (paths S3) | **Sí** (mínimo 1) | Rutas devueltas por `POST /api/upload`, igual que `imagenes` en el reporte. Recomendado: `directorio=auditorias` al subirlas. |
+| `evidencias` | array de strings (paths S3) | **Sí** (mínimo 1) | Rutas devueltas por `POST /api/upload`, igual que `imagenes` en el reporte. Recomendado: `directorio=auditorias` al subirlas. **Cada path debe empezar exactamente con `{company_id}/`** del usuario autenticado (ver nota de seguridad abajo). |
 | `resultado` | string | **Sí** | Solo acepta `"confirmado"` o `"negativo"`. **No** se puede volver a poner `"pendiente_auditoria"` vía API. |
 | `tipo_anomalia_id` | UUID | No | De catálogo — usa el mismo `GET /api/catalogos/tipos-anomalia` que ya conoces. |
-| `metros_cubicos_recuperados` | numérico (string o número) | No | Cantidad recuperada, si aplica. |
+| `metros_cubicos_recuperados` | numérico (string o número) | No | En el panel web se muestra como **"Posibles Metros Cúbicos Recuperados"** — el nombre del campo en la API no cambió, solo la etiqueta visible. |
+| `capacidad_instalada` | numérico (string o número) | No | **Campo nuevo.** Capacidad instalada relacionada al hallazgo, si aplica. |
 | `contrato` | string | No | Si se envía, además actualiza el campo `contrato` de la **orden** asociada (no solo de la auditoría). |
 | `observaciones` | string | No | Máximo 5000 caracteres. |
 
@@ -166,6 +221,7 @@ Guarda las evidencias y el resultado de la revisión. Se puede llamar más de un
   "resultado": "confirmado",
   "tipo_anomalia_id": "uuid-anomalia-bypass",
   "metros_cubicos_recuperados": "12.5",
+  "capacidad_instalada": "20",
   "contrato": "12345678",
   "observaciones": "Se confirma bypass en la instalación. Evidencia fotográfica adjunta."
 }
@@ -189,6 +245,7 @@ Guarda las evidencias y el resultado de la revisión. Se puede llamar más de un
     "observaciones": "Se confirma bypass en la instalación. Evidencia fotográfica adjunta.",
     "tipo_anomalia_id": "uuid-anomalia-bypass",
     "metros_cubicos_recuperados": "12.5",
+    "capacidad_instalada": "20",
     "fecha_auditoria": "2026-08-10T15:20:00.000000Z",
     "reporte": { "...": "igual que en el GET" },
     "orden": { "...": "igual que en el GET, con contrato ya actualizado si lo enviaste" }
@@ -204,13 +261,16 @@ Guarda las evidencias y el resultado de la revisión. Se puede llamar más de un
 - `422` — validación fallida. Ejemplos:
   - `evidencias` vacío o ausente → `"The evidencias field is required."`
   - `resultado` con un valor distinto de `confirmado`/`negativo` (incluido `pendiente_auditoria`) → `"The selected resultado is invalid."`
+  - un path en `evidencias` no empieza con `{company_id}/` del usuario → `"La evidencia debe pertenecer a tu empresa."` (en `errors.evidencias.0`, ver nota de seguridad abajo)
 - `404` — el UUID no corresponde a ninguna auditoría.
+
+> ⚠️ **Nota de seguridad — paths de `evidencias`:** el backend valida que cada string en `evidencias` empiece exactamente con el `company_id` del usuario autenticado, seguido de `/`. Si tu app siempre reenvía tal cual el `path` que devolvió `POST /api/upload` (sin recortarlo ni reconstruirlo), esto nunca falla — ese `path` ya viene con el `company_id` como prefijo por diseño. Solo revisa este punto si en algún lugar del código móvil se guarda/normaliza el path antes de mandarlo de vuelta.
 
 ---
 
-## 5. Campos de referencia
+## 6. Campos de referencia
 
-### 5.1 Estados de una Auditoría (`estado.value`)
+### 6.1 Estados de una Auditoría (`estado.value`)
 
 | Valor | Etiqueta | Color sugerido | ¿Se puede enviar por API? |
 |---|---|---|---|
@@ -218,22 +278,22 @@ Guarda las evidencias y el resultado de la revisión. Se puede llamar más de un
 | `confirmado` | Confirmado | success (verde) | Sí |
 | `negativo` | Negativo | danger (rojo) | Sí |
 
-### 5.2 Tipos de archivo aceptados en `evidencias`
+### 6.2 Tipos de archivo aceptados en `evidencias`
 
 Los mismos que ya conoces de `/api/upload`: imágenes (`jpg`, `jpeg`, `png`, `gif`, `webp`, `heic`, `heif`), video (`mp4`, `mov`), documentos (`pdf`, `doc`, `docx`, `xls`, `xlsx`, `ppt`, `pptx`). Máximo 10 MB por archivo. Recomendado usar `directorio=auditorias` al subir para mantener organizado el bucket, aunque no es obligatorio.
 
 ---
 
-## 6. Flujo completo de ejemplo
+## 7. Flujo completo de ejemplo
 
 ```
 1. Login (igual que siempre)
    POST /api/auth/login
    → Guardar token y personals_id
 
-2. Llegar a una auditoría pendiente
-   (Todavía no hay endpoint de "listado de auditorías pendientes" — el id debe
-   venir de otro lugar por ahora, ej. una notificación o un enlace directo)
+2. Listar las auditorías pendientes del usuario
+   GET /api/auditorias?estado=pendiente_auditoria
+   → Mostrar la lista (funciona igual para técnico o auditor, ver sección 2)
 
 3. Ver el detalle para mostrar el hallazgo que se va a auditar
    GET /api/auditorias/{id}
@@ -262,16 +322,16 @@ Los mismos que ya conoces de `/api/upload`: imágenes (`jpg`, `jpeg`, `png`, `gi
 
 ---
 
-## 7. Códigos de error
+## 8. Códigos de error
 
 Mismos códigos y formato que el resto de la API (ver `API_TECNICO.md` §9): `401`, `403`, `404`, `422` (con `errors` por campo), `500`.
 
 ---
 
-## 8. Notas de implementación para la app
+## 9. Notas de implementación para la app
 
 - **Reutiliza tus parsers existentes.** `reporte` y `orden` dentro de la respuesta de auditoría tienen exactamente la misma forma que ya manejas en `OrdenService` — no crees modelos/parsers nuevos para ellos, solo agrega el objeto `auditoria` (estado, evidencias, observaciones, etc.) como una entidad nueva.
 - **El campo `reporte.comercio` es nuevo** en `ReporteResource` — si en algún momento tu parser de reporte usa un `array_replace`/whitelist estricto de claves conocidas, revisa que no descarte esta clave nueva quando la reciba desde el endpoint de reporte normal (`/tecnico/ordenes/{id}/reporte`), donde también empezará a aparecer cuando el reporte tenga comercio.
 - **No hay soporte offline/cola todavía** para este endpoint (a diferencia de `crearReporte`/`actualizarReporte`, que sí tienen cola offline vía `OfflineSyncService`). Si la pantalla de auditoría necesita funcionar sin conexión, hay que diseñarlo — avísame cuando lleguen a esa parte.
-- **No existe todavía** un endpoint de listado ("mis auditorías pendientes"). Si la pantalla de la app necesita listar auditorías pendientes del técnico o del auditor (en vez de recibir el `id` desde otro lado), lo agregamos como un paso aparte — es rápido de construir siguiendo el mismo patrón de `GET /api/tecnico/mis-ordenes`.
-- **Autorización:** si tu app distingue entre "modo técnico" y "modo auditor" en la UI, recuerda que el mismo endpoint sirve para ambos casos — la API decide el acceso según `auditorias.ver` o dueño de la orden, no hace falta que la app mande ningún flag adicional.
+- **`GET /api/auditorias` no está paginado.** Si con el tiempo la lista crece mucho (muchas auditorías históricas), avisen para agregar paginación — hoy devuelve todo en un solo `data`, igual que `mis-ordenes`.
+- **Autorización:** si tu app distingue entre "modo técnico" y "modo auditor" en la UI, recuerda que el mismo endpoint sirve para ambos casos — la API decide el acceso según `auditorias.ver` o dueño de la orden, no hace falta que la app mande ningún flag adicional. Esto aplica también al nuevo listado.

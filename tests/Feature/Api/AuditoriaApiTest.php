@@ -7,6 +7,7 @@ use App\Models\auditoria;
 use App\Models\OrdenJob;
 use App\Models\reportes;
 use App\Models\User;
+use App\Models\UsuarioServicioAuditable;
 use Database\Seeders\PermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -43,6 +44,78 @@ function auditoriaDeOrdenDelTecnico(User $tecnico): auditoria
         'estado' => EstadoAuditoria::PendienteAuditoria->value,
     ]);
 }
+
+// ── GET /api/auditorias ──────────────────────────────────────────────────────
+
+test('GET /api/auditorias requiere autenticación', function () {
+    $this->getJson('/api/auditorias')->assertStatus(401);
+});
+
+test('el técnico solo ve las auditorías de sus propias órdenes', function () {
+    [$user, $token] = auditoriaConToken();
+    $miAuditoria = auditoriaDeOrdenDelTecnico($user);
+
+    $otroTecnico = User::factory()->create();
+    auditoriaDeOrdenDelTecnico($otroTecnico);
+
+    $this->withToken($token)
+        ->getJson('/api/auditorias')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $miAuditoria->id);
+});
+
+test('un auditor solo ve auditorías de sus servicios auditables', function () {
+    $this->seed(PermissionsSeeder::class);
+
+    $tecnico = User::factory()->create();
+
+    $auditor = User::factory()->create(['company_id' => $tecnico->company_id]);
+    $auditor->assignRole('Auditor');
+    UsuarioServicioAuditable::create([
+        'user_id' => $auditor->id,
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+    ]);
+    $auditorToken = $auditor->createToken('test')->plainTextToken;
+
+    $auditoriaFraudes = auditoriaDeOrdenDelTecnico($tecnico);
+
+    $ordenVigilancia = OrdenJob::factory()->create([
+        'company_id' => $tecnico->company_id,
+        'personals_id' => $tecnico->personals_id,
+        'tipo_servicio' => TipoServicio::Vigilancia->value,
+        'estado' => EstadoOrden::Completada->value,
+    ]);
+    $reporteVigilancia = reportes::factory()->create([
+        'orden_job_id' => $ordenVigilancia->id,
+        'personals_id' => $tecnico->personals_id,
+        'numero_orden' => $ordenVigilancia->numero_orden,
+        'company_id' => $tecnico->company_id,
+    ]);
+    auditoria::create([
+        'reportes_id' => $reporteVigilancia->id,
+        'estado' => EstadoAuditoria::PendienteAuditoria->value,
+    ]);
+
+    $this->withToken($auditorToken)
+        ->getJson('/api/auditorias')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $auditoriaFraudes->id);
+});
+
+test('GET /api/auditorias filtra por estado', function () {
+    [$user, $token] = auditoriaConToken();
+    $pendiente = auditoriaDeOrdenDelTecnico($user);
+    $confirmada = auditoriaDeOrdenDelTecnico($user);
+    $confirmada->update(['estado' => EstadoAuditoria::Confirmado->value]);
+
+    $this->withToken($token)
+        ->getJson('/api/auditorias?estado='.EstadoAuditoria::Confirmado->value)
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $confirmada->id);
+});
 
 // ── GET /api/auditorias/{auditoria} ─────────────────────────────────────────
 
@@ -111,6 +184,34 @@ test('PUT /api/auditorias/{auditoria} guarda evidencias y resultado', function (
     expect($auditoriaRecord->evidencias)->toBe(["{$user->company_id}/auditorias/evidencia1.jpg"]);
     expect($auditoriaRecord->auditado_por_id)->toBe($user->id);
     expect($auditoriaRecord->fecha_auditoria)->not->toBeNull();
+});
+
+test('PUT guarda capacidad_instalada cuando se envía y la deja en null cuando no', function () {
+    [$user, $token] = auditoriaConToken();
+    $auditoriaRecord = auditoriaDeOrdenDelTecnico($user);
+
+    $payload = [
+        'evidencias' => ["{$user->company_id}/auditorias/evidencia1.jpg"],
+        'resultado' => EstadoAuditoria::Confirmado->value,
+        'capacidad_instalada' => '20',
+    ];
+
+    $this->withToken($token)
+        ->putJson("/api/auditorias/{$auditoriaRecord->id}", $payload)
+        ->assertOk()
+        ->assertJsonPath('auditoria.capacidad_instalada', '20');
+
+    expect($auditoriaRecord->refresh()->capacidad_instalada)->toBe('20');
+
+    $otraAuditoria = auditoriaDeOrdenDelTecnico($user);
+
+    $this->withToken($token)
+        ->putJson("/api/auditorias/{$otraAuditoria->id}", [
+            'evidencias' => ["{$user->company_id}/auditorias/evidencia2.jpg"],
+            'resultado' => EstadoAuditoria::Negativo->value,
+        ])
+        ->assertOk()
+        ->assertJsonPath('auditoria.capacidad_instalada', null);
 });
 
 test('PUT actualiza el contrato de la orden cuando se envía', function () {
