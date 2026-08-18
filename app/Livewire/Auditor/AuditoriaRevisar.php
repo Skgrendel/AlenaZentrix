@@ -16,6 +16,7 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -38,6 +39,9 @@ class AuditoriaRevisar extends Component implements HasForms
 
     /** @var array<string, mixed> */
     public array $data = [];
+
+    /** Valor diligenciado para completar `metros_cubicos_recuperados` después de registrada la auditoría. */
+    public ?string $metrosCubicosRecuperados = null;
 
     public function mount(auditoria $auditoria): void
     {
@@ -106,7 +110,6 @@ class AuditoriaRevisar extends Component implements HasForms
                             ->label('Metros Cúbicos Recuperados')
                             ->numeric()
                             ->step('any')
-                            ->minValue(0)
                             ->nullable(),
                         Forms\Components\TextInput::make('contrato')
                             ->label('Numero de Contrato')
@@ -141,6 +144,22 @@ class AuditoriaRevisar extends Component implements HasForms
         session()->flash('success', "Auditoría de la orden {$this->auditoria->reporte?->ordenJob?->numero_orden} registrada correctamente.");
 
         $this->redirect($this->volverUrl(), navigate: true);
+    }
+
+    /** Completa `metros_cubicos_recuperados` en una auditoría ya registrada que quedó sin ese dato. */
+    public function guardarMetrosCubicosRecuperados(): void
+    {
+        $this->validate([
+            'metrosCubicosRecuperados' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $this->auditoria->update([
+            'metros_cubicos_recuperados' => $this->metrosCubicosRecuperados,
+        ]);
+
+        Flux::modal('agregar-metros-cubicos')->close();
+
+        Flux::toast(variant: 'success', text: 'Metros cúbicos recuperados registrados correctamente.');
     }
 
     public function volverUrl(): string
