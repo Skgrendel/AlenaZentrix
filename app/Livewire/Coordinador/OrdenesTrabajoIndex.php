@@ -65,6 +65,12 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->sortable()
                     ->badge()
                     ->color('primary'),
+                Tables\Columns\TextColumn::make('origenInformacion.nombre')
+                    ->label('Origen de Información')
+                    ->placeholder('—')
+                    ->searchable()
+                    ->toggleable()
+                    ->visible(fn (): bool => $this->tableColumnHasData('origen_informacion_id')),
                 Tables\Columns\TextColumn::make('tipo_servicio')
                     ->label('Servicio')
                     ->badge()
@@ -76,12 +82,6 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->searchable()
                     ->toggleable()
                     ->visible(fn (): bool => $this->tableColumnHasData('proceso_id')),
-                Tables\Columns\TextColumn::make('origenInformacion.nombre')
-                    ->label('Origen de Información')
-                    ->placeholder('—')
-                    ->searchable()
-                    ->toggleable()
-                    ->visible(fn (): bool => $this->tableColumnHasData('origen_informacion_id')),
                 Tables\Columns\TextColumn::make('contrato')
                     ->label('Contrato')
                     ->searchable()
