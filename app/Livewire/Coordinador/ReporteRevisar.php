@@ -65,7 +65,10 @@ class ReporteRevisar extends Component implements HasActions, HasForms
         $reporteId = request()->query('reporte');
 
         $query = $orden->reportes()
-            ->with(['ubicacion', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador', 'marcaMedidor', 'marcaRegulador', 'personal']);
+            ->with([
+                'ubicacion', 'comercio.tipoComercio', 'tipoImposibilidad', 'tipoRegulador', 'marcaMedidor', 'marcaRegulador', 'personal',
+                'auditoria.tipoAnomalia', 'auditoria.auditadoPor.personal',
+            ]);
 
         $this->reporte = $reporteId
             ? $query->where('id', $reporteId)->firstOrFail()

@@ -1,54 +1,91 @@
 <div class="space-y-6">
 
+    @php
+        $responsable = $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia
+            ? $reporte->personal
+            : $orden->personal;
+    @endphp
+
     {{-- Header --}}
-    <div class="flex items-center justify-between">
-        <div>
-            <flux:heading size="xl">Revisar Reporte</flux:heading>
-            <flux:text class="mt-1 text-sm flex items-center gap-2 flex-wrap">
-                <span>Orden: <span class="font-semibold">{{ $orden->numero_orden }}</span></span>
-                <flux:badge color="{{ $orden->tipo_servicio->color() }}" size="sm">
-                    {{ $orden->tipo_servicio->label() }}</flux:badge>
-                @if ($orden->estado === \App\Enums\EstadoOrden::Completada)
-                    <flux:badge color="green" class="ml-1">Completada</flux:badge>
-                @else
-                    <flux:badge color="purple" class="ml-1">En Revisión</flux:badge>
+    <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+        <div class="flex flex-col gap-4 p-6 sm:flex-row sm:items-start sm:justify-between">
+            <div class="flex items-start gap-4">
+                <div class="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-500 sm:flex dark:bg-zinc-800 dark:text-zinc-400">
+                    <x-heroicon-o-document-text class="h-6 w-6" />
+                </div>
+                <div>
+                    <flux:heading size="xl">Revisar Reporte</flux:heading>
+                    <div class="mt-1.5 flex flex-wrap items-center gap-2">
+                        <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $orden->numero_orden }}</span>
+                        <flux:badge color="{{ $orden->tipo_servicio->color() }}" size="sm">
+                            {{ $orden->tipo_servicio->label() }}</flux:badge>
+                        @if ($orden->estado === \App\Enums\EstadoOrden::Completada)
+                            <flux:badge color="green" size="sm">Completada</flux:badge>
+                        @else
+                            <flux:badge color="purple" size="sm">En Revisión</flux:badge>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                @if ($orden->tipo_servicio === \App\Enums\TipoServicio::Fraudes && auth()->user()->can('informes.fraude'))
+                    <flux:button
+                        href="{{ route('operaciones.ordenes-trabajo.reporte-pdf', [$orden, 'reporte' => $reporte->id]) }}"
+                        icon="arrow-down-tray" variant="filled" target="_blank">
+                        Descargar PDF
+                    </flux:button>
                 @endif
-            </flux:text>
+                @if ($orden->tipo_servicio === \App\Enums\TipoServicio::GestionLegal && auth()->user()->can('informes'))
+                    <flux:button
+                        href="{{ route('operaciones.ordenes-trabajo.reporte-gestion-legal', [$orden, 'reporte' => $reporte->id]) }}"
+                        icon="arrow-down-tray" variant="filled" target="_blank">
+                        Descargar PDF
+                    </flux:button>
+                @endif
+                @if ($orden->tipo_servicio === \App\Enums\TipoServicio::AuditoriaCampo && auth()->user()->can('informes'))
+                    <flux:button
+                        href="{{ route('operaciones.ordenes-trabajo.reporte-auditoria-campo', [$orden, 'reporte' => $reporte->id]) }}"
+                        icon="arrow-down-tray" variant="filled" target="_blank">
+                        Descargar PDF
+                    </flux:button>
+                @endif
+                @if ($orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia && $orden->estado === \App\Enums\EstadoOrden::Completada && auth()->user()->can('informes'))
+                    <flux:button
+                        href="{{ route('operaciones.ordenes-trabajo.reporte-vigilancia', $orden) }}"
+                        icon="arrow-down-tray" variant="filled" target="_blank">
+                        Descargar Informe PDF
+                    </flux:button>
+                @endif
+                <flux:button
+                    href="{{ $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia ? route('operaciones.ordenes-trabajo.reportes', $orden) : route('operaciones.ordenes-trabajo') }}"
+                    icon="arrow-left" variant="ghost" wire:navigate>
+                    Volver
+                </flux:button>
+            </div>
         </div>
-        <div class="flex items-center gap-2">
-            @if ($orden->tipo_servicio === \App\Enums\TipoServicio::Fraudes && auth()->user()->can('informes.fraude'))
-                <flux:button
-                    href="{{ route('operaciones.ordenes-trabajo.reporte-pdf', [$orden, 'reporte' => $reporte->id]) }}"
-                    icon="arrow-down-tray" variant="filled" target="_blank">
-                    Descargar PDF
-                </flux:button>
-            @endif
-            @if ($orden->tipo_servicio === \App\Enums\TipoServicio::GestionLegal && auth()->user()->can('informes'))
-                <flux:button
-                    href="{{ route('operaciones.ordenes-trabajo.reporte-gestion-legal', [$orden, 'reporte' => $reporte->id]) }}"
-                    icon="arrow-down-tray" variant="filled" target="_blank">
-                    Descargar PDF
-                </flux:button>
-            @endif
-            @if ($orden->tipo_servicio === \App\Enums\TipoServicio::AuditoriaCampo && auth()->user()->can('informes'))
-                <flux:button
-                    href="{{ route('operaciones.ordenes-trabajo.reporte-auditoria-campo', [$orden, 'reporte' => $reporte->id]) }}"
-                    icon="arrow-down-tray" variant="filled" target="_blank">
-                    Descargar PDF
-                </flux:button>
-            @endif
-            @if ($orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia && $orden->estado === \App\Enums\EstadoOrden::Completada && auth()->user()->can('informes'))
-                <flux:button
-                    href="{{ route('operaciones.ordenes-trabajo.reporte-vigilancia', $orden) }}"
-                    icon="arrow-down-tray" variant="filled" target="_blank">
-                    Descargar Informe PDF
-                </flux:button>
-            @endif
-            <flux:button
-                href="{{ $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia ? route('operaciones.ordenes-trabajo.reportes', $orden) : route('operaciones.ordenes-trabajo') }}"
-                icon="arrow-left" variant="ghost" wire:navigate>
-                Volver
-            </flux:button>
+
+        {{-- ═══ Datos clave de un vistazo ═══ --}}
+        <div class="grid grid-cols-2 gap-4 border-t border-zinc-100 bg-zinc-50/60 px-6 py-4 sm:grid-cols-4 dark:border-zinc-800 dark:bg-zinc-800/30">
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-zinc-400">Cliente</p>
+                <p class="mt-0.5 truncate text-sm font-semibold text-zinc-900 dark:text-white">
+                    {{ $orden->cliente ?? '—' }}</p>
+            </div>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-zinc-400">Técnico</p>
+                <p class="mt-0.5 truncate text-sm font-semibold text-zinc-900 dark:text-white">
+                    {{ $responsable ? "{$responsable->nombres} {$responsable->apellidos}" : '—' }}</p>
+            </div>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha Límite</p>
+                <p class="mt-0.5 truncate text-sm font-semibold {{ $orden->fecha_limite && $orden->fecha_limite->isPast() && $orden->estado->value !== 'completada' ? 'text-red-600 dark:text-red-400' : 'text-zinc-900 dark:text-white' }}">
+                    {{ $orden->fecha_limite?->format('d/m/Y H:i') ?? '—' }}</p>
+            </div>
+            <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-zinc-400">Completado</p>
+                <p class="mt-0.5 truncate text-sm font-semibold text-zinc-900 dark:text-white">
+                    {{ $orden->fecha_completado?->format('d/m/Y H:i') ?? '—' }}</p>
+            </div>
         </div>
     </div>
 
@@ -61,8 +98,8 @@
             @if ($orden->tipo_servicio === \App\Enums\TipoServicio::Fraudes)
 
                 {{-- Comercio Visitado --}}
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Comercio Visitado</h3>
                     <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                         <div>
@@ -90,8 +127,8 @@
                 </div>
 
                 {{-- Datos de la Visita --}}
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Datos de la Visita</h3>
                     <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                         <div>
@@ -147,8 +184,8 @@
 
                 {{-- Clasificación Técnica --}}
                 @if ($reporte->tipoImposibilidad || $reporte->tipoRegulador || $reporte->marcaMedidor || $reporte->marcaRegulador)
-                    <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                             Clasificación Técnica</h3>
                         <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                             @if ($reporte->tipoImposibilidad)
@@ -189,8 +226,8 @@
 
                 {{-- ═══ INVESTIGACIÓN ═══ --}}
             @elseif($orden->tipo_servicio === \App\Enums\TipoServicio::Investigacion)
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Datos de la Investigación</h3>
                     <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                         @if ($orden->tipo_investigacion)
@@ -227,8 +264,8 @@
                 </div>
 
                 @if ($datosServicio['acompanamiento_tecnico'] ?? false)
-                    <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                             Acompañante Técnico</h3>
                         <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                             @if ($datosServicio['acompanante_nombre'] ?? null)
@@ -267,9 +304,9 @@
                 @endif
 
                 @if ($datosServicio['tipo_investigado'] ?? null)
-                    <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                         <h3
-                            class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                            class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                             {{ $datosServicio['tipo_investigado'] === 'persona' ? 'Persona Investigada' : 'Comercio Investigado' }}
                         </h3>
                         <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
@@ -323,8 +360,8 @@
 
                 {{-- ═══ GESTIÓN LEGAL ═══ --}}
             @elseif($orden->tipo_servicio === \App\Enums\TipoServicio::GestionLegal)
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Gestión Legal</h3>
                     <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                         @if ($datosServicio['tipo_gestion_label'] ?? null)
@@ -396,8 +433,8 @@
 
                 {{-- ═══ VIGILANCIA ═══ --}}
             @elseif($orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia)
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Turno</h3>
                     <dl class="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-3">
                         <div>
@@ -419,8 +456,8 @@
                     </dl>
                 </div>
 
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Novedades</h3>
                     @if ($datosServicio['hay_novedad'] ?? false)
                         <div class="space-y-3">
@@ -441,9 +478,9 @@
                 </div>
 
                 @if ($datosServicio['resultado'] ?? null)
-                    <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                         <h3
-                            class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                            class="mb-3 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                             Resultado del Turno</h3>
                         <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] }}</flux:badge>
                     </div>
@@ -452,12 +489,12 @@
                 {{-- ═══ AUDITORÍA DE CAMPO ═══ --}}
             @elseif($orden->tipo_servicio === \App\Enums\TipoServicio::AuditoriaCampo)
                 {{-- Subtipo --}}
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                     <div class="grid grid-cols-2 gap-4">
 
                         <!-- Columna 1 -->
                         <div>
-                            <h3 class="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+                            <h3 class="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400">
                                 Auditoría de Campo
                             </h3>
                             <p class="text-sm font-medium text-zinc-900 dark:text-white">
@@ -476,8 +513,8 @@
                     </div>
                 </div>
                 {{-- Sección 1: Información General --}}
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">1. Información General
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">1. Información General
                     </h3>
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
                         <div>
@@ -531,8 +568,8 @@
                 </div>
 
                 {{-- Sección 2: Quién Atiende --}}
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">2. Quién Atendió la
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">2. Quién Atendió la
                         Visita</h3>
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
                         <div>
@@ -554,8 +591,8 @@
                 </div>
 
                 {{-- Secciones 3–6: Validación, Hallazgos, Materiales, Trazabilidad --}}
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">3–6. Validación y
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">3–6. Validación y
                         Hallazgos</h3>
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
                         @php $yesno = fn($v) => $v ? 'Sí' : 'No'; @endphp
@@ -640,8 +677,8 @@
                 </div>
 
                 {{-- Sección 7: Autorización y Firmas --}}
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">7. Autorización y
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">7. Autorización y
                         Firmas</h3>
                     <p class="mb-4 text-sm"><span class="font-medium">Autoriza:</span>
                         {{ $datosServicio['autoriza'] ?? false ? 'SÍ' : 'NO' }}</p>
@@ -679,17 +716,17 @@
                         $evidenciasDocs = array_values(array_filter($evidenciasUrls, fn($evidencia) => ! $evidencia['es_imagen']));
                     @endphp
                     <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
-                        class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                             URLs de Evidencia / Documentos</h3>
 
                         @if (!empty($evidenciasImgs))
                             <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                                 @foreach ($evidenciasImgs as $archivo)
                                     <button type="button" @click="src = '{{ $archivo['url'] }}'; open = true"
-                                        class="block overflow-hidden rounded-lg border border-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                        class="group relative block overflow-hidden rounded-xl border border-zinc-200 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
                                         <img src="{{ $archivo['url'] }}" alt="{{ $archivo['nombre'] }}"
-                                            class="h-40 w-full object-cover transition hover:opacity-80">
+                                            class="h-40 w-full object-cover transition duration-300 group-hover:scale-105">
                                     </button>
                                 @endforeach
                             </div>
@@ -699,7 +736,7 @@
                             <ul class="space-y-2">
                                 @foreach ($evidenciasDocs as $archivo)
                                     <li
-                                        class="flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                        class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 text-zinc-400"
                                             fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                             stroke-width="1.5">
@@ -749,8 +786,8 @@
 
             {{-- ═══ Actividades ═══ --}}
             @if (!empty($reporte->actividades) && is_array($reporte->actividades))
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Actividades Realizadas</h3>
                     <ul class="space-y-4">
                         @foreach ($reporte->actividades as $actividad)
@@ -781,8 +818,8 @@
 
             {{-- ═══ Observaciones (todos los servicios) ═══ --}}
             @if ($reporte->observaciones)
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-3 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Observaciones</h3>
                     <p class="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line">
                         {{ $reporte->observaciones }}</p>
@@ -797,9 +834,9 @@
                         $docs = array_values(array_filter($archivosUrls, fn($a) => !$a['es_imagen']));
                     @endphp
                     <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
-                        class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                         <h3
-                            class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                            class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                             Evidencias ({{ count($archivosUrls) }}
                             {{ count($archivosUrls) === 1 ? 'archivo' : 'archivos' }})</h3>
 
@@ -807,9 +844,9 @@
                             <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                                 @foreach ($imgs as $archivo)
                                     <button type="button" @click="src = '{{ $archivo['url'] }}'; open = true"
-                                        class="block overflow-hidden rounded-lg border border-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                        class="group relative block overflow-hidden rounded-xl border border-zinc-200 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
                                         <img src="{{ $archivo['url'] }}" alt="{{ $archivo['nombre'] }}"
-                                            class="h-40 w-full object-cover transition hover:opacity-80">
+                                            class="h-40 w-full object-cover transition duration-300 group-hover:scale-105">
                                     </button>
                                 @endforeach
                             </div>
@@ -819,7 +856,7 @@
                             <ul class="space-y-2">
                                 @foreach ($docs as $archivo)
                                     <li
-                                        class="flex items-center gap-3 rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800">
+                                        class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 text-zinc-400"
                                             fill="none" viewBox="0 0 24 24" stroke="currentColor"
                                             stroke-width="1.5">
@@ -863,15 +900,15 @@
                     </div>
             @elseif (!empty($imagenUrls))
                 <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
-                    class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Evidencias ({{ count($imagenUrls) }} fotos)</h3>
                     <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         @foreach ($imagenUrls as $url)
                             <button type="button" @click="src = '{{ $url }}'; open = true"
-                                class="block overflow-hidden rounded-lg border border-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                class="group relative block overflow-hidden rounded-xl border border-zinc-200 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
                                 <img src="{{ $url }}" alt="Evidencia"
-                                    class="h-40 w-full object-cover transition hover:opacity-80">
+                                    class="h-40 w-full object-cover transition duration-300 group-hover:scale-105">
                             </button>
                         @endforeach
                     </div>
@@ -897,8 +934,8 @@
 
             {{-- ═══ Video ═══ --}}
             @if ($reporte->video)
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-3 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Video</h3>
                     <a href="{{ $reporte->video }}" target="_blank" rel="noopener"
                         class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-all bg-blue-600 rounded-lg shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-offset-slate-900">
@@ -920,8 +957,8 @@
 
             {{-- ═══ Información de la Orden ═══ --}}
             @if ($orden->proceso || $orden->cliente || $orden->direccion || $orden->numero_noticia_criminal)
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Orden
                     </h3>
                     <dl class="space-y-2">
@@ -964,14 +1001,8 @@
 
 
             {{-- ═══ Investigador ═══ --}}
-            @php
-                $responsable =
-                    $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia
-                        ? $reporte->personal
-                        : $orden->personal;
-            @endphp
-            <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                     Investigador
                 </h3>
                 <dl class="space-y-2">
@@ -990,8 +1021,8 @@
                 </dl>
             </div>
                {{-- Fechas --}}
-            <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Fechas
+            <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">Fechas
                 </h3>
                 <dl class="space-y-3">
                     <div>
@@ -1019,8 +1050,8 @@
 
             {{-- ═══ Ubicación GPS ═══ --}}
             @if ($reporte->ubicacion?->latitud && $reporte->ubicacion?->longitud)
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
-                    <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-3 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Ubicación GPS</h3>
                     <p class="text-xs text-zinc-500 dark:text-zinc-400">
                         {{ number_format((float) $reporte->ubicacion->latitud, 6) }},
@@ -1044,10 +1075,107 @@
             {{-- ═══ Conclusión del coordinador ═══ --}}
             @if ($reporte->conclusion)
                 <div
-                    class="rounded-lg border border-green-200 bg-green-50 p-5 dark:border-green-800 dark:bg-green-950">
-                    <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">
+                    class="rounded-xl border border-l-4 border-green-200 border-l-green-500 bg-green-50 p-6 shadow-sm dark:border-green-800 dark:bg-green-950">
+                    <h3
+                        class="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-green-700 dark:text-green-400">
+                        <x-heroicon-o-check-badge class="h-4 w-4" />
                         Conclusión</h3>
                     <p class="text-sm text-zinc-900 dark:text-white">{{ $reporte->conclusion }}</p>
+                </div>
+            @endif
+
+            {{-- ═══ Resultado de la Auditoría (solo lectura, cuando existe) ═══ --}}
+            @if ($reporte->auditoria)
+                @php
+                    $auditoriaAccent = match ($reporte->auditoria->estado) {
+                        \App\Enums\EstadoAuditoria::Confirmado => 'border-l-green-500',
+                        \App\Enums\EstadoAuditoria::Negativo => 'border-l-red-500',
+                        default => 'border-l-amber-500',
+                    };
+                @endphp
+                <div
+                    class="rounded-xl border border-l-4 border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 {{ $auditoriaAccent }}">
+                    <h3 class="mb-4 flex items-center gap-2 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                        <x-heroicon-o-shield-check class="h-4 w-4" />
+                        Resultado de la Auditoría</h3>
+                    @if ($reporte->auditoria->estado === \App\Enums\EstadoAuditoria::PendienteAuditoria)
+                        <flux:badge color="amber">Pendiente por auditar</flux:badge>
+                    @else
+                        <dl class="space-y-4">
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Resultado</dt>
+                                <dd class="mt-1">
+                                    @if ($reporte->auditoria->estado === \App\Enums\EstadoAuditoria::Confirmado)
+                                        <flux:badge color="green">Confirmado</flux:badge>
+                                    @else
+                                        <flux:badge color="red">Negativo</flux:badge>
+                                    @endif
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha de Auditoría</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
+                                    {{ $reporte->auditoria->fecha_auditoria?->format('d/m/Y H:i') ?? '—' }}
+                                </dd>
+                            </div>
+                            @if ($reporte->auditoria->auditadoPor)
+                                <div>
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Auditado por</dt>
+                                    <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
+                                        {{ $reporte->auditoria->auditadoPor->fullName() }}
+                                    </dd>
+                                </div>
+                            @endif
+                            @if ($reporte->auditoria->tipoAnomalia)
+                                <div>
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Anomalía</dt>
+                                    <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                        {{ $reporte->auditoria->tipoAnomalia->nombre }}</dd>
+                                </div>
+                            @endif
+                            @if ($reporte->auditoria->metros_cubicos_recuperados !== null)
+                                <div>
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Posibles M³ Recuperados</dt>
+                                    <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                        {{ $reporte->auditoria->metros_cubicos_recuperados }}</dd>
+                                </div>
+                            @endif
+                            @if ($reporte->auditoria->capacidad_instalada !== null)
+                                <div>
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Capacidad Instalada</dt>
+                                    <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                        {{ $reporte->auditoria->capacidad_instalada }}</dd>
+                                </div>
+                            @endif
+                            @if ($reporte->auditoria->observaciones)
+                                <div>
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Observaciones</dt>
+                                    <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
+                                        {{ $reporte->auditoria->observaciones }}</dd>
+                                </div>
+                            @endif
+                            @if (!empty($reporte->auditoria->evidencias))
+                                <div>
+                                    <dt class="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-400">
+                                        Evidencias ({{ count($reporte->auditoria->evidencias) }})</dt>
+                                    <dd class="space-y-2">
+                                        @foreach ($reporte->auditoria->evidencias as $evidencia)
+                                            <a href="{{ \App\Support\ArchivoUrl::temporal($evidencia) }}"
+                                                target="_blank"
+                                                class="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-blue-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-blue-400 dark:hover:bg-zinc-800">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                                </svg>
+                                                <span class="truncate">{{ basename($evidencia) }}</span>
+                                            </a>
+                                        @endforeach
+                                    </dd>
+                                </div>
+                            @endif
+                        </dl>
+                    @endif
                 </div>
             @endif
 
@@ -1055,9 +1183,9 @@
             @if (
                 $orden->tipo_servicio === \App\Enums\TipoServicio::Vigilancia &&
                     in_array($orden->estado, [\App\Enums\EstadoOrden::EnProgreso, \App\Enums\EstadoOrden::EnRevision], true))
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900"
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
                     x-data="{ rechazo: @entangle('mostrarFormRechazo') }">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Decisión del Turno</h3>
 
                     @if ($reporte->requiere_correccion)
@@ -1101,9 +1229,9 @@
             @elseif (
                 $orden->estado === \App\Enums\EstadoOrden::EnRevision &&
                     $orden->tipo_servicio !== \App\Enums\TipoServicio::Vigilancia)
-                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900"
+                <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900"
                     x-data="{ rechazo: @entangle('mostrarFormRechazo'), conclusion: false }">
-                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
                         Decisión</h3>
 
                     <div x-show="!rechazo && !conclusion" class="flex flex-col items-stretch gap-3">

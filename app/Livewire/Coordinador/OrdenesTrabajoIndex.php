@@ -279,24 +279,6 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         ? route('operaciones.ordenes-trabajo.reportes', $record)
                         : route('operaciones.ordenes-trabajo.revisar', $record)
                     ),
-                Action::make('ver_auditoria')
-                    ->label('Auditoría')
-                    ->icon('heroicon-o-shield-check')
-                    ->color('purple')
-                    ->visible(function (OrdenJob $record): bool {
-                        if ($record->tipo_servicio !== TipoServicio::Fraudes) {
-                            return false;
-                        }
-
-                        $auditoria = $record->reportes->first()?->auditoria;
-
-                        return $auditoria !== null &&
-                            $auditoria->estado !== EstadoAuditoria::PendienteAuditoria;
-                    })
-                    ->url(fn (OrdenJob $record): string => route(
-                        'auditor.auditorias.revisar',
-                        $record->reportes->first()?->auditoria
-                    ).'?from=ordenes'),
                 Action::make('resultado')
                     ->label('Anexos de la Orden')
                     ->icon('heroicon-o-document-text')
