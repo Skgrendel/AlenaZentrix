@@ -24,6 +24,7 @@ class InformeService
             ->with([
                 'personal',
                 'proceso',
+                'origenInformacion',
                 'reportes' => fn ($q) => $q->latest()->with([
                     'auditoria',
                     'comercio',
@@ -36,6 +37,7 @@ class InformeService
             ->when($filters['estado'] ?? null, fn ($q, $v) => $q->where('estado', $v))
             ->when($servicio, fn ($q, $v) => $q->where('tipo_servicio', $v))
             ->when($filters['proceso'] ?? null, fn ($q, $v) => $q->where('proceso_id', $v))
+            ->when($filters['origen_informacion'] ?? null, fn ($q, $v) => $q->where('origen_informacion_id', $v))
             ->when(
                 isset($filters['sub_tipo']) && $servicio === TipoServicio::GestionLegal->value,
                 fn ($q) => $q->where('tipo_gestion_legal', $filters['sub_tipo'])
@@ -59,6 +61,7 @@ class InformeService
             // — Orden —
             'numero_orden' => $o->numero_orden,
             'proceso' => $o->proceso?->nombre,
+            'origen_informacion' => $o->origenInformacion?->nombre,
             'servicio' => $o->tipo_servicio->label(),
             'sub_tipo' => $o->subtipoLabel(),
             'estado' => $o->estado->label(),

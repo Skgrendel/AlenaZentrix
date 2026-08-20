@@ -8,6 +8,7 @@ use App\Enums\PrioridadOrden;
 use App\Enums\TipoServicio;
 use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
+use App\Models\OrigenInformacion;
 use App\Models\personals;
 use App\Models\Proceso;
 use App\Models\TipoAnomalia;
@@ -56,7 +57,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
     public function table(Table $table): Table
     {
         return $table
-            ->query(OrdenJob::query()->with(['personal', 'reportes.auditoria.tipoAnomalia', 'proceso']))
+            ->query(OrdenJob::query()->with(['personal', 'reportes.auditoria.tipoAnomalia', 'proceso', 'origenInformacion']))
             ->columns([
                 Tables\Columns\TextColumn::make('numero_orden')
                     ->label('N° Orden')
@@ -75,6 +76,12 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->searchable()
                     ->toggleable()
                     ->visible(fn (): bool => $this->tableColumnHasData('proceso_id')),
+                Tables\Columns\TextColumn::make('origenInformacion.nombre')
+                    ->label('Origen de Información')
+                    ->placeholder('—')
+                    ->searchable()
+                    ->toggleable()
+                    ->visible(fn (): bool => $this->tableColumnHasData('origen_informacion_id')),
                 Tables\Columns\TextColumn::make('contrato')
                     ->label('Contrato')
                     ->searchable()
@@ -213,6 +220,11 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->label('Proceso')
                     ->options(
                         Proceso::query()->orderBy('nombre')->pluck('nombre', 'id')
+                    ),
+                Tables\Filters\SelectFilter::make('origen_informacion_id')
+                    ->label('Origen de Información')
+                    ->options(
+                        OrigenInformacion::query()->orderBy('nombre')->pluck('nombre', 'id')
                     ),
                 Tables\Filters\SelectFilter::make('personals_id')
                     ->label('Personal Asignado')

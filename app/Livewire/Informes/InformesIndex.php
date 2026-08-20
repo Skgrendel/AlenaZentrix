@@ -7,6 +7,7 @@ use App\Enums\EstadoOrden;
 use App\Enums\TipoServicio;
 use App\Models\auditoria;
 use App\Models\OrdenJob;
+use App\Models\OrigenInformacion;
 use App\Models\Proceso;
 use App\Models\TipologiaOrden;
 use Illuminate\Contracts\View\View;
@@ -36,6 +37,8 @@ class InformesIndex extends Component
     public string $subTipo = '';
 
     public string $proceso = '';
+
+    public string $origenInformacion = '';
 
     public bool $previewGenerado = false;
 
@@ -81,6 +84,15 @@ class InformesIndex extends Component
             ->toArray();
     }
 
+    public function origenInformacionOptions(): array
+    {
+        return OrigenInformacion::query()
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->pluck('nombre', 'id')
+            ->toArray();
+    }
+
     public function updatedServicio(): void
     {
         $this->subTipo = '';
@@ -117,6 +129,7 @@ class InformesIndex extends Component
             ->with([
                 'personal',
                 'proceso',
+                'origenInformacion',
                 'reportes' => fn ($q) => $q->latest()->with([
                     'auditoria',
                     'comercio.tipoComercio',
@@ -129,6 +142,7 @@ class InformesIndex extends Component
             ->when($this->estado, fn ($q) => $q->where('estado', $this->estado))
             ->when($this->servicio, fn ($q) => $q->where('tipo_servicio', $this->servicio))
             ->when($this->proceso, fn ($q) => $q->where('proceso_id', $this->proceso))
+            ->when($this->origenInformacion, fn ($q) => $q->where('origen_informacion_id', $this->origenInformacion))
             ->when($this->subTipo, function ($q) {
                 match ($this->servicio) {
                     TipoServicio::GestionLegal->value => $q->where('tipo_gestion_legal', $this->subTipo),
@@ -148,6 +162,7 @@ class InformesIndex extends Component
             // Orden
             $o->numero_orden,
             $o->proceso?->nombre ?? '',
+            $o->origenInformacion?->nombre ?? '',
             $o->tipo_servicio->label(),
             $o->subtipoLabel(),
             $o->estado->label(),
@@ -191,7 +206,7 @@ class InformesIndex extends Component
     private function xlsxUnificado(): array
     {
         $headers = [
-            'N° Orden', 'Proceso', 'Servicio', 'Sub-tipo', 'Estado', 'Resultado', 'Prioridad', 'Investigador',
+            'N° Orden', 'Proceso', 'Origen de Información', 'Servicio', 'Sub-tipo', 'Estado', 'Resultado', 'Prioridad', 'Investigador',
             'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Objetivo', 'N° Noticia Criminal',
             'Fecha Asignación', 'Fecha Límite', 'Fecha Completado',
             'Tiene Reporte', 'Lectura', 'N° Medidor Reporte', 'Comercio', 'Imposibilidad',
@@ -219,6 +234,7 @@ class InformesIndex extends Component
                 return [
                     'N° Orden' => $o->numero_orden,
                     'Proceso' => $o->proceso?->nombre ?? '—',
+                    'Origen de Información' => $o->origenInformacion?->nombre ?? '—',
                     'Servicio' => $o->tipo_servicio->label(),
                     'Estado' => $o->estado->label(),
                     'Resultado' => match ($o->resultado) {
@@ -246,6 +262,7 @@ class InformesIndex extends Component
             'servicioOptions' => $this->servicioOptions(),
             'subTipoOptions' => $this->subTipoOptions(),
             'procesoOptions' => $this->procesoOptions(),
+            'origenInformacionOptions' => $this->origenInformacionOptions(),
         ]);
     }
 }

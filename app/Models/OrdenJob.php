@@ -57,6 +57,7 @@ class OrdenJob extends Model
         'fecha_completado',
         'resultado',
         'proceso_id',
+        'origen_informacion_id',
         'sincronizado',
     ];
 
@@ -159,6 +160,11 @@ class OrdenJob extends Model
     public function proceso(): BelongsTo
     {
         return $this->belongsTo(Proceso::class, 'proceso_id');
+    }
+
+    public function origenInformacion(): BelongsTo
+    {
+        return $this->belongsTo(OrigenInformacion::class, 'origen_informacion_id');
     }
 
     /** Técnico o investigador asignado a ejecutar la orden. */

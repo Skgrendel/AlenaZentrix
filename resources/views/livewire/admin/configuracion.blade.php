@@ -39,6 +39,9 @@
                     <flux:navlist.item href="#" x-on:click.prevent="active = 'procesos'" x-bind:data-current="active === 'procesos'">
                         Procesos
                     </flux:navlist.item>
+                    <flux:navlist.item href="#" x-on:click.prevent="active = 'origen-informacion'" x-bind:data-current="active === 'origen-informacion'">
+                        Origen de Información
+                    </flux:navlist.item>
                 </flux:navlist.group>
 
                 <flux:navlist.group heading="Catálogos Legales">
@@ -71,6 +74,12 @@
                     :model="\App\Models\Proceso::class"
                     label="Proceso"
                     wire:key="catalog-procesos" />
+            </div>
+            <div x-show="active === 'origen-informacion'" x-cloak>
+                <livewire:admin.catalogos.manage-catalog
+                    :model="\App\Models\OrigenInformacion::class"
+                    label="Origen de Información"
+                    wire:key="catalog-origen-informacion" />
             </div>
             <div x-show="active === 'anomalia'" x-cloak>
                 <livewire:admin.catalogos.manage-catalog

@@ -7,6 +7,7 @@ use App\Enums\PrioridadOrden;
 use App\Enums\TipoServicio;
 use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
+use App\Models\OrigenInformacion;
 use App\Models\personals;
 use App\Models\Proceso;
 use App\Models\TipologiaOrden;
@@ -68,6 +69,12 @@ class OrdenCreate extends Component implements HasActions, HasForms
             ->pluck('nombre', 'id')
             ->toArray();
 
+        $origenesInformacion = OrigenInformacion::query()
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->pluck('nombre', 'id')
+            ->toArray();
+
         $tecnicos = collect();
 
         if ($companyId) {
@@ -93,6 +100,12 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->searchable()
                             ->nullable()
                             ->placeholder('Sin proceso asignado'),
+                        Forms\Components\Select::make('origen_informacion_id')
+                            ->label('Origen de Información')
+                            ->options($origenesInformacion)
+                            ->searchable()
+                            ->nullable()
+                            ->placeholder('Sin origen asignado'),
                         Forms\Components\Select::make('tipo_servicio')
                             ->label('Tipo de Servicio')
                             ->options(

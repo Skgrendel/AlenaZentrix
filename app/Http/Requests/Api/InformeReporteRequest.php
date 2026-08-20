@@ -23,6 +23,7 @@ class InformeReporteRequest extends FormRequest
             'servicio' => ['nullable', 'string', Rule::enum(TipoServicio::class)],
             'sub_tipo' => ['nullable', 'string'],
             'proceso' => ['nullable', 'uuid'],
+            'origen_informacion' => ['nullable', 'uuid'],
         ];
     }
 
@@ -36,6 +37,7 @@ class InformeReporteRequest extends FormRequest
             'servicio' => $this->input('servicio'),
             'sub_tipo' => $this->input('sub_tipo'),
             'proceso' => $this->input('proceso'),
+            'origen_informacion' => $this->input('origen_informacion'),
         ]);
     }
 }

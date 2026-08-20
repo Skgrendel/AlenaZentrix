@@ -55,6 +55,13 @@ class OrdenResource extends JsonResource
                     fn () => $orden->proceso->nombre
                 ),
             ] : null,
+            'origen_informacion' => $orden->origen_informacion_id ? [
+                'id' => $orden->origen_informacion_id,
+                'nombre' => $this->when(
+                    $orden->relationLoaded('origenInformacion') && $orden->origenInformacion,
+                    fn () => $orden->origenInformacion->nombre
+                ),
+            ] : null,
             'fecha_asignacion' => $orden->fecha_asignacion?->toISOString(),
             'fecha_limite' => $orden->fecha_limite?->toISOString(),
             'fecha_completado' => $orden->fecha_completado?->toISOString(),
