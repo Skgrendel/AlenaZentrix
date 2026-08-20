@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
+use App\Enums\TipoServicio;
 use App\Filament\Widgets\Concerns\FiltraPorDashboard;
 use App\Models\auditoria;
 use App\Models\OrdenJob;
@@ -50,6 +51,7 @@ class OrdenesStatsOverview extends BaseWidget
 
         $entregadasPendienteRevision = $this->aplicarFiltrosAuditoria(
             auditoria::where('estado', EstadoAuditoria::PendienteAuditoria)
+                ->whereHas('reporte.ordenJob', fn ($q) => $q->where('tipo_servicio', TipoServicio::Fraudes))
         )->count();
 
         if ($filtroActivo) {

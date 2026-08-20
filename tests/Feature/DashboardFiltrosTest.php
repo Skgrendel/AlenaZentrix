@@ -103,6 +103,10 @@ test('ordenes stats overview counts auditorias pendientes por auditar as entrega
     $reporteConfirmada = reportes::factory()->create(['orden_job_id' => $ordenConfirmada->id, 'numero_orden' => $ordenConfirmada->numero_orden]);
     auditoria::create(['reportes_id' => $reporteConfirmada->id, 'estado' => EstadoAuditoria::Confirmado]);
 
+    $ordenNoFraude = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Investigacion]);
+    $reporteNoFraude = reportes::factory()->create(['orden_job_id' => $ordenNoFraude->id, 'numero_orden' => $ordenNoFraude->numero_orden]);
+    auditoria::create(['reportes_id' => $reporteNoFraude->id, 'estado' => EstadoAuditoria::PendienteAuditoria]);
+
     $widget = new OrdenesStatsOverview;
 
     $stats = (fn () => $this->getStats())->call($widget);
