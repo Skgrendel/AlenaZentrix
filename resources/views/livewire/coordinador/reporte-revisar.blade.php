@@ -1192,6 +1192,20 @@
                             {{ $orden->fecha_completado?->format('d/m/Y H:i') ?? '—' }}
                         </dd>
                     </div>
+                    <div>
+                        <dt class="text-xs font-medium text-zinc-400 uppercase tracking-wide">Fecha de Entrega</dt>
+                        @if ($orden->fecha_entrega)
+                            <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
+                                {{ $orden->fecha_entrega->format('d/m/Y H:i') }}
+                            </dd>
+                        @else
+                            <dd class="mt-1">
+                                <flux:modal.trigger name="agregar-fecha-entrega">
+                                    <flux:button size="sm" variant="ghost" icon="plus-circle">Agregar Fecha de Entrega</flux:button>
+                                </flux:modal.trigger>
+                            </dd>
+                        @endif
+                    </div>
                 </dl>
             </div>
 
@@ -1385,6 +1399,25 @@
                     <flux:button type="submit" variant="primary" wire:loading.attr="disabled">
                         <span wire:loading.remove wire:target="guardarMetrosCubicosRecuperados">Guardar</span>
                         <span wire:loading wire:target="guardarMetrosCubicosRecuperados">Guardando...</span>
+                    </flux:button>
+                </div>
+            </form>
+        </div>
+    </flux:modal>
+
+    {{-- Modal: Agregar Fecha de Entrega --}}
+    <flux:modal name="agregar-fecha-entrega" class="w-full max-w-sm">
+        <div class="space-y-5">
+            <flux:heading size="lg">Registrar Fecha de Entrega</flux:heading>
+            <form wire:submit="guardarFechaEntrega" class="space-y-4">
+                <flux:input type="datetime-local" wire:model="fechaEntrega" label="Fecha de Entrega" />
+                <div class="flex justify-end gap-2">
+                    <flux:modal.close>
+                        <flux:button variant="ghost">Cancelar</flux:button>
+                    </flux:modal.close>
+                    <flux:button type="submit" variant="primary" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="guardarFechaEntrega">Guardar</span>
+                        <span wire:loading wire:target="guardarFechaEntrega">Guardando...</span>
                     </flux:button>
                 </div>
             </form>

@@ -123,7 +123,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->formatStateUsing(fn ($state) => $state === 'positivo' ? 'Positiva' : ($state === 'negativo' ? 'Negativa' : '—'))
                     ->color(fn ($state) => $state === 'positivo' ? 'green' : ($state === 'negativo' ? 'red' : 'gray')),
                 Tables\Columns\TextColumn::make('estado_auditoria')
-                    ->label('Estado de la Auditoría')
+                    ->label('Auditoría B&CG')
                     ->badge()
                     ->state(fn (OrdenJob $record) => $record->tipo_servicio === TipoServicio::Fraudes
                         ? $record->reportes->first()?->auditoria?->estado

@@ -55,6 +55,7 @@ class OrdenJob extends Model
         'fecha_asignacion',
         'fecha_limite',
         'fecha_completado',
+        'fecha_entrega',
         'resultado',
         'proceso_id',
         'origen_informacion_id',
@@ -72,6 +73,7 @@ class OrdenJob extends Model
         'fecha_asignacion' => 'datetime',
         'fecha_limite' => 'datetime',
         'fecha_completado' => 'datetime',
+        'fecha_entrega' => 'datetime',
         'resultado' => 'string',
         'sincronizado' => 'boolean',
     ];

@@ -53,6 +53,9 @@ class ReporteRevisar extends Component implements HasActions, HasForms
     /** Valor diligenciado para completar `metros_cubicos_recuperados` después de registrada la auditoría. */
     public ?string $metrosCubicosRecuperados = null;
 
+    /** Valor diligenciado para registrar la fecha en la que se entregó el informe/resultado al cliente. */
+    public ?string $fechaEntrega = null;
+
     public function mount(OrdenJob $orden): void
     {
         $estadosPermitidos = [EstadoOrden::EnRevision, EstadoOrden::Completada];
@@ -160,6 +163,20 @@ class ReporteRevisar extends Component implements HasActions, HasForms
         Flux::modal('agregar-metros-cubicos')->close();
 
         Flux::toast(variant: 'success', text: 'Metros cúbicos recuperados registrados correctamente.');
+    }
+
+    /** Registra la fecha en la que se entregó el informe/resultado de la orden al cliente. */
+    public function guardarFechaEntrega(): void
+    {
+        $this->validate([
+            'fechaEntrega' => ['required', 'date'],
+        ]);
+
+        $this->orden->update(['fecha_entrega' => $this->fechaEntrega]);
+
+        Flux::modal('agregar-fecha-entrega')->close();
+
+        Flux::toast(variant: 'success', text: 'Fecha de entrega registrada correctamente.');
     }
 
     protected function notificarTecnico(Mailable $mail): void
