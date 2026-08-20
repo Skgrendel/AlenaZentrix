@@ -14,7 +14,7 @@ class OrdenesPorResultadoChart extends ChartWidget
 {
     use FiltraPorDashboard;
 
-    protected ?string $heading = 'Por Resultado';
+    protected ?string $heading = 'Por Resultado Preliminar';
 
     protected ?string $pollingInterval = null;
 

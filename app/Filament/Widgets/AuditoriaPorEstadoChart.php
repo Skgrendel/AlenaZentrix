@@ -15,7 +15,7 @@ class AuditoriaPorEstadoChart extends ChartWidget
 {
     use FiltraPorDashboard;
 
-    protected ?string $heading = 'Estado de Auditoría';
+    protected ?string $heading = 'Estado de las Auditorías';
 
     protected ?string $pollingInterval = null;
 

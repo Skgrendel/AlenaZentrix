@@ -2,8 +2,10 @@
 
 namespace App\Filament\Widgets;
 
+use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
 use App\Filament\Widgets\Concerns\FiltraPorDashboard;
+use App\Models\auditoria;
 use App\Models\OrdenJob;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -45,9 +47,10 @@ class OrdenesStatsOverview extends BaseWidget
         $enRevision = $enRango()->where('estado', EstadoOrden::EnRevision)->count();
 
         $completadasTotal = $enRango()->where('estado', EstadoOrden::Completada)->count();
-        $rechazadasTotal = $enRango()->where('estado', EstadoOrden::Rechazada)->count();
-        $cerradas = $completadasTotal + $rechazadasTotal;
-        $eficiencia = $cerradas > 0 ? round($completadasTotal / $cerradas * 100) : null;
+
+        $entregadasPendienteRevision = $this->aplicarFiltrosAuditoria(
+            auditoria::where('estado', EstadoAuditoria::PendienteAuditoria)
+        )->count();
 
         if ($filtroActivo) {
             $completadas = $completadasTotal;
@@ -110,15 +113,10 @@ class OrdenesStatsOverview extends BaseWidget
                 ->descriptionIcon('heroicon-m-arrow-trending-up')
                 ->when($chart !== [], fn (Stat $stat) => $stat->chart($chart)->chartColor($chartColor))
                 ->color($color),
-            Stat::make('Eficiencia', $eficiencia !== null ? "{$eficiencia}%" : 'N/D')
-                ->description('Completadas vs rechazadas')
-                ->descriptionIcon('heroicon-m-chart-bar')
-                ->color(match (true) {
-                    $eficiencia === null => 'gray',
-                    $eficiencia >= 80 => 'success',
-                    $eficiencia >= 60 => 'warning',
-                    default => 'danger',
-                }),
+            Stat::make('Entregadas pendiente de Revisión', $entregadasPendienteRevision)
+                ->description('Pendientes por auditar')
+                ->descriptionIcon('heroicon-m-clipboard-document-check')
+                ->color('warning'),
         ];
     }
 

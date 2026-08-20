@@ -90,6 +90,27 @@ test('ordenes stats overview only counts ordenes within the selected date range'
         ->and($stats[4]->getValue())->toBe(1);
 });
 
+test('ordenes stats overview counts auditorias pendientes por auditar as entregadas pendiente de revision', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+    $this->actingAs($user);
+
+    $ordenPendiente = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes]);
+    $reportePendiente = reportes::factory()->create(['orden_job_id' => $ordenPendiente->id, 'numero_orden' => $ordenPendiente->numero_orden]);
+    auditoria::create(['reportes_id' => $reportePendiente->id, 'estado' => EstadoAuditoria::PendienteAuditoria]);
+
+    $ordenConfirmada = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes]);
+    $reporteConfirmada = reportes::factory()->create(['orden_job_id' => $ordenConfirmada->id, 'numero_orden' => $ordenConfirmada->numero_orden]);
+    auditoria::create(['reportes_id' => $reporteConfirmada->id, 'estado' => EstadoAuditoria::Confirmado]);
+
+    $widget = new OrdenesStatsOverview;
+
+    $stats = (fn () => $this->getStats())->call($widget);
+
+    expect($stats[5]->getLabel())->toBe('Entregadas pendiente de Revisión')
+        ->and($stats[5]->getValue())->toBe(1);
+});
+
 test('ordenes stats overview only counts ordenes matching the selected tipo_servicio criterio', function () {
     $user = User::factory()->create();
     $user->assignRole('Coordinador');
