@@ -94,28 +94,10 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->formatStateUsing(fn ($state) => $state instanceof PrioridadOrden ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof PrioridadOrden ? $state->color() : 'gray'),
                 Tables\Columns\TextColumn::make('estado')
-                    ->label('Estado')
+                    ->label('Estado de la Orden')
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state instanceof EstadoOrden ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof EstadoOrden ? $state->color() : 'gray'),
-                Tables\Columns\TextColumn::make('resultado')
-                    ->label('Resultado')
-                    ->badge()
-                    ->formatStateUsing(fn ($state) => $state === 'positivo' ? 'Positiva' : ($state === 'negativo' ? 'Negativa' : '—'))
-                    ->color(fn ($state) => $state === 'positivo' ? 'green' : ($state === 'negativo' ? 'red' : 'gray')),
-                Tables\Columns\TextColumn::make('estado_auditoria')
-                    ->label('Estado Auditoría')
-                    ->badge()
-                    ->state(fn (OrdenJob $record) => $record->tipo_servicio === TipoServicio::Fraudes
-                        ? $record->reportes->first()?->auditoria?->estado
-                        : null)
-                    ->formatStateUsing(fn ($state) => $state instanceof EstadoAuditoria ? $state->label() : '—')
-                    ->color(fn ($state) => $state instanceof EstadoAuditoria ? $state->color() : 'gray'),
-                Tables\Columns\TextColumn::make('reportes.auditoria.tipoAnomalia.nombre')
-                    ->label('Tipo de Anomalía')
-                    ->state(fn (OrdenJob $record) => $record->reportes->first()?->auditoria?->tipoAnomalia?->nombre)
-                    ->placeholder('—')
-                    ->toggleable(),
                 Tables\Columns\TextColumn::make('personal.nombres')
                     ->label('Personal Asignado')
                     ->formatStateUsing(fn ($state, OrdenJob $record): string => $record->personal
@@ -127,6 +109,24 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         fn ($q) => $q->where('nombres', 'like', "%{$search}%")
                             ->orWhere('apellidos', 'like', "%{$search}%")
                     ))
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('resultado')
+                    ->label('Resultado Preliminar')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state === 'positivo' ? 'Positiva' : ($state === 'negativo' ? 'Negativa' : '—'))
+                    ->color(fn ($state) => $state === 'positivo' ? 'green' : ($state === 'negativo' ? 'red' : 'gray')),
+                Tables\Columns\TextColumn::make('estado_auditoria')
+                    ->label('Estado de la Auditoría')
+                    ->badge()
+                    ->state(fn (OrdenJob $record) => $record->tipo_servicio === TipoServicio::Fraudes
+                        ? $record->reportes->first()?->auditoria?->estado
+                        : null)
+                    ->formatStateUsing(fn ($state) => $state instanceof EstadoAuditoria ? $state->label() : '—')
+                    ->color(fn ($state) => $state instanceof EstadoAuditoria ? $state->color() : 'gray'),
+                Tables\Columns\TextColumn::make('reportes.auditoria.tipoAnomalia.nombre')
+                    ->label('Tipo de Anomalía')
+                    ->state(fn (OrdenJob $record) => $record->reportes->first()?->auditoria?->tipoAnomalia?->nombre)
+                    ->placeholder('—')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('fecha_limite')
                     ->label('Fecha Límite')
@@ -147,7 +147,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('estado')
-                    ->label('Estado')
+                    ->label('Estado de la Orden')
                     ->options(
                         collect(EstadoOrden::cases())
                             ->mapWithKeys(fn (EstadoOrden $case) => [$case->value => $case->label()])
@@ -165,13 +165,13 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                             ->mapWithKeys(fn (TipoServicio $case) => [$case->value => $case->label()])
                     ),
                 Tables\Filters\SelectFilter::make('resultado')
-                    ->label('Resultado')
+                    ->label('Resultado Preliminar')
                     ->options([
                         'positivo' => 'Positiva',
                         'negativo' => 'Negativa',
                     ]),
                 Tables\Filters\SelectFilter::make('estado_auditoria')
-                    ->label('Estado Auditoría')
+                    ->label('Estado de la Auditoría')
                     ->options(
                         collect(EstadoAuditoria::cases())
                             ->mapWithKeys(fn (EstadoAuditoria $case) => [$case->value => $case->label()])
@@ -286,7 +286,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         $record->reportes->first()?->auditoria
                     ).'?from=ordenes'),
                 Action::make('resultado')
-                    ->label('Resultado')
+                    ->label('Anexos de la Orden')
                     ->icon('heroicon-o-document-text')
                     ->color('success')
                     ->visible(fn (OrdenJob $record): bool => $record->estado === EstadoOrden::Completada)
