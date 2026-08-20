@@ -1,11 +1,14 @@
 <?php
 
+use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
 use App\Enums\TipoServicio;
 use App\Livewire\Coordinador\OrdenesTrabajoIndex;
+use App\Models\auditoria;
 use App\Models\OrdenJob;
 use App\Models\personals;
+use App\Models\reportes;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -199,6 +202,35 @@ test('changing tecnico on non-pendiente orden does not change estado', function 
     $orden->update(['personals_id' => $tecnico2->id]);
 
     expect($orden->fresh()->estado)->toBe(EstadoOrden::EnProgreso);
+});
+
+test('resultado de la auditoria column shows the label when the audit is confirmado', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes]);
+    $reporte = reportes::factory()->create(['orden_job_id' => $orden->id, 'numero_orden' => $orden->numero_orden]);
+    auditoria::create(['reportes_id' => $reporte->id, 'estado' => EstadoAuditoria::Confirmado]);
+
+    $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo'))
+        ->assertOk()
+        ->assertSee('Resultado de la Auditoría')
+        ->assertSeeText(EstadoAuditoria::Confirmado->label());
+});
+
+test('resultado de la auditoria column is empty while the audit is still pendiente', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes]);
+    $reporte = reportes::factory()->create(['orden_job_id' => $orden->id, 'numero_orden' => $orden->numero_orden]);
+    auditoria::create(['reportes_id' => $reporte->id, 'estado' => EstadoAuditoria::PendienteAuditoria]);
+
+    $this->actingAs($user);
+
+    Livewire::test(OrdenesTrabajoIndex::class)
+        ->assertSeeInOrder(['Pendiente por auditar', '—']);
 });
 
 test('created_at date filter only shows ordenes within the selected range', function () {

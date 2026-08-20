@@ -123,6 +123,20 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         : null)
                     ->formatStateUsing(fn ($state) => $state instanceof EstadoAuditoria ? $state->label() : '—')
                     ->color(fn ($state) => $state instanceof EstadoAuditoria ? $state->color() : 'gray'),
+                Tables\Columns\TextColumn::make('resultado_auditoria')
+                    ->label('Resultado de la Auditoría')
+                    ->badge()
+                    ->state(function (OrdenJob $record) {
+                        $estado = $record->tipo_servicio === TipoServicio::Fraudes
+                            ? $record->reportes->first()?->auditoria?->estado
+                            : null;
+
+                        return in_array($estado, [EstadoAuditoria::Confirmado, EstadoAuditoria::Negativo], true)
+                            ? $estado
+                            : null;
+                    })
+                    ->formatStateUsing(fn ($state) => $state instanceof EstadoAuditoria ? $state->label() : '—')
+                    ->color(fn ($state) => $state instanceof EstadoAuditoria ? $state->color() : 'gray'),
                 Tables\Columns\TextColumn::make('reportes.auditoria.tipoAnomalia.nombre')
                     ->label('Tipo de Anomalía')
                     ->state(fn (OrdenJob $record) => $record->reportes->first()?->auditoria?->tipoAnomalia?->nombre)
