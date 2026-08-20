@@ -887,6 +887,15 @@
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
                                     {{ $auditoria->metros_cubicos_recuperados }}</dd>
                             </div>
+                        @else
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">M³ Recuperados</dt>
+                                <dd class="mt-1">
+                                    <flux:modal.trigger name="agregar-metros-cubicos">
+                                        <flux:button size="sm" variant="ghost" icon="plus-circle">Agregar M³ Recuperados</flux:button>
+                                    </flux:modal.trigger>
+                                </dd>
+                            </div>
                         @endif
                         @if ($auditoria->capacidad_instalada !== null)
                             <div>
@@ -939,6 +948,26 @@
                     <span wire:loading.remove wire:target="guardar">Guardar Auditoría</span>
                     <span wire:loading wire:target="guardar">Guardando...</span>
                 </flux:button>
+            </form>
+        </div>
+    </flux:modal>
+
+    {{-- Modal: Agregar Metros Cúbicos Recuperados --}}
+    <flux:modal name="agregar-metros-cubicos" class="w-full max-w-sm">
+        <div class="space-y-5">
+            <flux:heading size="lg">Completar M³ Recuperados</flux:heading>
+            <form wire:submit="guardarMetrosCubicosRecuperados" class="space-y-4">
+                <flux:input type="number" step="any" wire:model="metrosCubicosRecuperados"
+                    label="Metros Cúbicos Recuperados" />
+                <div class="flex justify-end gap-2">
+                    <flux:modal.close>
+                        <flux:button variant="ghost">Cancelar</flux:button>
+                    </flux:modal.close>
+                    <flux:button type="submit" variant="primary" wire:loading.attr="disabled">
+                        <span wire:loading.remove wire:target="guardarMetrosCubicosRecuperados">Guardar</span>
+                        <span wire:loading wire:target="guardarMetrosCubicosRecuperados">Guardando...</span>
+                    </flux:button>
+                </div>
             </form>
         </div>
     </flux:modal>
