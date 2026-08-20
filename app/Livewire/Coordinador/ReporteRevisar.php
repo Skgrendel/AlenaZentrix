@@ -17,6 +17,7 @@ use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Mail\Mailable;
 use Illuminate\Support\Facades\Log;
@@ -48,6 +49,9 @@ class ReporteRevisar extends Component implements HasActions, HasForms
     public bool $mostrarFormRechazo = false;
 
     public $resultado = ''; // En tu clase Livewire
+
+    /** Valor diligenciado para completar `metros_cubicos_recuperados` después de registrada la auditoría. */
+    public ?string $metrosCubicosRecuperados = null;
 
     public function mount(OrdenJob $orden): void
     {
@@ -140,6 +144,22 @@ class ReporteRevisar extends Component implements HasActions, HasForms
         session()->flash('success', "Orden {$this->orden->numero_orden} rechazada. El técnico podrá corregir y reenviar el reporte.");
 
         $this->redirect(route('operaciones.ordenes-trabajo'), navigate: true);
+    }
+
+    /** Completa `metros_cubicos_recuperados` en una auditoría ya registrada que quedó sin ese dato. */
+    public function guardarMetrosCubicosRecuperados(): void
+    {
+        $this->validate([
+            'metrosCubicosRecuperados' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $this->reporte->auditoria?->update([
+            'metros_cubicos_recuperados' => $this->metrosCubicosRecuperados,
+        ]);
+
+        Flux::modal('agregar-metros-cubicos')->close();
+
+        Flux::toast(variant: 'success', text: 'Metros cúbicos recuperados registrados correctamente.');
     }
 
     protected function notificarTecnico(Mailable $mail): void
