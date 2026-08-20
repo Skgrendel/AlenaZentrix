@@ -70,6 +70,24 @@ it('muestra pendiente por auditar cuando la auditoria aun no se registro', funct
         ->assertSee('Pendiente por auditar');
 });
 
+it('muestra las evidencias de la auditoria como galeria de imagenes y lista de documentos', function () {
+    $company = Company::factory()->create();
+    $user = User::factory()->create(['company_id' => $company->id]);
+    $this->actingAs($user);
+
+    [$orden, $reporte] = crearOrdenCompletadaConReporte($company);
+
+    auditoria::create([
+        'reportes_id' => $reporte->id,
+        'estado' => EstadoAuditoria::Confirmado,
+        'evidencias' => ['auditorias/evidencia-1.jpg', 'auditorias/soporte.pdf'],
+    ]);
+
+    Livewire::test(ReporteRevisar::class, ['orden' => $orden])
+        ->assertSee('Evidencias de la Auditoría')
+        ->assertSee('soporte.pdf');
+});
+
 it('no muestra la seccion de auditoria cuando la orden no tiene auditoria asociada', function () {
     $company = Company::factory()->create();
     $user = User::factory()->create(['company_id' => $company->id]);

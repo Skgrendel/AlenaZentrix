@@ -176,9 +176,26 @@ class ReporteRevisar extends Component implements HasActions, HasForms
      */
     public function archivosUrls(): array
     {
+        return $this->mapArchivosConUrl($this->reporte->imagenes ?? []);
+    }
+
+    /**
+     * @return array<int, array{url: string, nombre: string, es_imagen: bool}>
+     */
+    public function auditoriaArchivosUrls(): array
+    {
+        return $this->mapArchivosConUrl($this->reporte->auditoria?->evidencias ?? []);
+    }
+
+    /**
+     * @param  array<int, string>  $paths
+     * @return array<int, array{url: string, nombre: string, es_imagen: bool}>
+     */
+    private function mapArchivosConUrl(array $paths): array
+    {
         $imageExtensions = ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif', 'heic', 'heif', 'avif'];
 
-        return collect($this->reporte->imagenes ?? [])
+        return collect($paths)
             ->map(function (string $path) use ($imageExtensions): array {
                 $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
@@ -307,6 +324,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
             'imagenUrls' => $this->imagenUrls(),
             'datosServicio' => $this->datosServicioDisplay(),
             'archivosUrls' => $this->archivosUrls(),
+            'auditoriaArchivosUrls' => $this->auditoriaArchivosUrls(),
         ]);
     }
 }

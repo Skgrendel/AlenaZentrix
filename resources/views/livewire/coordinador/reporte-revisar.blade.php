@@ -932,6 +932,145 @@
                 </div>
             @endif
 
+            {{-- ═══ Resultado de la Auditoría (solo lectura, cuando existe) ═══ --}}
+            @if ($reporte->auditoria)
+                @php
+                    $auditoriaAccent = match ($reporte->auditoria->estado) {
+                        \App\Enums\EstadoAuditoria::Confirmado => 'border-l-green-500',
+                        \App\Enums\EstadoAuditoria::Negativo => 'border-l-red-500',
+                        default => 'border-l-amber-500',
+                    };
+                @endphp
+                <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
+                    class="rounded-xl border border-l-4 border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 {{ $auditoriaAccent }}">
+                    <h3 class="mb-4 flex items-center gap-2 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                        <x-heroicon-o-shield-check class="h-4 w-4" />
+                        Resultado de la Auditoría</h3>
+                    @if ($reporte->auditoria->estado === \App\Enums\EstadoAuditoria::PendienteAuditoria)
+                        <flux:badge color="amber">Pendiente por auditar</flux:badge>
+                    @else
+                        <dl class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Resultado</dt>
+                                <dd class="mt-1">
+                                    @if ($reporte->auditoria->estado === \App\Enums\EstadoAuditoria::Confirmado)
+                                        <flux:badge color="green">Confirmado</flux:badge>
+                                    @else
+                                        <flux:badge color="red">Negativo</flux:badge>
+                                    @endif
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha de Auditoría</dt>
+                                <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
+                                    {{ $reporte->auditoria->fecha_auditoria?->format('d/m/Y H:i') ?? '—' }}
+                                </dd>
+                            </div>
+                            @if ($reporte->auditoria->auditadoPor)
+                                <div>
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Auditado por</dt>
+                                    <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
+                                        {{ $reporte->auditoria->auditadoPor->fullName() }}
+                                    </dd>
+                                </div>
+                            @endif
+                            @if ($reporte->auditoria->tipoAnomalia)
+                                <div>
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Anomalía</dt>
+                                    <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                        {{ $reporte->auditoria->tipoAnomalia->nombre }}</dd>
+                                </div>
+                            @endif
+                            @if ($reporte->auditoria->metros_cubicos_recuperados !== null)
+                                <div>
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Posibles M³ Recuperados</dt>
+                                    <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                        {{ $reporte->auditoria->metros_cubicos_recuperados }}</dd>
+                                </div>
+                            @endif
+                            @if ($reporte->auditoria->capacidad_instalada !== null)
+                                <div>
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Capacidad Instalada</dt>
+                                    <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
+                                        {{ $reporte->auditoria->capacidad_instalada }}</dd>
+                                </div>
+                            @endif
+                            @if ($reporte->auditoria->observaciones)
+                                <div class="sm:col-span-2">
+                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Observaciones</dt>
+                                    <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
+                                        {{ $reporte->auditoria->observaciones }}</dd>
+                                </div>
+                            @endif
+                        </dl>
+
+                        @if (!empty($auditoriaArchivosUrls))
+                            @php
+                                $auditoriaImgs = array_values(array_filter($auditoriaArchivosUrls, fn ($a) => $a['es_imagen']));
+                                $auditoriaDocs = array_values(array_filter($auditoriaArchivosUrls, fn ($a) => ! $a['es_imagen']));
+                            @endphp
+                            <div class="mt-5 border-t border-zinc-100 pt-5 dark:border-zinc-800">
+                                <h4 class="mb-3 text-xs font-medium uppercase tracking-wide text-zinc-400">
+                                    Evidencias de la Auditoría ({{ count($auditoriaArchivosUrls) }}
+                                    {{ count($auditoriaArchivosUrls) === 1 ? 'archivo' : 'archivos' }})</h4>
+
+                                @if (!empty($auditoriaImgs))
+                                    <div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                        @foreach ($auditoriaImgs as $archivo)
+                                            <button type="button" @click="src = '{{ $archivo['url'] }}'; open = true"
+                                                class="group relative block overflow-hidden rounded-xl border border-zinc-200 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                                <img src="{{ $archivo['url'] }}" alt="{{ $archivo['nombre'] }}"
+                                                    class="h-40 w-full object-cover transition duration-300 group-hover:scale-105">
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                @if (!empty($auditoriaDocs))
+                                    <ul class="space-y-2">
+                                        @foreach ($auditoriaDocs as $archivo)
+                                            <li
+                                                class="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 transition hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700/60">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 text-zinc-400"
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                                </svg>
+                                                <span
+                                                    class="flex-1 truncate text-sm text-zinc-700 dark:text-zinc-300">{{ $archivo['nombre'] }}</span>
+                                                <a href="{{ $archivo['url'] }}" target="_blank" rel="noopener"
+                                                    class="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+                                                    Abrir
+                                                </a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+
+                                {{-- Lightbox --}}
+                                <div x-show="open" x-transition.opacity @click.self="open = false"
+                                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+                                    style="display: none">
+                                    <div class="relative max-h-full max-w-4xl">
+                                        <button type="button" @click="open = false"
+                                            class="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-800 shadow-lg hover:bg-zinc-100">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                        <img :src="src" alt="Evidencia de auditoría ampliada"
+                                            class="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl">
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+                </div>
+            @endif
+
             {{-- ═══ Video ═══ --}}
             @if ($reporte->video)
                 <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
@@ -1081,101 +1220,6 @@
                         <x-heroicon-o-check-badge class="h-4 w-4" />
                         Conclusión</h3>
                     <p class="text-sm text-zinc-900 dark:text-white">{{ $reporte->conclusion }}</p>
-                </div>
-            @endif
-
-            {{-- ═══ Resultado de la Auditoría (solo lectura, cuando existe) ═══ --}}
-            @if ($reporte->auditoria)
-                @php
-                    $auditoriaAccent = match ($reporte->auditoria->estado) {
-                        \App\Enums\EstadoAuditoria::Confirmado => 'border-l-green-500',
-                        \App\Enums\EstadoAuditoria::Negativo => 'border-l-red-500',
-                        default => 'border-l-amber-500',
-                    };
-                @endphp
-                <div
-                    class="rounded-xl border border-l-4 border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 {{ $auditoriaAccent }}">
-                    <h3 class="mb-4 flex items-center gap-2 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-                        <x-heroicon-o-shield-check class="h-4 w-4" />
-                        Resultado de la Auditoría</h3>
-                    @if ($reporte->auditoria->estado === \App\Enums\EstadoAuditoria::PendienteAuditoria)
-                        <flux:badge color="amber">Pendiente por auditar</flux:badge>
-                    @else
-                        <dl class="space-y-4">
-                            <div>
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Resultado</dt>
-                                <dd class="mt-1">
-                                    @if ($reporte->auditoria->estado === \App\Enums\EstadoAuditoria::Confirmado)
-                                        <flux:badge color="green">Confirmado</flux:badge>
-                                    @else
-                                        <flux:badge color="red">Negativo</flux:badge>
-                                    @endif
-                                </dd>
-                            </div>
-                            <div>
-                                <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha de Auditoría</dt>
-                                <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
-                                    {{ $reporte->auditoria->fecha_auditoria?->format('d/m/Y H:i') ?? '—' }}
-                                </dd>
-                            </div>
-                            @if ($reporte->auditoria->auditadoPor)
-                                <div>
-                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Auditado por</dt>
-                                    <dd class="mt-0.5 text-sm text-zinc-900 dark:text-white">
-                                        {{ $reporte->auditoria->auditadoPor->fullName() }}
-                                    </dd>
-                                </div>
-                            @endif
-                            @if ($reporte->auditoria->tipoAnomalia)
-                                <div>
-                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Anomalía</dt>
-                                    <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                        {{ $reporte->auditoria->tipoAnomalia->nombre }}</dd>
-                                </div>
-                            @endif
-                            @if ($reporte->auditoria->metros_cubicos_recuperados !== null)
-                                <div>
-                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Posibles M³ Recuperados</dt>
-                                    <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                        {{ $reporte->auditoria->metros_cubicos_recuperados }}</dd>
-                                </div>
-                            @endif
-                            @if ($reporte->auditoria->capacidad_instalada !== null)
-                                <div>
-                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Capacidad Instalada</dt>
-                                    <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                        {{ $reporte->auditoria->capacidad_instalada }}</dd>
-                                </div>
-                            @endif
-                            @if ($reporte->auditoria->observaciones)
-                                <div>
-                                    <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Observaciones</dt>
-                                    <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
-                                        {{ $reporte->auditoria->observaciones }}</dd>
-                                </div>
-                            @endif
-                            @if (!empty($reporte->auditoria->evidencias))
-                                <div>
-                                    <dt class="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-400">
-                                        Evidencias ({{ count($reporte->auditoria->evidencias) }})</dt>
-                                    <dd class="space-y-2">
-                                        @foreach ($reporte->auditoria->evidencias as $evidencia)
-                                            <a href="{{ \App\Support\ArchivoUrl::temporal($evidencia) }}"
-                                                target="_blank"
-                                                class="flex items-center gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-sm text-blue-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-blue-400 dark:hover:bg-zinc-800">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                                </svg>
-                                                <span class="truncate">{{ basename($evidencia) }}</span>
-                                            </a>
-                                        @endforeach
-                                    </dd>
-                                </div>
-                            @endif
-                        </dl>
-                    @endif
                 </div>
             @endif
 
