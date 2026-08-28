@@ -2,6 +2,7 @@
 
 use App\Enums\EstadoOrden;
 use App\Enums\TipoServicio;
+use App\Http\Controllers\ReportePdfController;
 use App\Models\OrdenJob;
 use App\Models\reportes;
 use App\Models\User;
@@ -164,6 +165,31 @@ test('coordinador can download vigilancia pdf with no reportes', function () {
 
     $response->assertOk();
     $response->assertHeader('Content-Type', 'application/pdf');
+});
+
+test('resolveImagenes downscales large photos before embedding them in a pdf', function () {
+    // A full-resolution phone photo (12MP) previously got embedded as-is, and dompdf
+    // exhausted the 256M memory_limit decoding several of these in a multi-turno report.
+    $largeImage = imagecreatetruecolor(4032, 3024);
+    imagefilledrectangle($largeImage, 0, 0, 4032, 3024, imagecolorallocate($largeImage, 90, 140, 200));
+    ob_start();
+    imagejpeg($largeImage, null, 95);
+    $original = ob_get_clean();
+    imagedestroy($largeImage);
+
+    $method = new ReflectionMethod(ReportePdfController::class, 'downscaleImageToBase64');
+    $method->setAccessible(true);
+    $dataUri = $method->invoke(new ReportePdfController, $original);
+
+    expect($dataUri)->toStartWith('data:image/jpeg;base64,');
+
+    $decoded = base64_decode(substr($dataUri, strlen('data:image/jpeg;base64,')));
+    $resized = imagecreatefromstring($decoded);
+
+    expect(max(imagesx($resized), imagesy($resized)))->toBeLessThanOrEqual(1200)
+        ->and(strlen($decoded))->toBeLessThan(strlen($original));
+
+    imagedestroy($resized);
 });
 
 test('coordinador can download vigilancia pdf with multiple reportes', function () {

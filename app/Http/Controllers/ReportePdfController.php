@@ -352,7 +352,10 @@ class ReportePdfController extends Controller
     }
 
     /**
-     * Fetches images from S3 and converts each to a base64 data URI for embedding in the PDF.
+     * Fetches images from S3, downscales/recompresses them, and converts each to a base64
+     * data URI for embedding in the PDF. Downscaling keeps memory usage bounded when a report
+     * (e.g. vigilancia) embeds many full-resolution phone photos in a single document, since
+     * dompdf decodes every embedded image to a full bitmap while rendering.
      *
      * @param  array<int, string>  $paths
      * @return array<int, string>
@@ -367,10 +370,8 @@ class ReportePdfController extends Controller
                     if (! $disk->exists($path)) {
                         return null;
                     }
-                    $mimeType = $disk->mimeType($path);
-                    $content = $disk->get($path);
 
-                    return 'data:'.$mimeType.';base64,'.base64_encode($content);
+                    return $this->downscaleImageToBase64($disk->get($path));
                 } catch (\Throwable) {
                     return null;
                 }
@@ -378,6 +379,42 @@ class ReportePdfController extends Controller
             ->filter()
             ->values()
             ->all();
+    }
+
+    /**
+     * Downscales an image to fit within $maxDimension and re-encodes it as JPEG at $quality
+     * before base64-encoding. Formats GD cannot decode (e.g. heic, tiff) are embedded as-is.
+     */
+    private function downscaleImageToBase64(string $content, int $maxDimension = 1200, int $quality = 75): string
+    {
+        $image = @imagecreatefromstring($content);
+
+        if ($image === false) {
+            $mimeType = (new \finfo(FILEINFO_MIME_TYPE))->buffer($content) ?: 'application/octet-stream';
+
+            return 'data:'.$mimeType.';base64,'.base64_encode($content);
+        }
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $scale = min(1, $maxDimension / max($width, $height));
+
+        if ($scale < 1) {
+            $newWidth = max(1, (int) round($width * $scale));
+            $newHeight = max(1, (int) round($height * $scale));
+
+            $resized = imagecreatetruecolor($newWidth, $newHeight);
+            imagecopyresampled($resized, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+            imagedestroy($image);
+            $image = $resized;
+        }
+
+        ob_start();
+        imagejpeg($image, null, $quality);
+        $data = ob_get_clean();
+        imagedestroy($image);
+
+        return 'data:image/jpeg;base64,'.base64_encode($data);
     }
 
     /**
