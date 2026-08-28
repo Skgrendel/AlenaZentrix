@@ -1045,6 +1045,14 @@ class ReporteEdit extends Component implements HasActions, HasForms
     {
         $data = $this->form->getState();
 
+        // Descartar referencias temporales de Livewire que no llegaron a subirse a S3
+        // (p.ej. un borrador restaurado con un archivo que quedó a medio subir).
+        foreach (['imagenes', 'foto_detector_fuga'] as $campoArchivo) {
+            if (array_key_exists($campoArchivo, $data)) {
+                $data[$campoArchivo] = $this->descartarReferenciasTemporales($data[$campoArchivo]);
+            }
+        }
+
         // Normalizar actividades con UUID
         if (! empty($data['actividades']) && is_array($data['actividades'])) {
             foreach ($data['actividades'] as $i => $item) {
@@ -1112,6 +1120,30 @@ class ReporteEdit extends Component implements HasActions, HasForms
         $this->dispatch('borrador-limpiar');
 
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
+    }
+
+    /**
+     * Descarta referencias temporales de Livewire (formato "livewire-file:...") que quedaron
+     * en el estado del formulario sin llegar a subirse al disco S3 —por ejemplo, al restaurar
+     * un borrador guardado mientras un archivo estaba a medio subir.
+     *
+     * @param  array<int, string>|string|null  $value
+     * @return array<int, string>|string|null
+     */
+    private function descartarReferenciasTemporales(array|string|null $value): array|string|null
+    {
+        if (is_string($value)) {
+            return str_starts_with($value, 'livewire-file:') ? null : $value;
+        }
+
+        if (is_array($value)) {
+            return array_values(array_filter(
+                $value,
+                fn (mixed $path): bool => is_string($path) && ! str_starts_with($path, 'livewire-file:')
+            ));
+        }
+
+        return $value;
     }
 
     /**

@@ -66,11 +66,20 @@
             this.saveTimer = setTimeout(() => this.saveDraft(), 2000);
         },
 
+        // Campos de FileUpload: nunca deben guardarse/restaurarse desde el borrador.
+        // Mientras un archivo se está subiendo, $wire.data contiene una referencia
+        // temporal de Livewire (formato "livewire-file:..."); si esa referencia se
+        // persiste en localStorage y luego se restaura, queda un enlace roto porque
+        // el archivo real nunca se subió al disco S3.
+        fileFields: ['imagenes', 'foto_detector_fuga'],
+
         saveDraft() {
             const data = $wire.data;
             if (!data || Object.keys(data).length === 0) return;
+            const safeData = { ...data };
+            this.fileFields.forEach(key => delete safeData[key]);
             localStorage.setItem(this.draftKey, JSON.stringify({
-                data,
+                data: safeData,
                 savedAt: new Date().toISOString()
             }));
         },
@@ -80,7 +89,8 @@
             if (!raw) return;
             try {
                 const { data } = JSON.parse(raw);
-                $wire.set('data', data);
+                this.fileFields.forEach(key => delete data[key]);
+                $wire.set('data', { ...$wire.data, ...data });
                 this.hasDraft = false;
             } catch(e) {
                 this.discardDraft();

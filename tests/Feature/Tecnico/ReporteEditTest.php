@@ -355,6 +355,54 @@ test('editar reporte carga el turno elegido por query param cuando hay varios pe
         ->and($component->instance()->turnosPendientes)->toBeNull();
 });
 
+test('editar reporte descarta referencias temporales de livewire en imagenes y foto_detector_fuga', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'estado' => EstadoOrden::Rechazada->value,
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden]);
+
+    $method = new ReflectionMethod($component->instance(), 'descartarReferenciasTemporales');
+    $method->setAccessible(true);
+
+    // Un borrador restaurado a medio subir deja una referencia "livewire-file:..." mezclada
+    // con rutas reales de S3; solo las rutas reales deben sobrevivir.
+    expect($method->invoke($component->instance(), [
+        'reportes/OT-1/foto-real.jpg',
+        'livewire-file:cBgjMvKLVl6iY4oNK3HlZ5AM6JilPLBuTibZ',
+    ]))->toBe(['reportes/OT-1/foto-real.jpg']);
+
+    expect($method->invoke($component->instance(), 'livewire-file:cBgjMvKLVl6iY4oNK3HlZ5AM6JilPLBuTibZ'))->toBeNull();
+    expect($method->invoke($component->instance(), 'reportes/OT-1/foto-real.jpg'))->toBe('reportes/OT-1/foto-real.jpg');
+    expect($method->invoke($component->instance(), null))->toBeNull();
+});
+
 test('editar reporte de vigilancia corrige solo el turno puntual sin afectar el estado de la orden ni otros turnos', function () {
     $personal = personals::create([
         'tipo_documento' => 'CC',
