@@ -33,7 +33,7 @@
 
         // Campos de FileUpload: nunca deben guardarse/restaurarse desde el borrador.
         // Mientras un archivo se está subiendo, $wire.data contiene una referencia
-        // temporal de Livewire (formato "livewire-file:..."); si esa referencia se
+        // temporal de Livewire (formato 'livewire-file:...'); si esa referencia se
         // persiste en localStorage y luego se restaura, queda un enlace roto porque
         // el archivo real nunca se subió al disco S3.
         fileFields: ['imagenes', 'foto_detector_fuga'],

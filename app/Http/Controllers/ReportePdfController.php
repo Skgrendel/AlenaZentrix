@@ -477,6 +477,7 @@ class ReportePdfController extends Controller
         $subtipos = [
             'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
             'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+            'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
         ];
 
         $datosOrden = $this->buildDatosOrden($orden);
@@ -714,7 +715,30 @@ class ReportePdfController extends Controller
     {
         $datos = $reporte->datos_servicio ?? [];
 
+        if (($reporte->ordenJob?->tipo_auditoria_campo ?? null) === 'visita_calidad_medidores_digitales') {
+            return [
+                'es_medidores_digitales' => true,
+                'fecha_visita_medidor' => $datos['fecha_visita_medidor'] ?? null,
+                'tecnico_atendio_medidor' => $datos['tecnico_atendio_medidor'] ?? null,
+                'nombre_atiende_medidor' => $datos['nombre_atiende_medidor'] ?? null,
+                'informo_gratuidad_medidor' => (bool) ($datos['informo_gratuidad_medidor'] ?? false),
+                'solicito_dinero_medidor' => (bool) ($datos['solicito_dinero_medidor'] ?? false),
+                'gestion_conforme_medidor' => (bool) ($datos['gestion_conforme_medidor'] ?? false),
+                'requiere_seguimiento_medidor' => (bool) ($datos['requiere_seguimiento_medidor'] ?? false),
+                'hallazgos_medidor' => $datos['hallazgos_medidor'] ?? null,
+                'autoriza' => (bool) ($datos['autoriza'] ?? false),
+                'firma_usuario' => $datos['firma_usuario'] ?? null,
+                'cedula_usuario' => $datos['cedula_usuario'] ?? null,
+                'firma_auditor' => $datos['firma_auditor'] ?? null,
+                'cedula_auditor' => $datos['cedula_auditor'] ?? null,
+                'urls_evidencia' => $datos['urls_evidencia'] ?? [],
+                'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
+                'geo_referencia' => $reporte->geo_referencia ?? null,
+            ];
+        }
+
         return [
+            'es_medidores_digitales' => false,
             'fecha_hora_atencion' => $datos['fecha_hora_atencion'] ?? null,
             'ciudad' => $datos['ciudad'] ?? null,
             'celular_usuario' => $datos['celular_usuario'] ?? null,

@@ -739,8 +739,11 @@ class ReporteCreate extends Component implements HasActions, HasForms
         $subtipo = match ($this->orden->tipo_auditoria_campo) {
             'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
             'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+            'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
             default => 'Auditoría de Campo',
         };
+
+        $esMedidoresDigitales = $this->orden->tipo_auditoria_campo === 'visita_calidad_medidores_digitales';
 
         return [
             Section::make('Información General')
@@ -774,141 +777,180 @@ class ReporteCreate extends Component implements HasActions, HasForms
 
                 ]),
 
-            Section::make('Datos de Quién Atiende la Visita')
-                ->icon('heroicon-o-user-circle')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\TextInput::make('nombre_atiende')
-                        ->label('Nombre')
-                        ->required()
-                        ->maxLength(255),
-                    Forms\Components\Select::make('vinculo_usuario')
-                        ->label('Vínculo con el usuario')
-                        ->options([
-                            'titular' => 'Titular',
-                            'familiar' => 'Familiar',
-                            'vecino' => 'Vecino',
-                            'otro' => 'Otro',
-                        ])
-                        ->placeholder('Seleccionar'),
-                    Forms\Components\TextInput::make('celular_atiende')
-                        ->label('Celular')
-                        ->tel()
-                        ->maxLength(20),
-                    Forms\Components\DateTimePicker::make('fecha_hora_atencion')
-                        ->label('Fecha y Hora de Atención')
-                        ->required()
-                        ->displayFormat('d/m/Y H:i'),
-                ]),
+            ...($esMedidoresDigitales ? [] : [
+                Section::make('Datos de Quién Atiende la Visita')
+                    ->icon('heroicon-o-user-circle')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('nombre_atiende')
+                            ->label('Nombre')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\Select::make('vinculo_usuario')
+                            ->label('Vínculo con el usuario')
+                            ->options([
+                                'titular' => 'Titular',
+                                'familiar' => 'Familiar',
+                                'vecino' => 'Vecino',
+                                'otro' => 'Otro',
+                            ])
+                            ->placeholder('Seleccionar'),
+                        Forms\Components\TextInput::make('celular_atiende')
+                            ->label('Celular')
+                            ->tel()
+                            ->maxLength(20),
+                        Forms\Components\DateTimePicker::make('fecha_hora_atencion')
+                            ->label('Fecha y Hora de Atención')
+                            ->required()
+                            ->displayFormat('d/m/Y H:i'),
+                    ]),
 
-            Section::make('Validación de la Atención y Ejecución')
-                ->icon('heroicon-o-check-circle')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\Toggle::make('recibio_visita')
-                        ->label('¿Recibió la visita del técnico?')
-                        ->required()
-                        ->default(false),
-                    Forms\Components\Toggle::make('se_realizo_revision')
-                        ->label('¿Se realizó revisión técnica o trabajos?')
-                        ->required()
-                        ->default(false),
-                    Forms\Components\DatePicker::make('fecha_ejecucion')
-                        ->label('Fecha de ejecución')
-                        ->displayFormat('d/m/Y'),
-                    Forms\Components\TextInput::make('tiempo_ejecucion')
-                        ->label('Tiempo aproximado de ejecución')
-                        ->placeholder('Ej: 2 horas')
-                        ->maxLength(100),
-                    Forms\Components\Textarea::make('descripcion_trabajo')
-                        ->label('Descripción del trabajo / reparación realizada')
-                        ->rows(3)
-                        ->columnSpanFull(),
-                ]),
+                Section::make('Validación de la Atención y Ejecución')
+                    ->icon('heroicon-o-check-circle')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\Toggle::make('recibio_visita')
+                            ->label('¿Recibió la visita del técnico?')
+                            ->required()
+                            ->default(false),
+                        Forms\Components\Toggle::make('se_realizo_revision')
+                            ->label('¿Se realizó revisión técnica o trabajos?')
+                            ->required()
+                            ->default(false),
+                        Forms\Components\DatePicker::make('fecha_ejecucion')
+                            ->label('Fecha de ejecución')
+                            ->displayFormat('d/m/Y'),
+                        Forms\Components\TextInput::make('tiempo_ejecucion')
+                            ->label('Tiempo aproximado de ejecución')
+                            ->placeholder('Ej: 2 horas')
+                            ->maxLength(100),
+                        Forms\Components\Textarea::make('descripcion_trabajo')
+                            ->label('Descripción del trabajo / reparación realizada')
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ]),
 
-            Section::make('Hallazgos Técnicos y Validación Física')
-                ->icon('heroicon-o-magnifying-glass')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\Toggle::make('se_detecto_fuga')
-                        ->label('¿Se detectó fuga o falla?')
-                        ->default(false)
-                        ->live()
-                        ->columnSpanFull(),
-                    Forms\Components\TextInput::make('ppm')
-                        ->label('Medición PPM')
-                        ->maxLength(50)
-                        ->visible(fn ($get) => (bool) $get('se_detecto_fuga')),
-                    Forms\Components\TextInput::make('vol_porcentaje')
-                        ->label('VOL %')
-                        ->maxLength(50)
-                        ->visible(fn ($get) => (bool) $get('se_detecto_fuga')),
-                    Forms\Components\Toggle::make('problema_persiste')
-                        ->label('¿Actualmente el problema persiste?')
-                        ->default(false),
-                    Forms\Components\Toggle::make('evidencia_reparacion')
-                        ->label('¿Se evidencia la reparación en el punto?')
-                        ->default(false),
-                    Forms\Components\Toggle::make('servicio_correcto')
-                        ->label('¿El servicio funciona correctamente?')
-                        ->default(false)
-                        ->columnSpanFull(),
-                ]),
+                Section::make('Hallazgos Técnicos y Validación Física')
+                    ->icon('heroicon-o-magnifying-glass')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\Toggle::make('se_detecto_fuga')
+                            ->label('¿Se detectó fuga o falla?')
+                            ->default(false)
+                            ->live()
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('ppm')
+                            ->label('Medición PPM')
+                            ->maxLength(50)
+                            ->visible(fn ($get) => (bool) $get('se_detecto_fuga')),
+                        Forms\Components\TextInput::make('vol_porcentaje')
+                            ->label('VOL %')
+                            ->maxLength(50)
+                            ->visible(fn ($get) => (bool) $get('se_detecto_fuga')),
+                        Forms\Components\Toggle::make('problema_persiste')
+                            ->label('¿Actualmente el problema persiste?')
+                            ->default(false),
+                        Forms\Components\Toggle::make('evidencia_reparacion')
+                            ->label('¿Se evidencia la reparación en el punto?')
+                            ->default(false),
+                        Forms\Components\Toggle::make('servicio_correcto')
+                            ->label('¿El servicio funciona correctamente?')
+                            ->default(false)
+                            ->columnSpanFull(),
+                    ]),
 
-            Section::make('Materiales y Cobros')
-                ->icon('heroicon-o-currency-dollar')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\Toggle::make('se_usaron_materiales')
-                        ->label('¿Se utilizaron materiales?')
-                        ->default(false)
-                        ->live()
-                        ->columnSpanFull(),
-                    Forms\Components\Select::make('quien_suministro_materiales')
-                        ->label('¿Quién suministró los materiales?')
-                        ->options([
-                            'tecnico' => 'Técnico',
-                            'usuario' => 'Usuario',
-                            'empresa' => 'Empresa',
-                        ])
-                        ->placeholder('Seleccionar')
-                        ->visible(fn ($get) => (bool) $get('se_usaron_materiales'))
-                        ->columnSpanFull(),
-                    Forms\Components\Toggle::make('usuario_asumio_costo')
-                        ->label('¿El usuario asumió algún costo?')
-                        ->default(false)
-                        ->live()
-                        ->columnSpanFull(),
-                    Forms\Components\TextInput::make('valor_pagado')
-                        ->label('Valor pagado')
-                        ->maxLength(100)
-                        ->visible(fn ($get) => (bool) $get('usuario_asumio_costo')),
-                    Forms\Components\Select::make('medio_pago')
-                        ->label('Medio de pago')
-                        ->options([
-                            'efectivo' => 'Efectivo',
-                            'transferencia' => 'Transferencia',
-                        ])
-                        ->placeholder('Seleccionar')
-                        ->visible(fn ($get) => (bool) $get('usuario_asumio_costo')),
-                    Forms\Components\Toggle::make('entrego_factura')
-                        ->label('¿Se entregó factura, IVT o soporte de cobro?')
-                        ->default(false)
-                        ->columnSpanFull(),
-                ]),
+                Section::make('Materiales y Cobros')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\Toggle::make('se_usaron_materiales')
+                            ->label('¿Se utilizaron materiales?')
+                            ->default(false)
+                            ->live()
+                            ->columnSpanFull(),
+                        Forms\Components\Select::make('quien_suministro_materiales')
+                            ->label('¿Quién suministró los materiales?')
+                            ->options([
+                                'tecnico' => 'Técnico',
+                                'usuario' => 'Usuario',
+                                'empresa' => 'Empresa',
+                            ])
+                            ->placeholder('Seleccionar')
+                            ->visible(fn ($get) => (bool) $get('se_usaron_materiales'))
+                            ->columnSpanFull(),
+                        Forms\Components\Toggle::make('usuario_asumio_costo')
+                            ->label('¿El usuario asumió algún costo?')
+                            ->default(false)
+                            ->live()
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('valor_pagado')
+                            ->label('Valor pagado')
+                            ->maxLength(100)
+                            ->visible(fn ($get) => (bool) $get('usuario_asumio_costo')),
+                        Forms\Components\Select::make('medio_pago')
+                            ->label('Medio de pago')
+                            ->options([
+                                'efectivo' => 'Efectivo',
+                                'transferencia' => 'Transferencia',
+                            ])
+                            ->placeholder('Seleccionar')
+                            ->visible(fn ($get) => (bool) $get('usuario_asumio_costo')),
+                        Forms\Components\Toggle::make('entrego_factura')
+                            ->label('¿Se entregó factura, IVT o soporte de cobro?')
+                            ->default(false)
+                            ->columnSpanFull(),
+                    ]),
 
-            Section::make('Trazabilidad y Contradicción')
-                ->icon('heroicon-o-document-check')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\TextInput::make('tecnico_dejo_documento')
-                        ->label('¿El técnico dejó algún documento (IVT, certificado)?')
-                        ->maxLength(255)
-                        ->columnSpanFull(),
-                    Forms\Components\Toggle::make('informaron_no_estaba')
-                        ->label('¿Le informaron erróneamente que no estaba en la vivienda?')
-                        ->default(false),
-                ]),
+                Section::make('Trazabilidad y Contradicción')
+                    ->icon('heroicon-o-document-check')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\TextInput::make('tecnico_dejo_documento')
+                            ->label('¿El técnico dejó algún documento (IVT, certificado)?')
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+                        Forms\Components\Toggle::make('informaron_no_estaba')
+                            ->label('¿Le informaron erróneamente que no estaba en la vivienda?')
+                            ->default(false),
+                    ]),
+            ]),
+
+            ...($esMedidoresDigitales ? [
+                Section::make('Validación y Hallazgos — Medidores Digitales')
+                    ->icon('heroicon-o-cpu-chip')
+                    ->columns(2)
+                    ->schema([
+                        Forms\Components\DatePicker::make('fecha_visita_medidor')
+                            ->label('Fecha visita')
+                            ->required()
+                            ->displayFormat('d/m/Y'),
+                        Forms\Components\TextInput::make('tecnico_atendio_medidor')
+                            ->label('Técnico que atendió')
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('nombre_atiende_medidor')
+                            ->label('Nombre de quien atiende visita')
+                            ->required()
+                            ->maxLength(255)
+                            ->columnSpanFull(),
+                        Forms\Components\Toggle::make('solicito_dinero_medidor')
+                            ->label('¿Solicitó, insinuó o recibió dinero?')
+                            ->default(false),
+                        Forms\Components\Toggle::make('gestion_conforme_medidor')
+                            ->label('¿Gestión conforme a procedimientos?')
+                            ->default(false),
+                        Forms\Components\Toggle::make('requiere_seguimiento_medidor')
+                            ->label('¿Requiere seguimiento?')
+                            ->default(false),
+                        Forms\Components\Toggle::make('informo_gratuidad_medidor')
+                            ->label('¿Informó gratuidad medidor/instalación?')
+                            ->default(false),
+                        Forms\Components\Textarea::make('hallazgos_medidor')
+                            ->label('Hallazgos / observaciones')
+                            ->rows(3)
+                            ->columnSpanFull(),
+                    ]),
+            ] : []),
 
             Section::make('Autorización y Firmas')
                 ->icon('heroicon-o-pencil')

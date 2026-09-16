@@ -463,6 +463,7 @@
                     </dl>
                 </div>
 
+                @unless ($datosServicio['es_medidores_digitales'] ?? false)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">2. Quién Atendió la Visita</h3>
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
@@ -553,6 +554,50 @@
                         </div>
                     </dl>
                 </div>
+                @endunless
+
+                @if ($datosServicio['es_medidores_digitales'] ?? false)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">3–6. Validación y Hallazgos</h3>
+                    <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+                        @php $yesno = fn($v) => $v ? 'Sí' : 'No'; @endphp
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Fecha visita</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['fecha_visita_medidor'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Técnico que atendió</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['tecnico_atendio_medidor'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Nombre de quien atiende visita</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['nombre_atiende_medidor'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Informó gratuidad medidor/instalación</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['informo_gratuidad_medidor']) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Solicitó, insinuó o recibió dinero</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['solicito_dinero_medidor']) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Gestión conforme a procedimientos</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['gestion_conforme_medidor']) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Requiere seguimiento</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['requiere_seguimiento_medidor']) }}</dd>
+                        </div>
+                        @if ($datosServicio['hallazgos_medidor'] ?? null)
+                            <div class="col-span-full">
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Hallazgos / observaciones</dt>
+                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['hallazgos_medidor'] }}</dd>
+                            </div>
+                        @endif
+                    </dl>
+                </div>
+                @endif
 
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">7. Autorización y Firmas</h3>

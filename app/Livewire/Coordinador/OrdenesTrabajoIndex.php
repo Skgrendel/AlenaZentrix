@@ -514,6 +514,7 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         ->options([
                             'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
                             'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+                            'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
                         ])
                         ->placeholder('Seleccionar')
                         ->columnSpanFull(),

@@ -271,11 +271,34 @@ class AuditoriaRevisar extends Component implements HasForms
             $subtipo = match ($orden?->tipo_auditoria_campo) {
                 'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
                 'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+                'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
                 default => 'Auditoría de Campo',
             };
 
+            if ($orden?->tipo_auditoria_campo === 'visita_calidad_medidores_digitales') {
+                return [
+                    'subtipo' => $subtipo,
+                    'es_medidores_digitales' => true,
+                    'fecha_visita_medidor' => $datos['fecha_visita_medidor'] ?? null,
+                    'tecnico_atendio_medidor' => $datos['tecnico_atendio_medidor'] ?? null,
+                    'nombre_atiende_medidor' => $datos['nombre_atiende_medidor'] ?? null,
+                    'informo_gratuidad_medidor' => $datos['informo_gratuidad_medidor'] ?? false,
+                    'solicito_dinero_medidor' => $datos['solicito_dinero_medidor'] ?? false,
+                    'gestion_conforme_medidor' => $datos['gestion_conforme_medidor'] ?? false,
+                    'requiere_seguimiento_medidor' => $datos['requiere_seguimiento_medidor'] ?? false,
+                    'hallazgos_medidor' => $datos['hallazgos_medidor'] ?? null,
+                    'autoriza' => $datos['autoriza'] ?? false,
+                    'firma_usuario' => $datos['firma_usuario'] ?? null,
+                    'cedula_usuario' => $datos['cedula_usuario'] ?? null,
+                    'firma_auditor' => $datos['firma_auditor'] ?? null,
+                    'cedula_auditor' => $datos['cedula_auditor'] ?? null,
+                    'urls_evidencia' => $datos['urls_evidencia'] ?? [],
+                ];
+            }
+
             return [
                 'subtipo' => $subtipo,
+                'es_medidores_digitales' => false,
                 'fecha_hora_atencion' => $datos['fecha_hora_atencion'] ?? null,
                 'ciudad' => $datos['ciudad'] ?? null,
                 'celular_usuario' => $datos['celular_usuario'] ?? null,

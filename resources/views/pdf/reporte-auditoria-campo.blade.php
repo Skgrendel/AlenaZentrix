@@ -493,6 +493,7 @@
         @endif
 
         {{-- ── Validación de la Atención ── --}}
+        @unless ($datosReporte['es_medidores_digitales'] ?? false)
         <div class="section">
             <div class="section-title">VALIDACIÓN DE LA ATENCIÓN Y EJECUCIÓN</div>
             <div class="info-box">
@@ -608,6 +609,57 @@
                 </table>
             </div>
         </div>
+        @endunless
+
+        {{-- ── Validación y Hallazgos — Medidores Digitales ── --}}
+        @if ($datosReporte['es_medidores_digitales'] ?? false)
+        <div class="section">
+            <div class="section-title">VALIDACIÓN Y HALLAZGOS — MEDIDORES DIGITALES</div>
+            <div class="info-box">
+                <table class="col2-tabla">
+                    <tr>
+                        <td class="col2-lbl">Fecha visita:</td>
+                        <td class="col2-val">
+                            {{ $datosReporte['fecha_visita_medidor'] ? \Illuminate\Support\Carbon::parse($datosReporte['fecha_visita_medidor'])->format('d/m/Y') : '—' }}
+                        </td>
+                        <td class="col2-sep"></td>
+                        <td class="col2-lbl-r">Técnico que atendió:</td>
+                        <td class="col2-val-r">{{ $datosReporte['tecnico_atendio_medidor'] ?? '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="col2-lbl">Nombre de quien atiende visita:</td>
+                        <td class="col2-val" colspan="4">{{ $datosReporte['nombre_atiende_medidor'] ?? '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="col2-lbl">¿Informó gratuidad medidor/instalación?</td>
+                        <td class="col2-val"><span
+                                class="badge {{ $datosReporte['informo_gratuidad_medidor'] ? 'badge-green' : 'badge-red' }}">{{ $datosReporte['informo_gratuidad_medidor'] ? 'SÍ' : 'NO' }}</span>
+                        </td>
+                        <td class="col2-sep"></td>
+                        <td class="col2-lbl-r">¿Solicitó, insinuó o recibió dinero?</td>
+                        <td class="col2-val-r"><span
+                                class="badge {{ $datosReporte['solicito_dinero_medidor'] ? 'badge-red' : 'badge-green' }}">{{ $datosReporte['solicito_dinero_medidor'] ? 'SÍ' : 'NO' }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="col2-lbl">¿Gestión conforme a procedimientos?</td>
+                        <td class="col2-val"><span
+                                class="badge {{ $datosReporte['gestion_conforme_medidor'] ? 'badge-green' : 'badge-red' }}">{{ $datosReporte['gestion_conforme_medidor'] ? 'SÍ' : 'NO' }}</span>
+                        </td>
+                        <td class="col2-sep"></td>
+                        <td class="col2-lbl-r">¿Requiere seguimiento?</td>
+                        <td class="col2-val-r"><span
+                                class="badge {{ $datosReporte['requiere_seguimiento_medidor'] ? 'badge-red' : 'badge-green' }}">{{ $datosReporte['requiere_seguimiento_medidor'] ? 'SÍ' : 'NO' }}</span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            @if ($datosReporte['hallazgos_medidor'])
+                <div style="font-size:8pt; font-weight:bold; color:#003E72; margin:6px 0 2px 0;">Hallazgos / observaciones:</div>
+                <div class="content-box" style="margin-top:4px;">{{ $datosReporte['hallazgos_medidor'] }}</div>
+            @endif
+        </div>
+        @endif
 
         {{-- ── Observaciones ── --}}
         <div class="section">

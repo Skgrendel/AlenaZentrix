@@ -218,6 +218,7 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->options([
                                 'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
                                 'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+                                'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
                             ])
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
                             ->placeholder('Seleccionar')

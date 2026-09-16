@@ -100,6 +100,53 @@ it('datosServicioDisplay returns structured array for AuditoriaCampo', function 
         ->and($display['autoriza'])->toBeTrue();
 });
 
+it('datosServicioDisplay returns medidores digitales fields for that subtipo', function () {
+    $company = Company::factory()->create();
+    $user = User::factory()->create(['company_id' => $company->id, 'is_superadmin' => false]);
+    $this->actingAs($user);
+
+    $orden = OrdenJob::create([
+        'tipo_servicio' => TipoServicio::AuditoriaCampo,
+        'tipo_auditoria_campo' => 'visita_calidad_medidores_digitales',
+        'prioridad' => PrioridadOrden::Media,
+        'estado' => EstadoOrden::EnRevision,
+        'estado_servicio' => true,
+    ]);
+
+    $reporte = reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => null,
+        'numero_orden' => $orden->numero_orden,
+        'datos_servicio' => [
+            'fecha_visita_medidor' => '2026-05-29',
+            'tecnico_atendio_medidor' => 'Juan Pérez',
+            'nombre_atiende_medidor' => 'María García',
+            'informo_gratuidad_medidor' => true,
+            'solicito_dinero_medidor' => false,
+            'gestion_conforme_medidor' => true,
+            'requiere_seguimiento_medidor' => false,
+            'hallazgos_medidor' => 'Sin novedades',
+            'autoriza' => true,
+        ],
+    ]);
+
+    $component = new ReporteRevisar;
+    $component->orden = $orden->load('personal');
+    $component->reporte = $reporte;
+
+    $display = $component->datosServicioDisplay();
+
+    expect($display['subtipo'])->toBe('Visita de Calidad — Medidores Digitales')
+        ->and($display['es_medidores_digitales'])->toBeTrue()
+        ->and($display['tecnico_atendio_medidor'])->toBe('Juan Pérez')
+        ->and($display['nombre_atiende_medidor'])->toBe('María García')
+        ->and($display['informo_gratuidad_medidor'])->toBeTrue()
+        ->and($display['solicito_dinero_medidor'])->toBeFalse()
+        ->and($display['hallazgos_medidor'])->toBe('Sin novedades')
+        ->and($display)->not->toHaveKey('se_detecto_fuga')
+        ->and($display)->not->toHaveKey('se_usaron_materiales');
+});
+
 it('evidenciasUrls clasifies images and documents by extension', function () {
     $company = Company::factory()->create();
     $user = User::factory()->create(['company_id' => $company->id, 'is_superadmin' => false]);
