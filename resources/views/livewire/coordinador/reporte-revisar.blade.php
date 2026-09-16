@@ -571,7 +571,6 @@
                 </div>
 
                 {{-- Sección 2: Quién Atiende --}}
-                @unless ($datosServicio['es_medidores_digitales'] ?? false)
                 <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">2. Quién Atendió la
                         Visita</h3>
@@ -595,6 +594,7 @@
                 </div>
 
                 {{-- Secciones 3–6: Validación, Hallazgos, Materiales, Trazabilidad --}}
+                @unless ($datosServicio['es_medidores_digitales'] ?? false)
                 <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">3–6. Validación y
                         Hallazgos</h3>
@@ -689,29 +689,14 @@
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
                         @php $yesno = fn($v) => $v ? 'Sí' : 'No'; @endphp
                         <div>
-                            <dt class="text-xs font-medium uppercase text-zinc-400">Fecha visita</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
-                                {{ $datosServicio['fecha_visita_medidor'] ?? '—' }}</dd>
-                        </div>
-                        <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Técnico que atendió</dt>
                             <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
                                 {{ $datosServicio['tecnico_atendio_medidor'] ?? '—' }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-medium uppercase text-zinc-400">Nombre de quien atiende visita</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
-                                {{ $datosServicio['nombre_atiende_medidor'] ?? '—' }}</dd>
-                        </div>
-                        <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Número de medidor instalado</dt>
                             <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
                                 {{ $datosServicio['numero_medidor_instalado'] ?? '—' }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs font-medium uppercase text-zinc-400">Teléfono de contacto</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
-                                {{ $datosServicio['telefono_contacto_medidor'] ?? '—' }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Resultado de la auditoría</dt>

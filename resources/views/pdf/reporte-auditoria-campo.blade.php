@@ -618,24 +618,11 @@
             <div class="info-box">
                 <table class="col2-tabla">
                     <tr>
-                        <td class="col2-lbl">Fecha visita:</td>
-                        <td class="col2-val">
-                            {{ $datosReporte['fecha_visita_medidor'] ? \Illuminate\Support\Carbon::parse($datosReporte['fecha_visita_medidor'])->format('d/m/Y') : '—' }}
-                        </td>
+                        <td class="col2-lbl">Técnico que atendió:</td>
+                        <td class="col2-val">{{ $datosReporte['tecnico_atendio_medidor'] ?? '—' }}</td>
                         <td class="col2-sep"></td>
-                        <td class="col2-lbl-r">Técnico que atendió:</td>
-                        <td class="col2-val-r">{{ $datosReporte['tecnico_atendio_medidor'] ?? '—' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="col2-lbl">Nombre de quien atiende visita:</td>
-                        <td class="col2-val" colspan="4">{{ $datosReporte['nombre_atiende_medidor'] ?? '—' }}</td>
-                    </tr>
-                    <tr>
-                        <td class="col2-lbl">Número de medidor instalado:</td>
-                        <td class="col2-val">{{ $datosReporte['numero_medidor_instalado'] ?? '—' }}</td>
-                        <td class="col2-sep"></td>
-                        <td class="col2-lbl-r">Teléfono de contacto:</td>
-                        <td class="col2-val-r">{{ $datosReporte['telefono_contacto_medidor'] ?? '—' }}</td>
+                        <td class="col2-lbl-r">Número de medidor instalado:</td>
+                        <td class="col2-val-r">{{ $datosReporte['numero_medidor_instalado'] ?? '—' }}</td>
                     </tr>
                     <tr>
                         <td class="col2-lbl">Resultado de la auditoría:</td>

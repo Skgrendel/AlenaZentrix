@@ -312,15 +312,30 @@ class ReporteRevisar extends Component implements HasActions, HasForms
                 default => 'Auditoría de Campo',
             };
 
+            $comunes = [
+                'subtipo' => $subtipo,
+                'fecha_hora_atencion' => $datos['fecha_hora_atencion'] ?? null,
+                'ciudad' => $datos['ciudad'] ?? null,
+                'celular_usuario' => $datos['celular_usuario'] ?? null,
+                'comentario_usuario' => $datos['comentario_usuario'] ?? null,
+                'comentario_tecnico' => $datos['comentario_tecnico'] ?? null,
+                'nombre_atiende' => $datos['nombre_atiende'] ?? null,
+                'vinculo_usuario' => $datos['vinculo_usuario'] ?? null,
+                'celular_atiende' => $datos['celular_atiende'] ?? null,
+                'autoriza' => $datos['autoriza'] ?? false,
+                'firma_usuario' => $datos['firma_usuario'] ?? null,
+                'cedula_usuario' => $datos['cedula_usuario'] ?? null,
+                'firma_auditor' => $datos['firma_auditor'] ?? null,
+                'cedula_auditor' => $datos['cedula_auditor'] ?? null,
+                'urls_evidencia' => $datos['urls_evidencia'] ?? [],
+            ];
+
             if ($this->orden->tipo_auditoria_campo === 'visita_calidad_medidores_digitales') {
                 return [
-                    'subtipo' => $subtipo,
+                    ...$comunes,
                     'es_medidores_digitales' => true,
-                    'fecha_visita_medidor' => $datos['fecha_visita_medidor'] ?? null,
                     'tecnico_atendio_medidor' => $datos['tecnico_atendio_medidor'] ?? null,
-                    'nombre_atiende_medidor' => $datos['nombre_atiende_medidor'] ?? null,
                     'numero_medidor_instalado' => $datos['numero_medidor_instalado'] ?? null,
-                    'telefono_contacto_medidor' => $datos['telefono_contacto_medidor'] ?? null,
                     'resultado_medidor' => match ($datos['resultado_medidor'] ?? null) {
                         'conforme' => 'Conforme',
                         'no_conforme' => 'No conforme',
@@ -332,26 +347,12 @@ class ReporteRevisar extends Component implements HasActions, HasForms
                     'gestion_conforme_medidor' => $datos['gestion_conforme_medidor'] ?? false,
                     'requiere_seguimiento_medidor' => $datos['requiere_seguimiento_medidor'] ?? false,
                     'hallazgos_medidor' => $datos['hallazgos_medidor'] ?? null,
-                    'autoriza' => $datos['autoriza'] ?? false,
-                    'firma_usuario' => $datos['firma_usuario'] ?? null,
-                    'cedula_usuario' => $datos['cedula_usuario'] ?? null,
-                    'firma_auditor' => $datos['firma_auditor'] ?? null,
-                    'cedula_auditor' => $datos['cedula_auditor'] ?? null,
-                    'urls_evidencia' => $datos['urls_evidencia'] ?? [],
                 ];
             }
 
             return [
-                'subtipo' => $subtipo,
+                ...$comunes,
                 'es_medidores_digitales' => false,
-                'fecha_hora_atencion' => $datos['fecha_hora_atencion'] ?? null,
-                'ciudad' => $datos['ciudad'] ?? null,
-                'celular_usuario' => $datos['celular_usuario'] ?? null,
-                'comentario_usuario' => $datos['comentario_usuario'] ?? null,
-                'comentario_tecnico' => $datos['comentario_tecnico'] ?? null,
-                'nombre_atiende' => $datos['nombre_atiende'] ?? null,
-                'vinculo_usuario' => $datos['vinculo_usuario'] ?? null,
-                'celular_atiende' => $datos['celular_atiende'] ?? null,
                 'recibio_visita' => $datos['recibio_visita'] ?? false,
                 'se_realizo_revision' => $datos['se_realizo_revision'] ?? false,
                 'fecha_ejecucion' => $datos['fecha_ejecucion'] ?? null,
@@ -371,12 +372,6 @@ class ReporteRevisar extends Component implements HasActions, HasForms
                 'entrego_factura' => $datos['entrego_factura'] ?? false,
                 'tecnico_dejo_documento' => $datos['tecnico_dejo_documento'] ?? null,
                 'informaron_no_estaba' => $datos['informaron_no_estaba'] ?? false,
-                'autoriza' => $datos['autoriza'] ?? false,
-                'firma_usuario' => $datos['firma_usuario'] ?? null,
-                'cedula_usuario' => $datos['cedula_usuario'] ?? null,
-                'firma_auditor' => $datos['firma_auditor'] ?? null,
-                'cedula_auditor' => $datos['cedula_auditor'] ?? null,
-                'urls_evidencia' => $datos['urls_evidencia'] ?? [],
             ];
         }
 

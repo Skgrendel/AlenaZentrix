@@ -120,6 +120,73 @@ test('coordinador can download pdf for fraudes reporte', function () {
     $response->assertHeader('Content-Type', 'application/pdf');
 });
 
+test('coordinador can download pdf for auditoria campo medidores digitales reporte', function () {
+    Storage::fake('s3');
+
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'tipo_auditoria_campo' => 'visita_calidad_medidores_digitales',
+        'estado' => EstadoOrden::EnRevision->value,
+        'creado_por_id' => $user->id,
+        'company_id' => $user->company_id,
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
+        'imagenes' => [],
+        'datos_servicio' => [
+            'fecha_hora_atencion' => '2026-05-29 10:00',
+            'nombre_atiende' => 'María García',
+            'tecnico_atendio_medidor' => 'Juan Pérez',
+            'numero_medidor_instalado' => 'MD-999',
+            'resultado_medidor' => 'conforme',
+        ],
+    ]);
+
+    $response = $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo.reporte-auditoria-campo', $orden));
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'application/pdf');
+});
+
+test('coordinador can download pdf for auditoria campo emergencia reporte', function () {
+    Storage::fake('s3');
+
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'tipo_auditoria_campo' => 'visita_calidad_emergencia',
+        'estado' => EstadoOrden::EnRevision->value,
+        'creado_por_id' => $user->id,
+        'company_id' => $user->company_id,
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
+        'imagenes' => [],
+        'datos_servicio' => [
+            'nombre_atiende' => 'María García',
+            'recibio_visita' => true,
+        ],
+    ]);
+
+    $response = $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo.reporte-auditoria-campo', $orden));
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'application/pdf');
+});
+
 test('guests are redirected to login on vigilancia pdf download', function () {
     $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Vigilancia->value]);
 

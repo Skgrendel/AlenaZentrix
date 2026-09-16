@@ -843,30 +843,30 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                 ]),
 
-            ...($esMedidoresDigitales ? [] : [
-                Section::make('2. Datos de Quién Atiende la Visita')
-                    ->icon('heroicon-o-user-circle')
-                    ->columns(2)
-                    ->schema([
-                        Forms\Components\TextInput::make('nombre_atiende')
-                            ->label('Nombre')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\Select::make('vinculo_usuario')
-                            ->label('Vínculo con el usuario')
-                            ->options([
-                                'titular' => 'Titular',
-                                'familiar' => 'Familiar',
-                                'vecino' => 'Vecino',
-                                'otro' => 'Otro',
-                            ])
-                            ->placeholder('Seleccionar'),
-                        Forms\Components\TextInput::make('celular_atiende')
-                            ->label('Celular')
-                            ->tel()
-                            ->maxLength(20),
-                    ]),
+            Section::make('2. Datos de Quién Atiende la Visita')
+                ->icon('heroicon-o-user-circle')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\TextInput::make('nombre_atiende')
+                        ->label('Nombre')
+                        ->required()
+                        ->maxLength(255),
+                    Forms\Components\Select::make('vinculo_usuario')
+                        ->label('Vínculo con el usuario')
+                        ->options([
+                            'titular' => 'Titular',
+                            'familiar' => 'Familiar',
+                            'vecino' => 'Vecino',
+                            'otro' => 'Otro',
+                        ])
+                        ->placeholder('Seleccionar'),
+                    Forms\Components\TextInput::make('celular_atiende')
+                        ->label('Celular')
+                        ->tel()
+                        ->maxLength(20),
+                ]),
 
+            ...($esMedidoresDigitales ? [] : [
                 Section::make('3. Validación de la Atención y Ejecución')
                     ->icon('heroicon-o-check-circle')
                     ->columns(2)
@@ -982,27 +982,14 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     ->icon('heroicon-o-cpu-chip')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\DatePicker::make('fecha_visita_medidor')
-                            ->label('Fecha visita')
-                            ->required()
-                            ->displayFormat('d/m/Y'),
                         Forms\Components\TextInput::make('tecnico_atendio_medidor')
                             ->label('Técnico que atendió')
                             ->required()
                             ->maxLength(255),
-                        Forms\Components\TextInput::make('nombre_atiende_medidor')
-                            ->label('Nombre de quien atiende visita')
-                            ->required()
-                            ->maxLength(255)
-                            ->columnSpanFull(),
                         Forms\Components\TextInput::make('numero_medidor_instalado')
                             ->label('Número de medidor instalado')
                             ->required()
                             ->maxLength(100),
-                        Forms\Components\TextInput::make('telefono_contacto_medidor')
-                            ->label('Teléfono de contacto')
-                            ->tel()
-                            ->maxLength(20),
                         Forms\Components\Select::make('resultado_medidor')
                             ->label('Resultado de la auditoría')
                             ->options([

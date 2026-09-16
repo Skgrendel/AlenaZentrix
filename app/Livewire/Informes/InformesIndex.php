@@ -297,11 +297,11 @@ class InformesIndex extends Component
 
         if ($this->subTipo === 'visita_calidad_medidores_digitales') {
             return [
-                ['label' => 'Fecha Visita', 'value' => $dato('fecha_visita_medidor')],
+                ['label' => 'Fecha y Hora Atención', 'value' => $dato('fecha_hora_atencion')],
                 ['label' => 'Técnico que Atendió', 'value' => $dato('tecnico_atendio_medidor')],
-                ['label' => 'Nombre Atiende', 'value' => $dato('nombre_atiende_medidor')],
+                ['label' => 'Nombre Atiende', 'value' => $dato('nombre_atiende')],
                 ['label' => 'N° Medidor Instalado', 'value' => $dato('numero_medidor_instalado')],
-                ['label' => 'Teléfono Contacto', 'value' => $dato('telefono_contacto_medidor')],
+                ['label' => 'Teléfono Contacto', 'value' => $dato('celular_atiende')],
                 ['label' => 'Resultado Auditoría', 'value' => fn ($reporte) => match ($reporte?->datos_servicio['resultado_medidor'] ?? null) {
                     'conforme' => 'Conforme',
                     'no_conforme' => 'No conforme',
