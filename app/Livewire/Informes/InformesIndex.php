@@ -71,6 +71,11 @@ class InformesIndex extends Component
                 'contratista' => 'Contratista',
                 'Terceros' => 'Terceros',
             ],
+            TipoServicio::AuditoriaCampo->value => [
+                'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
+                'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+                'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
+            ],
             default => [],
         };
     }
@@ -147,6 +152,7 @@ class InformesIndex extends Component
                 match ($this->servicio) {
                     TipoServicio::GestionLegal->value => $q->where('tipo_gestion_legal', $this->subTipo),
                     TipoServicio::Investigacion->value => $q->where('tipo_investigacion', $this->subTipo),
+                    TipoServicio::AuditoriaCampo->value => $q->where('tipo_auditoria_campo', $this->subTipo),
                     default => null,
                 };
             })

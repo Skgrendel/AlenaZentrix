@@ -995,6 +995,24 @@ class ReporteEdit extends Component implements HasActions, HasForms
                             ->required()
                             ->maxLength(255)
                             ->columnSpanFull(),
+                        Forms\Components\TextInput::make('numero_medidor_instalado')
+                            ->label('Número de medidor instalado')
+                            ->required()
+                            ->maxLength(100),
+                        Forms\Components\TextInput::make('telefono_contacto_medidor')
+                            ->label('Teléfono de contacto')
+                            ->tel()
+                            ->maxLength(20),
+                        Forms\Components\Select::make('resultado_medidor')
+                            ->label('Resultado de la auditoría')
+                            ->options([
+                                'conforme' => 'Conforme',
+                                'no_conforme' => 'No conforme',
+                                'seguimiento_urgente' => 'Requiere seguimiento urgente',
+                            ])
+                            ->required()
+                            ->placeholder('Seleccionar')
+                            ->columnSpanFull(),
                         Forms\Components\Toggle::make('solicito_dinero_medidor')
                             ->label('¿Solicitó, insinuó o recibió dinero?')
                             ->default(false),

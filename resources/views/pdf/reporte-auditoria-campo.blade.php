@@ -631,6 +631,17 @@
                         <td class="col2-val" colspan="4">{{ $datosReporte['nombre_atiende_medidor'] ?? '—' }}</td>
                     </tr>
                     <tr>
+                        <td class="col2-lbl">Número de medidor instalado:</td>
+                        <td class="col2-val">{{ $datosReporte['numero_medidor_instalado'] ?? '—' }}</td>
+                        <td class="col2-sep"></td>
+                        <td class="col2-lbl-r">Teléfono de contacto:</td>
+                        <td class="col2-val-r">{{ $datosReporte['telefono_contacto_medidor'] ?? '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="col2-lbl">Resultado de la auditoría:</td>
+                        <td class="col2-val" colspan="4">{{ $datosReporte['resultado_medidor'] ?? '—' }}</td>
+                    </tr>
+                    <tr>
                         <td class="col2-lbl">¿Informó gratuidad medidor/instalación?</td>
                         <td class="col2-val"><span
                                 class="badge {{ $datosReporte['informo_gratuidad_medidor'] ? 'badge-green' : 'badge-red' }}">{{ $datosReporte['informo_gratuidad_medidor'] ? 'SÍ' : 'NO' }}</span>

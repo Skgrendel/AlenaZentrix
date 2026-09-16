@@ -121,6 +121,9 @@ it('datosServicioDisplay returns medidores digitales fields for that subtipo', f
             'fecha_visita_medidor' => '2026-05-29',
             'tecnico_atendio_medidor' => 'Juan Pérez',
             'nombre_atiende_medidor' => 'María García',
+            'numero_medidor_instalado' => 'MD-123456',
+            'telefono_contacto_medidor' => '3001234567',
+            'resultado_medidor' => 'conforme',
             'informo_gratuidad_medidor' => true,
             'solicito_dinero_medidor' => false,
             'gestion_conforme_medidor' => true,
@@ -140,6 +143,9 @@ it('datosServicioDisplay returns medidores digitales fields for that subtipo', f
         ->and($display['es_medidores_digitales'])->toBeTrue()
         ->and($display['tecnico_atendio_medidor'])->toBe('Juan Pérez')
         ->and($display['nombre_atiende_medidor'])->toBe('María García')
+        ->and($display['numero_medidor_instalado'])->toBe('MD-123456')
+        ->and($display['telefono_contacto_medidor'])->toBe('3001234567')
+        ->and($display['resultado_medidor'])->toBe('Conforme')
         ->and($display['informo_gratuidad_medidor'])->toBeTrue()
         ->and($display['solicito_dinero_medidor'])->toBeFalse()
         ->and($display['hallazgos_medidor'])->toBe('Sin novedades')

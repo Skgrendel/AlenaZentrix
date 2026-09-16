@@ -19,6 +19,9 @@
                         <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $orden->numero_orden }}</span>
                         <flux:badge color="{{ $orden->tipo_servicio->color() }}" size="sm">
                             {{ $orden->tipo_servicio->label() }}</flux:badge>
+                        @if ($orden->tipo_servicio === \App\Enums\TipoServicio::AuditoriaCampo && ($datosServicio['subtipo'] ?? null))
+                            <flux:badge color="zinc" size="sm">{{ $datosServicio['subtipo'] }}</flux:badge>
+                        @endif
                         @if ($orden->estado === \App\Enums\EstadoOrden::Completada)
                             <flux:badge color="green" size="sm">Completada</flux:badge>
                         @else
@@ -699,6 +702,21 @@
                             <dt class="text-xs font-medium uppercase text-zinc-400">Nombre de quien atiende visita</dt>
                             <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
                                 {{ $datosServicio['nombre_atiende_medidor'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Número de medidor instalado</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $datosServicio['numero_medidor_instalado'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Teléfono de contacto</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $datosServicio['telefono_contacto_medidor'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-medium uppercase text-zinc-400">Resultado de la auditoría</dt>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                {{ $datosServicio['resultado_medidor'] ?? '—' }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Informó gratuidad medidor/instalación</dt>
