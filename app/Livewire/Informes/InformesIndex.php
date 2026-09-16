@@ -197,6 +197,8 @@ class InformesIndex extends Component
             $reporte?->tipoImposibilidad?->nombre ?? '',
             $reporte?->tipoRegulador?->nombre ?? '',
             $reporte ? implode(' | ', array_column($reporte->actividades ?? [], 'actividades')) : '',
+            // Columnas específicas del servicio/subtipo filtrado (ver columnasAdicionalesDefinicion())
+            ...array_map(fn (array $columna) => ($columna['value'])($reporte), $this->columnasAdicionalesDefinicion()),
             $reporte?->observaciones ?? '',
             $reporte?->conclusion ?? '',
             $reporte?->created_at?->format('d/m/Y H:i') ?? '',
@@ -220,6 +222,9 @@ class InformesIndex extends Component
             'Estado Auditoría', 'Observaciones Auditoría', 'Fecha Auditoría',
         ];
 
+        $columnasAdicionales = array_column($this->columnasAdicionalesDefinicion(), 'label');
+        array_splice($headers, 26, 0, $columnasAdicionales);
+
         $rows = $this->baseQuery()
             ->get()
             ->map(fn (OrdenJob $o) => $this->mapRow($o))
@@ -242,6 +247,7 @@ class InformesIndex extends Component
                     'Proceso' => $o->proceso?->nombre ?? '—',
                     'Origen de Información' => $o->origenInformacion?->nombre ?? '—',
                     'Servicio' => $o->tipo_servicio->label(),
+                    'Sub-tipo' => $o->subtipoLabel(),
                     'Estado' => $o->estado->label(),
                     'Resultado' => match ($o->resultado) {
                         'positivo' => 'Positiva',
@@ -251,6 +257,7 @@ class InformesIndex extends Component
                     'Investigador' => $o->personal ? "{$o->personal->nombres} {$o->personal->apellidos}" : '—',
                     'Cliente' => $o->cliente ?? '—',
                     'Tiene Reporte' => $reporte ? 'Sí' : 'No',
+                    ...$this->columnasAdicionalesValores($o, $reporte),
                     'Conclusión' => $reporte?->conclusion ?? '—',
                     'Estado Auditoría' => $auditoria instanceof auditoria
                         ? ($auditoria->estado instanceof EstadoAuditoria ? $auditoria->estado->label() : ($auditoria->estado ?? '—'))
@@ -258,6 +265,82 @@ class InformesIndex extends Component
                     'Fecha Completado' => $o->fecha_completado?->format('d/m/Y') ?? '—',
                 ];
             })
+            ->all();
+    }
+
+    /**
+     * Columnas adicionales específicas del servicio/subtipo filtrado, para que la vista previa
+     * y el Excel muestren lo realmente auditado (hoy solo cubre Auditoría de Campo; nuevos
+     * servicios se agregan extendiendo el match de columnasAdicionalesDefinicion()).
+     * Solo se activan cuando el usuario filtra por un servicio concreto, para no ensuciar
+     * la vista "Todos los servicios" con columnas que no aplican a la mayoría de filas.
+     *
+     * @return array<int, array{label: string, value: \Closure(mixed $reporte): string}>
+     */
+    private function columnasAdicionalesDefinicion(): array
+    {
+        return match ($this->servicio) {
+            TipoServicio::AuditoriaCampo->value => $this->columnasAuditoriaCampo(),
+            default => [],
+        };
+    }
+
+    /** @return array<int, array{label: string, value: \Closure(mixed $reporte): string}> */
+    private function columnasAuditoriaCampo(): array
+    {
+        $yesNo = fn (?bool $v): string => match (true) {
+            $v === null => '—',
+            $v => 'Sí',
+            default => 'No',
+        };
+        $dato = fn (string $key) => fn ($reporte) => $reporte?->datos_servicio[$key] ?? '—';
+
+        if ($this->subTipo === 'visita_calidad_medidores_digitales') {
+            return [
+                ['label' => 'Fecha Visita', 'value' => $dato('fecha_visita_medidor')],
+                ['label' => 'Técnico que Atendió', 'value' => $dato('tecnico_atendio_medidor')],
+                ['label' => 'Nombre Atiende', 'value' => $dato('nombre_atiende_medidor')],
+                ['label' => 'N° Medidor Instalado', 'value' => $dato('numero_medidor_instalado')],
+                ['label' => 'Teléfono Contacto', 'value' => $dato('telefono_contacto_medidor')],
+                ['label' => 'Resultado Auditoría', 'value' => fn ($reporte) => match ($reporte?->datos_servicio['resultado_medidor'] ?? null) {
+                    'conforme' => 'Conforme',
+                    'no_conforme' => 'No conforme',
+                    'seguimiento_urgente' => 'Requiere seguimiento urgente',
+                    default => '—',
+                }],
+                ['label' => 'Informó Gratuidad', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['informo_gratuidad_medidor'] ?? null)],
+                ['label' => 'Solicitó/Recibió Dinero', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['solicito_dinero_medidor'] ?? null)],
+                ['label' => 'Gestión Conforme', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['gestion_conforme_medidor'] ?? null)],
+                ['label' => 'Requiere Seguimiento', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['requiere_seguimiento_medidor'] ?? null)],
+                ['label' => 'Hallazgos', 'value' => $dato('hallazgos_medidor')],
+            ];
+        }
+
+        if (in_array($this->subTipo, ['visita_calidad_emergencia', 'visita_calidad_trabajos_varios'], true)) {
+            return [
+                ['label' => 'Recibió Visita', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['recibio_visita'] ?? null)],
+                ['label' => 'Se Realizó Revisión', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['se_realizo_revision'] ?? null)],
+                ['label' => 'Fecha Ejecución', 'value' => $dato('fecha_ejecucion')],
+                ['label' => 'Descripción Trabajo', 'value' => $dato('descripcion_trabajo')],
+                ['label' => 'Fuga/Falla Detectada', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['se_detecto_fuga'] ?? null)],
+                ['label' => 'Problema Persiste', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['problema_persiste'] ?? null)],
+                ['label' => 'Servicio Correcto', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['servicio_correcto'] ?? null)],
+                ['label' => 'Se Usaron Materiales', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['se_usaron_materiales'] ?? null)],
+                ['label' => 'Usuario Asumió Costo', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['usuario_asumio_costo'] ?? null)],
+                ['label' => 'Entregó Factura/IVT', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['entrego_factura'] ?? null)],
+            ];
+        }
+
+        // Servicio Auditoría de Campo sin subtipo elegido: los subtipos tienen estructuras de
+        // datos distintas, así que no mezclamos columnas hasta que el usuario elija uno.
+        return [];
+    }
+
+    /** @return array<string, string> */
+    private function columnasAdicionalesValores(OrdenJob $o, $reporte): array
+    {
+        return collect($this->columnasAdicionalesDefinicion())
+            ->mapWithKeys(fn (array $columna) => [$columna['label'] => ($columna['value'])($reporte)])
             ->all();
     }
 

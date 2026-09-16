@@ -191,6 +191,12 @@ class OrdenJob extends Model
         return match ($this->tipo_servicio) {
             TipoServicio::GestionLegal => TipologiaOrden::find($this->tipo_gestion_legal ?? null)?->nombre ?? ($this->tipo_gestion_legal ?? '—'),
             TipoServicio::Investigacion => $this->tipo_investigacion ?? '—',
+            TipoServicio::AuditoriaCampo => match ($this->tipo_auditoria_campo) {
+                'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
+                'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
+                'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
+                default => '—',
+            },
             default => '—',
         };
     }
