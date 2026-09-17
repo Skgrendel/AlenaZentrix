@@ -159,7 +159,7 @@ class ReporteController extends Controller
             TipoServicio::Vigilancia => $this->reglasVigilancia(),
             TipoServicio::Investigacion => $this->reglasInvestigacion(),
             TipoServicio::GestionLegal => $this->reglasGestionLegal(),
-            TipoServicio::AuditoriaCampo => $this->reglasAuditoriaCampo(),
+            TipoServicio::AuditoriaCampo => $this->reglasAuditoriaCampo($orden),
             default => [],
         };
 
@@ -249,13 +249,36 @@ class ReporteController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function reglasAuditoriaCampo(): array
+    private function reglasAuditoriaCampo(OrdenJob $orden): array
     {
-        return [
+        $comunes = [
             'nombre_atiende' => ['required', 'string', 'max:255'],
             'vinculo_usuario' => ['nullable', 'in:titular,familiar,vecino,otro'],
             'celular_atiende' => ['nullable', 'string', 'max:20'],
             'fecha_hora_atencion' => ['required', 'date'],
+            'autoriza' => ['required', 'boolean'],
+            'cedula_usuario' => ['required', 'string', 'max:20'],
+            'cedula_auditor' => ['required', 'string', 'max:20'],
+            'firma_usuario' => ['nullable', 'string'],
+            'firma_auditor' => ['nullable', 'string'],
+            'urls_evidencia' => ['nullable', 'array'],
+            'urls_evidencia.*' => ['url'],
+        ];
+
+        if ($orden->tipo_auditoria_campo === 'visita_calidad_medidores_digitales') {
+            return array_merge($comunes, [
+                'tecnico_atendio_medidor' => ['required', 'string', 'max:255'],
+                'numero_medidor_instalado' => ['required', 'string', 'max:100'],
+                'resultado_medidor' => ['required', 'in:conforme,no_conforme,seguimiento_urgente'],
+                'informo_gratuidad_medidor' => ['nullable', 'boolean'],
+                'solicito_dinero_medidor' => ['nullable', 'boolean'],
+                'gestion_conforme_medidor' => ['nullable', 'boolean'],
+                'requiere_seguimiento_medidor' => ['nullable', 'boolean'],
+                'hallazgos_medidor' => ['nullable', 'string'],
+            ]);
+        }
+
+        return array_merge($comunes, [
             'recibio_visita' => ['required', 'boolean'],
             'se_realizo_revision' => ['required', 'boolean'],
             'fecha_ejecucion' => ['nullable', 'date'],
@@ -275,14 +298,7 @@ class ReporteController extends Controller
             'entrego_factura' => ['nullable', 'boolean'],
             'tecnico_dejo_documento' => ['nullable', 'string', 'max:255'],
             'informaron_no_estaba' => ['nullable', 'boolean'],
-            'autoriza' => ['required', 'boolean'],
-            'cedula_usuario' => ['required', 'string', 'max:20'],
-            'cedula_auditor' => ['required', 'string', 'max:20'],
-            'firma_usuario' => ['nullable', 'string'],
-            'firma_auditor' => ['nullable', 'string'],
-            'urls_evidencia' => ['nullable', 'array'],
-            'urls_evidencia.*' => ['url'],
-        ];
+        ]);
     }
 
     // ─────────────────────────────────────────────────────────────

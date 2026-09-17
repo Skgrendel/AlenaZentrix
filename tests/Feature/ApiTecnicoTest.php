@@ -202,6 +202,91 @@ test('POST reporte reenviado en una orden ya sincronizada no duplica el reporte'
     expect($orden->fresh()->reportes()->count())->toBe(1);
 });
 
+// ── Reportes: Auditoría de Campo ───────────────────────────────────────────────
+
+test('POST reporte auditoria campo medidores digitales guarda los campos del subtipo', function () {
+    [$user, $token] = tecnicoConToken();
+    $orden = ordenAsignada($user, [
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'tipo_auditoria_campo' => 'visita_calidad_medidores_digitales',
+        'estado' => EstadoOrden::EnProgreso->value,
+    ]);
+
+    $payload = [
+        'nombre_atiende' => 'María García',
+        'celular_atiende' => '3001234567',
+        'fecha_hora_atencion' => now()->toDateTimeString(),
+        'tecnico_atendio_medidor' => 'Juan Pérez',
+        'numero_medidor_instalado' => 'MD-123456',
+        'resultado_medidor' => 'conforme',
+        'informo_gratuidad_medidor' => true,
+        'solicito_dinero_medidor' => false,
+        'gestion_conforme_medidor' => true,
+        'requiere_seguimiento_medidor' => false,
+        'hallazgos_medidor' => 'Sin novedades',
+        'autoriza' => true,
+        'cedula_usuario' => '12345678',
+        'cedula_auditor' => '87654321',
+    ];
+
+    $response = $this->withToken($token)
+        ->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", $payload)
+        ->assertCreated();
+
+    $reporte = $orden->fresh()->reportes()->latest()->first();
+
+    expect($reporte->datos_servicio['numero_medidor_instalado'])->toBe('MD-123456')
+        ->and($reporte->datos_servicio['resultado_medidor'])->toBe('conforme')
+        ->and($reporte->datos_servicio['tecnico_atendio_medidor'])->toBe('Juan Pérez')
+        ->and($reporte->datos_servicio['nombre_atiende'])->toBe('María García');
+});
+
+test('POST reporte auditoria campo medidores digitales sin numero de medidor falla la validación', function () {
+    [$user, $token] = tecnicoConToken();
+    $orden = ordenAsignada($user, [
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'tipo_auditoria_campo' => 'visita_calidad_medidores_digitales',
+        'estado' => EstadoOrden::EnProgreso->value,
+    ]);
+
+    $payload = [
+        'nombre_atiende' => 'María García',
+        'fecha_hora_atencion' => now()->toDateTimeString(),
+        'tecnico_atendio_medidor' => 'Juan Pérez',
+        'resultado_medidor' => 'conforme',
+        'autoriza' => true,
+        'cedula_usuario' => '12345678',
+        'cedula_auditor' => '87654321',
+    ];
+
+    $this->withToken($token)
+        ->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", $payload)
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['numero_medidor_instalado']);
+});
+
+test('POST reporte auditoria campo emergencia sigue exigiendo recibio_visita', function () {
+    [$user, $token] = tecnicoConToken();
+    $orden = ordenAsignada($user, [
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'tipo_auditoria_campo' => 'visita_calidad_emergencia',
+        'estado' => EstadoOrden::EnProgreso->value,
+    ]);
+
+    $payload = [
+        'nombre_atiende' => 'María García',
+        'fecha_hora_atencion' => now()->toDateTimeString(),
+        'autoriza' => true,
+        'cedula_usuario' => '12345678',
+        'cedula_auditor' => '87654321',
+    ];
+
+    $this->withToken($token)
+        ->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", $payload)
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['recibio_visita', 'se_realizo_revision']);
+});
+
 test('POST reporte Vigilancia reenviado con el mismo turno no duplica el reporte', function () {
     [$user, $token] = tecnicoConToken();
     $orden = ordenAsignada($user, [
