@@ -542,3 +542,89 @@ test('editar reporte sin fotos previas no muestra la seccion de fotos ya guardad
         ->test(ReporteEdit::class, ['orden' => $orden])
         ->assertDontSee('Fotos ya Guardadas');
 });
+
+test('editar reporte de auditoria de campo precarga comentario_usuario y comentario_tecnico desde la orden cuando el reporte aun no los tiene', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'estado' => EstadoOrden::Rechazada->value,
+        'comentario_usuario' => 'El usuario solicitó revisión por olor a gas.',
+        'comentario_tecnico' => 'Se revisó la instalación y no se encontraron fugas.',
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'datos_servicio' => [
+            'nombre_atiende' => 'Carlos Pérez',
+        ],
+        'comentarios' => 'Falta la firma del auditor.',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden])
+        ->assertSet('data.comentario_usuario', 'El usuario solicitó revisión por olor a gas.')
+        ->assertSet('data.comentario_tecnico', 'Se revisó la instalación y no se encontraron fugas.');
+});
+
+test('editar reporte de auditoria de campo respeta un comentario ya corregido en el reporte en vez del de la orden', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'estado' => EstadoOrden::Rechazada->value,
+        'comentario_usuario' => 'Comentario original de la orden.',
+        'comentario_tecnico' => 'Comentario técnico original de la orden.',
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'datos_servicio' => [
+            'nombre_atiende' => 'Carlos Pérez',
+            'comentario_usuario' => 'Comentario ya corregido por el técnico.',
+            'comentario_tecnico' => 'Comentario técnico ya corregido.',
+        ],
+        'comentarios' => 'Falta la firma del auditor.',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden])
+        ->assertSet('data.comentario_usuario', 'Comentario ya corregido por el técnico.')
+        ->assertSet('data.comentario_tecnico', 'Comentario técnico ya corregido.');
+});

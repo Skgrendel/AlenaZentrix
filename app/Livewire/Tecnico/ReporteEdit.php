@@ -131,8 +131,21 @@ class ReporteEdit extends Component implements HasActions, HasForms
                 'tipo_comercio_id' => $this->reporte->comercio?->tipo_comercio_id,
             ]);
         } else {
+            $datosServicio = $this->reporte->datos_servicio ?? [];
+
+            if ($this->orden->tipo_servicio === TipoServicio::AuditoriaCampo) {
+                // comentario_usuario/comentario_tecnico son editables en este formulario, pero
+                // el reporte solo guarda lo que el técnico haya escrito aquí. Si aún no se ha
+                // corregido este campo, se precarga con el valor original de la orden en vez de
+                // dejarlo en blanco (el "+" no sobrescribe si datos_servicio ya trae un valor).
+                $datosServicio += [
+                    'comentario_usuario' => $this->orden->comentario_usuario,
+                    'comentario_tecnico' => $this->orden->comentario_tecnico,
+                ];
+            }
+
             $this->form->fill([
-                ...($this->reporte->datos_servicio ?? []),
+                ...$datosServicio,
                 'observaciones' => $this->reporte->observaciones,
                 'imagenes' => [],
                 'video' => $this->reporte->video,
