@@ -504,5 +504,41 @@ test('editar reporte muestra las fotos ya guardadas en una galeria separada del 
     expect($urls)->toHaveCount(2)
         ->and($urls[0])->toContain('/operaciones/foto')
         ->and(substr_count($html, 'operaciones/foto'))->toBe(4)
-        ->and($html)->toContain('Fotos ya Guardadas');
+        ->and($html)->toContain('8. Fotos ya Guardadas');
+});
+
+test('editar reporte sin fotos previas no muestra la seccion de fotos ya guardadas', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'estado' => EstadoOrden::Rechazada->value,
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'observaciones' => 'Reporte sin fotos.',
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden])
+        ->assertDontSee('Fotos ya Guardadas');
 });

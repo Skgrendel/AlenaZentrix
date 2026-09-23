@@ -35,6 +35,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use League\Flysystem\UnableToCheckExistence;
 use Livewire\Attributes\Layout;
@@ -346,6 +347,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->url()
                         ->maxLength(500),
                 ]),
+
+            ...$this->seccionFotosExistentes('8'),
         ];
     }
 
@@ -512,6 +515,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->url()
                         ->maxLength(500),
                 ]),
+
+            ...$this->seccionFotosExistentes('7'),
         ];
     }
 
@@ -616,6 +621,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->url()
                         ->maxLength(500),
                 ]),
+
+            ...$this->seccionFotosExistentes('5'),
         ];
     }
 
@@ -690,6 +697,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->url()
                         ->maxLength(500),
                 ]),
+
+            ...$this->seccionFotosExistentes('4'),
         ];
     }
 
@@ -786,6 +795,8 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->url()
                         ->maxLength(500),
                 ]),
+
+            ...$this->seccionFotosExistentes('6'),
         ];
     }
 
@@ -1081,6 +1092,39 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('GeoReferencia')
                         ->url()
                         ->maxLength(500),
+                ]),
+
+            ...$this->seccionFotosExistentes('10'),
+        ];
+    }
+
+    /**
+     * Sección de solo lectura con las fotos ya guardadas del reporte, agregada al final
+     * de cada esquema de formulario únicamente cuando existen. Va separada del campo de
+     * subida de fotos nuevas para que el técnico no confunda "ver lo ya enviado" con
+     * "adjuntar algo más".
+     *
+     * @return array<int, Section>
+     */
+    private function seccionFotosExistentes(string $numero): array
+    {
+        if ($this->imagenesExistentes === []) {
+            return [];
+        }
+
+        return [
+            Section::make($numero.'. Fotos ya Guardadas')
+                ->icon('heroicon-o-photo')
+                ->description('Ya quedaron registradas en el reporte. Usa el campo de fotos de arriba solo para agregar más.')
+                ->schema([
+                    Forms\Components\Placeholder::make('fotos_existentes_galeria')
+                        ->hiddenLabel()
+                        ->content(fn () => new HtmlString(
+                            view('livewire.tecnico.partials.fotos-existentes-galeria', [
+                                'urls' => $this->imagenesExistentesUrls(),
+                            ])->render()
+                        ))
+                        ->columnSpanFull(),
                 ]),
         ];
     }
@@ -1381,8 +1425,6 @@ class ReporteEdit extends Component implements HasActions, HasForms
 
     public function render(): View
     {
-        return view('livewire.tecnico.reporte-edit', [
-            'imagenesExistentesUrls' => $this->imagenesExistentesUrls(),
-        ]);
+        return view('livewire.tecnico.reporte-edit');
     }
 }
