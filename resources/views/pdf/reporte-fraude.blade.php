@@ -647,7 +647,7 @@
                         @if (!empty($auditoriaDocs))
                             <div style="margin-top:6px;">
                                 @foreach ($auditoriaDocs as $doc)
-                                    <div style="font-size:8pt; padding:2px 0; color:#333;">&#128196; {{ $doc }}</div>
+                                    <div style="font-size:8pt; padding:2px 0; color:#333;">&#8226; {{ $doc }}</div>
                                 @endforeach
                             </div>
                         @endif
