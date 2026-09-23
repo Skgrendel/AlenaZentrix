@@ -762,6 +762,9 @@ class ReporteCreate extends Component implements HasActions, HasForms
                     Forms\Components\Placeholder::make('cliente_display')
                         ->label('Nombre del Usuario')
                         ->content($this->orden->cliente ?? '—'),
+                    Forms\Components\Placeholder::make('tecnico_display')
+                        ->label('Nombre del Técnico')
+                        ->content($this->orden->tecnico ?? '—'),
                     Forms\Components\Placeholder::make('direccion_display')
                         ->label('Dirección')
                         ->content($this->orden->direccion ?? '—'),
