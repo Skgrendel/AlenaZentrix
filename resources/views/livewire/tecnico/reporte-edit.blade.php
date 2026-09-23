@@ -218,6 +218,46 @@
         </div>
     @endif --}}
 
+    @if (!empty($imagenesExistentesUrls))
+        {{-- Fotos ya guardadas: galería de solo lectura, separada del campo de subida
+             de fotos nuevas para que quede claro que esto ya está en el reporte y no
+             hace falta volver a adjuntarlo. --}}
+        <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false"
+            class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+            <h3 class="mb-1 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                Fotos ya Guardadas ({{ count($imagenesExistentesUrls) }})
+            </h3>
+            <p class="mb-4 text-xs text-zinc-400 dark:text-zinc-500">
+                Estas fotos ya quedaron registradas en el reporte. Usa el campo de "Imágenes" del formulario solo si
+                necesitas agregar fotos adicionales.
+            </p>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                @foreach ($imagenesExistentesUrls as $url)
+                    <button type="button" @click="src = '{{ $url }}'; open = true"
+                        class="group relative block overflow-hidden rounded-xl border border-zinc-200 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                        <img src="{{ $url }}" alt="Foto ya guardada"
+                            class="h-32 w-full object-cover transition duration-300 group-hover:scale-105">
+                    </button>
+                @endforeach
+            </div>
+
+            {{-- Lightbox --}}
+            <div x-show="open" x-transition.opacity @click.self="open = false"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" style="display: none">
+                <div class="relative max-h-full max-w-4xl">
+                    <button type="button" @click="open = false"
+                        class="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-800 shadow-lg hover:bg-zinc-100">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                    <img :src="src" alt="Foto ampliada" class="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl">
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- GPS silencioso: captura en segundo plano, modal si está bloqueado --}}
     <div x-data="{
         modalAbierto: false,

@@ -21,6 +21,7 @@ use App\Models\TipologiaOrden;
 use App\Models\TipoNotificacionAlerta;
 use App\Models\TipoRegulador;
 use App\Models\ubicacion;
+use App\Support\ArchivoUrl;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms;
@@ -1364,8 +1365,24 @@ class ReporteEdit extends Component implements HasActions, HasForms
         }
     }
 
+    /**
+     * URLs temporales firmadas para previsualizar las fotos ya guardadas del reporte.
+     * Se muestran en una galería de solo lectura, separada del campo de subida de
+     * fotos nuevas, para que el técnico no confunda "ver lo ya enviado" con "adjuntar".
+     *
+     * @return array<int, string>
+     */
+    public function imagenesExistentesUrls(): array
+    {
+        return collect($this->imagenesExistentes)
+            ->map(fn (string $path) => ArchivoUrl::temporal($path))
+            ->all();
+    }
+
     public function render(): View
     {
-        return view('livewire.tecnico.reporte-edit');
+        return view('livewire.tecnico.reporte-edit', [
+            'imagenesExistentesUrls' => $this->imagenesExistentesUrls(),
+        ]);
     }
 }

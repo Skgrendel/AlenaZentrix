@@ -19,11 +19,26 @@
                     const h = canvas.offsetHeight;
                     if (!w || !h) return;
                     if (canvas.width === w * ratio && canvas.height === h * ratio) return;
+
+                    // Redimensionar el canvas borra su contenido. Antes de hacerlo,
+                    // conservamos la firma que ya hubiera (dibujada por el usuario o
+                    // precargada desde la base de datos al editar un reporte rechazado)
+                    // para poder redibujarla después en vez de perderla.
+                    const firmaPrevia = this.pad.isEmpty() ? this.state : this.pad.toDataURL('image/png');
+
                     canvas.width = w * ratio;
                     canvas.height = h * ratio;
                     canvas.getContext('2d').scale(ratio, ratio);
                     this.pad.clear();
-                    this.state = null;
+
+                    if (firmaPrevia) {
+                        this.pad.fromDataURL(firmaPrevia, { width: w, height: h }).catch(() => {
+                            this.pad.clear();
+                            this.state = null;
+                        });
+                    } else {
+                        this.state = null;
+                    }
                 };
 
                 setSize();

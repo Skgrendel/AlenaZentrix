@@ -455,3 +455,54 @@ test('editar reporte de vigilancia corrige solo el turno puntual sin afectar el 
         ->and($otroTurno->fresh()->requiere_correccion)->toBeFalse()
         ->and($orden->fresh()->estado)->toBe(EstadoOrden::EnProgreso);
 });
+
+test('editar reporte muestra las fotos ya guardadas en una galeria separada del campo de subida', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'estado' => EstadoOrden::Rechazada->value,
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'imagenes' => [
+            'reportes/'.$orden->numero_orden.'/foto-1.jpg',
+            'reportes/'.$orden->numero_orden.'/foto-2.jpg',
+        ],
+        'observaciones' => 'Reporte con fotos previas.',
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden]);
+
+    $urls = $component->instance()->imagenesExistentesUrls();
+
+    // La URL firmada se regenera en cada render (el timestamp de expiración cambia),
+    // así que comparamos por la ruta del recurso en vez de la firma exacta. Cada foto
+    // aparece dos veces en el HTML: en el atributo @click del lightbox y en el <img>.
+    $html = $component->html();
+
+    expect($urls)->toHaveCount(2)
+        ->and($urls[0])->toContain('/operaciones/foto')
+        ->and(substr_count($html, 'operaciones/foto'))->toBe(4)
+        ->and($html)->toContain('Fotos ya Guardadas');
+});
