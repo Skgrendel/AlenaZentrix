@@ -121,7 +121,12 @@ class ReporteEdit extends Component implements HasActions, HasForms
                 ?? $orden->reportes()->latest()->firstOrFail();
         }
 
-        $this->imagenesExistentes = $this->reporte->imagenes ?? [];
+        // Descarta referencias temporales de Livewire que hayan quedado guardadas de una
+        // corrección anterior a este fix, para que no se sigan arrastrando indefinidamente.
+        $this->imagenesExistentes = collect($this->reporte->imagenes ?? [])
+            ->reject(fn (string $path) => ArchivoUrl::esReferenciaTemporal($path))
+            ->values()
+            ->all();
 
         if ($this->orden->tipo_servicio === TipoServicio::Fraudes || $this->orden->tipo_servicio === TipoServicio::RevisionMedidores) {
             $this->form->fill([

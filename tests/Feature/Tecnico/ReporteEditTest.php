@@ -507,6 +507,49 @@ test('editar reporte muestra las fotos ya guardadas en una galeria separada del 
         ->and($html)->toContain('8. Fotos ya Guardadas');
 });
 
+test('editar reporte descarta referencias temporales de livewire en fotos existentes', function () {
+    $personal = personals::create([
+        'tipo_documento' => 'CC',
+        'numero_documento' => fake()->unique()->numerify('##########'),
+        'nombres' => 'Ana',
+        'apellidos' => 'Prueba',
+        'telefono' => '3000000000',
+        'cargo' => 'Técnico',
+    ]);
+
+    $user = User::create([
+        'personals_id' => $personal->id,
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => Hash::make('password'),
+        'estado' => true,
+    ]);
+
+    $orden = OrdenJob::factory()->create([
+        'personals_id' => $personal->id,
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'estado' => EstadoOrden::Rechazada->value,
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'imagenes' => [
+            'reportes/'.$orden->numero_orden.'/foto-1.jpg',
+            'livewire-file:cBgjMvKLVl6iY4oNK3HlZ5AM6JilPLBuTibZ',
+        ],
+        'observaciones' => 'Reporte con una foto que no llegó a subirse.',
+    ]);
+
+    $component = Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden]);
+
+    expect($component->instance()->imagenesExistentes)->toBe([
+        'reportes/'.$orden->numero_orden.'/foto-1.jpg',
+    ]);
+});
+
 test('editar reporte sin fotos previas no muestra la seccion de fotos ya guardadas', function () {
     $personal = personals::create([
         'tipo_documento' => 'CC',

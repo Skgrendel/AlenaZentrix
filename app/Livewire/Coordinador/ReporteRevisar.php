@@ -204,6 +204,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
     public function imagenUrls(): array
     {
         return collect($this->reporte->imagenes ?? [])
+            ->reject(fn (string $path) => ArchivoUrl::esReferenciaTemporal($path))
             ->map(fn (string $path) => ArchivoUrl::temporal($path))
             ->all();
     }
@@ -233,6 +234,7 @@ class ReporteRevisar extends Component implements HasActions, HasForms
         $imageExtensions = ['jpg', 'jpeg', 'jpe', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif', 'heic', 'heif', 'avif'];
 
         return collect($paths)
+            ->reject(fn (string $path) => ArchivoUrl::esReferenciaTemporal($path))
             ->map(function (string $path) use ($imageExtensions): array {
                 $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 

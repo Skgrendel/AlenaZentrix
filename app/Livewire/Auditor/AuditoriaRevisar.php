@@ -184,6 +184,7 @@ class AuditoriaRevisar extends Component implements HasForms
     public function imagenUrls(): array
     {
         return collect($this->auditoria->reporte?->imagenes ?? [])
+            ->reject(fn (string $path) => ArchivoUrl::esReferenciaTemporal($path))
             ->map(fn (string $path) => ArchivoUrl::temporal($path))
             ->all();
     }
@@ -196,6 +197,7 @@ class AuditoriaRevisar extends Component implements HasForms
         $imageExtensions = ['jpg', 'jpeg', 'jpe', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif', 'heic', 'heif', 'avif'];
 
         return collect($this->auditoria->reporte?->imagenes ?? [])
+            ->reject(fn (string $path) => ArchivoUrl::esReferenciaTemporal($path))
             ->map(function (string $path) use ($imageExtensions): array {
                 $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 

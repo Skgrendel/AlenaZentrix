@@ -11,6 +11,7 @@ use App\Models\TipoAnomalia;
 use App\Models\TipoComercio;
 use App\Models\TipologiaOrden;
 use App\Models\User;
+use App\Support\ArchivoUrl;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -59,7 +60,8 @@ class ReportePdfController extends Controller
 
         $imagenes = $this->resolveImagenes($reporte->imagenes ?? []);
 
-        $auditoriaEvidencias = collect($reporte->auditoria?->evidencias ?? []);
+        $auditoriaEvidencias = collect($reporte->auditoria?->evidencias ?? [])
+            ->reject(fn (string $p) => ArchivoUrl::esReferenciaTemporal($p));
         $auditoriaImagenes = $this->resolveImagenes(
             $auditoriaEvidencias->filter(fn (string $p) => $this->isImagePath($p))->values()->all()
         );

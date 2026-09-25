@@ -304,6 +304,43 @@ test('coordinador can download fraude pdf with jpe evidencia photos on the audit
     $response->assertHeader('Content-Type', 'application/pdf');
 });
 
+test('coordinador can download fraude pdf when auditoria evidencias has an unresolved livewire upload reference', function () {
+    Storage::fake('s3');
+
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'estado' => EstadoOrden::EnRevision->value,
+        'creado_por_id' => $user->id,
+        'company_id' => $user->company_id,
+    ]);
+
+    $reporte = reportes::create([
+        'orden_job_id' => $orden->id,
+        'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
+        'imagenes' => [],
+        'observaciones' => 'Sin novedad.',
+    ]);
+
+    // Un archivo que quedó a medio subir guarda la referencia temporal de Livewire
+    // en vez de una ruta real de S3; nunca debería listarse como si fuera un documento.
+    auditoria::create([
+        'reportes_id' => $reporte->id,
+        'estado' => EstadoAuditoria::Negativo,
+        'evidencias' => ['auditorias/evidencia.jpg', 'livewire-file:cBgjMvKLVl6iY4oNK3HlZ5AM6JilPLBuTibZ'],
+        'observaciones' => 'Sin anomalías.',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo.reporte-fraude', $orden));
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'application/pdf');
+});
+
 test('isImagePath recognizes jpe evidencia photos as images', function () {
     // Fotos de evidencias de auditoría suben con extensión .JPE y antes caían en la lista
     // de "documentos" del reporte en lugar de renderizarse como imagen.

@@ -88,6 +88,48 @@ it('muestra las evidencias de la auditoria como galeria de imagenes y lista de d
         ->assertSee('soporte.pdf');
 });
 
+it('excluye referencias temporales de livewire de las evidencias de la auditoria', function () {
+    $company = Company::factory()->create();
+    $user = User::factory()->create(['company_id' => $company->id]);
+    $this->actingAs($user);
+
+    [$orden, $reporte] = crearOrdenCompletadaConReporte($company);
+
+    auditoria::create([
+        'reportes_id' => $reporte->id,
+        'estado' => EstadoAuditoria::Confirmado,
+        'evidencias' => ['auditorias/evidencia-1.jpg', 'livewire-file:cBgjMvKLVl6iY4oNK3HlZ5AM6JilPLBuTibZ'],
+    ]);
+
+    Livewire::test(ReporteRevisar::class, ['orden' => $orden])
+        ->assertSee('Evidencias de la Auditoría')
+        ->assertDontSee('livewire-file:');
+});
+
+it('excluye referencias temporales de livewire de la galeria de fotos del reporte', function () {
+    $company = Company::factory()->create();
+    $user = User::factory()->create(['company_id' => $company->id]);
+    $this->actingAs($user);
+
+    $personal = personals::factory()->create(['company_id' => $company->id]);
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'company_id' => $company->id,
+        'personals_id' => $personal->id,
+        'estado' => EstadoOrden::Completada->value,
+        'resultado' => 'positivo',
+    ]);
+    reportes::factory()->create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'imagenes' => ['reportes/foto-real.jpg', 'livewire-file:cBgjMvKLVl6iY4oNK3HlZ5AM6JilPLBuTibZ'],
+    ]);
+
+    Livewire::test(ReporteRevisar::class, ['orden' => $orden])
+        ->assertDontSee('livewire-file:');
+});
+
 it('no muestra la seccion de auditoria cuando la orden no tiene auditoria asociada', function () {
     $company = Company::factory()->create();
     $user = User::factory()->create(['company_id' => $company->id]);

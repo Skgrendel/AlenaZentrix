@@ -18,4 +18,14 @@ final class ArchivoUrl
             ['path' => $path],
         );
     }
+
+    /**
+     * Detecta referencias temporales de subida de Livewire (formato "livewire-file:...")
+     * que quedaron guardadas en vez de la ruta final en S3 —el archivo nunca llegó a subirse—,
+     * para poder excluirlas antes de intentar mostrarlas como evidencia.
+     */
+    public static function esReferenciaTemporal(string $path): bool
+    {
+        return str_starts_with($path, 'livewire-file:');
+    }
 }
