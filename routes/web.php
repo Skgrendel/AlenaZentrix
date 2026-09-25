@@ -54,7 +54,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             }
 
             $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-            $imageExtensions = ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif', 'heic', 'heif', 'avif'];
+            $imageExtensions = ['jpg', 'jpeg', 'jpe', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'tiff', 'tif', 'heic', 'heif', 'avif'];
 
             $isImage = false;
             if ($mime) {

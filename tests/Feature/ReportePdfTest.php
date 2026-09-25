@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
 use App\Enums\TipoServicio;
 use App\Http\Controllers\ReportePdfController;
+use App\Models\auditoria;
 use App\Models\OrdenJob;
 use App\Models\reportes;
 use App\Models\User;
@@ -257,6 +259,63 @@ test('resolveImagenes downscales large photos before embedding them in a pdf', f
         ->and(strlen($decoded))->toBeLessThan(strlen($original));
 
     imagedestroy($resized);
+});
+
+test('coordinador can download fraude pdf with jpe evidencia photos on the auditoria', function () {
+    Storage::fake('s3');
+
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'estado' => EstadoOrden::EnRevision->value,
+        'creado_por_id' => $user->id,
+        'company_id' => $user->company_id,
+    ]);
+
+    $reporte = reportes::create([
+        'orden_job_id' => $orden->id,
+        'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
+        'imagenes' => [],
+        'observaciones' => 'Sin novedad.',
+    ]);
+
+    $image = imagecreatetruecolor(10, 10);
+    ob_start();
+    imagejpeg($image);
+    $imageContent = ob_get_clean();
+    imagedestroy($image);
+
+    Storage::disk('s3')->put('auditorias/evidencia.JPE', $imageContent);
+
+    auditoria::create([
+        'reportes_id' => $reporte->id,
+        'estado' => EstadoAuditoria::Negativo,
+        'evidencias' => ['auditorias/evidencia.JPE'],
+        'observaciones' => 'Sin anomalías.',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo.reporte-fraude', $orden));
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'application/pdf');
+});
+
+test('isImagePath recognizes jpe evidencia photos as images', function () {
+    // Fotos de evidencias de auditoría suben con extensión .JPE y antes caían en la lista
+    // de "documentos" del reporte en lugar de renderizarse como imagen.
+    $method = new ReflectionMethod(ReportePdfController::class, 'isImagePath');
+    $method->setAccessible(true);
+    $controller = new ReportePdfController;
+
+    expect($method->invoke($controller, '01M37XP43ES2M2XZWC9BKW14NS.JPE'))->toBeTrue()
+        ->and($method->invoke($controller, 'evidencia.jpe'))->toBeTrue()
+        ->and($method->invoke($controller, 'evidencia.jpg'))->toBeTrue()
+        ->and($method->invoke($controller, 'evidencia.jpeg'))->toBeTrue()
+        ->and($method->invoke($controller, 'documento.pdf'))->toBeFalse();
 });
 
 test('coordinador can download vigilancia pdf with multiple reportes', function () {

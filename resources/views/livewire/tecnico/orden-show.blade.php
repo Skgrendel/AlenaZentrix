@@ -181,7 +181,7 @@
                                     $extension = strtolower(pathinfo(urldecode($pathParam), PATHINFO_EXTENSION));
                                 }
 
-                                $isImage = in_array($extension, ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'heic', 'heif', 'avif']);
+                                $isImage = in_array($extension, ['jpg', 'jpeg', 'jpe', 'jfif', 'png', 'gif', 'webp', 'bmp', 'svg', 'heic', 'heif', 'avif']);
                             @endphp
                             @if ($isImage)
                                 <button type="button" @click="src = '{{ $url }}'; open = true"

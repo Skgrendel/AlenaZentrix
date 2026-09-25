@@ -19,6 +19,11 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportePdfController extends Controller
 {
+    /**
+     * @var array<int, string>
+     */
+    private const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'jpe', 'jfif', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'heic', 'heif', 'avif'];
+
     public function DownLoadInformeFraude(OrdenJob $orden): Response
     {
         abort_unless($orden->tipo_servicio === TipoServicio::Fraudes, 403);
@@ -54,13 +59,12 @@ class ReportePdfController extends Controller
 
         $imagenes = $this->resolveImagenes($reporte->imagenes ?? []);
 
-        $imageExtensions = ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'heic', 'heif', 'avif'];
         $auditoriaEvidencias = collect($reporte->auditoria?->evidencias ?? []);
         $auditoriaImagenes = $this->resolveImagenes(
-            $auditoriaEvidencias->filter(fn (string $p) => in_array(strtolower(pathinfo($p, PATHINFO_EXTENSION)), $imageExtensions))->values()->all()
+            $auditoriaEvidencias->filter(fn (string $p) => $this->isImagePath($p))->values()->all()
         );
         $auditoriaDocs = $auditoriaEvidencias
-            ->filter(fn (string $p) => ! in_array(strtolower(pathinfo($p, PATHINFO_EXTENSION)), $imageExtensions))
+            ->filter(fn (string $p) => ! $this->isImagePath($p))
             ->map(fn (string $p) => basename($p))
             ->values()
             ->all();
@@ -186,9 +190,8 @@ class ReportePdfController extends Controller
 
         $logoProderi = $this->fileToBase64(public_path('assets/image/LOGO PRODERI CON SLOGAN.png'), 'image/png');
 
-        $imageExtensions = ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'heic', 'heif', 'avif'];
         $imagePaths = collect($reporte->imagenes ?? [])
-            ->filter(fn (string $path) => in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), $imageExtensions, true))
+            ->filter(fn (string $path) => $this->isImagePath($path))
             ->values()
             ->all();
 
@@ -349,6 +352,15 @@ class ReportePdfController extends Controller
             'por_definir' => 'Por definir',
             default => $tipoMedidor ?: '—',
         };
+    }
+
+    /**
+     * Determines whether a stored path should be embedded as an image (vs. listed as a
+     * plain document) based on its file extension.
+     */
+    private function isImagePath(string $path): bool
+    {
+        return in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), self::IMAGE_EXTENSIONS, true);
     }
 
     /**
@@ -526,9 +538,8 @@ class ReportePdfController extends Controller
 
         $logoProderi = $this->fileToBase64(public_path('assets/image/LOGO PRODERI CON SLOGAN.png'), 'image/png');
 
-        $imageExtensions = ['jpg', 'jpeg', 'jfif', 'png', 'gif', 'webp', 'bmp', 'tiff', 'tif', 'heic', 'heif', 'avif'];
         $imagePaths = collect($reporte->imagenes ?? [])
-            ->filter(fn (string $path) => in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), $imageExtensions, true))
+            ->filter(fn (string $path) => $this->isImagePath($path))
             ->values()
             ->all();
 
