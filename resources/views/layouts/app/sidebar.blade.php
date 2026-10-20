@@ -72,7 +72,7 @@
             </flux:sidebar.group>
             @endcanany
 
-            @can('mapa.ver')
+            {{-- @can('mapa.ver')
             <flux:sidebar.group :heading="__('Mapa')" class="grid">
                 <flux:sidebar.item icon="map"
                     :href="route('mapa.index')"
@@ -81,9 +81,9 @@
                     {{ __('Mapa de Ubicaciones') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
-            @endcan
+            @endcan --}}
 
-            @if(Auth::user()->company?->gis_habilitado)
+            {{-- @if(Auth::user()->company?->gis_habilitado)
             <flux:sidebar.group :heading="__('Ubicacion')" class="grid">
                 <flux:sidebar.item icon="globe-alt"
                     :href="route('operaciones.consulta-gis')"
@@ -92,7 +92,7 @@
                     {{ __('Consulta Ubicacion') }}
                 </flux:sidebar.item>
             </flux:sidebar.group>
-            @endif
+            @endif --}}
         </flux:sidebar.nav>
 
         <flux:spacer />
