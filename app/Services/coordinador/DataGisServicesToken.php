@@ -21,7 +21,7 @@ class DataGisServicesToken
     }
 
     /** @return array<string, mixed> */
-    private function proxyOptions(): array
+    public function proxyOptions(): array
     {
         if (! $this->proxy) {
             return [];
@@ -80,9 +80,9 @@ class DataGisServicesToken
                 return null; // Request failed
             }
         } catch (\Exception $e) {
-            return [
-                'error' => 'Se produjo un error al intentar acceder al servicio : ',  // . $e->getMessage()
-            ];
+            Log::error('Error en DataGis (oauth authorize): '.$e->getMessage());
+
+            return null;
         }
     }
 
@@ -91,53 +91,53 @@ class DataGisServicesToken
 
         $login = $this->DataGis();
 
-        if ($login) {
-            $url = 'https://arcgisportal.surtigas.com.co/geaportal/sharing/oauth2/signin';
-            // Use the token in the request
-            $response = Http::withoutVerifying()->withHeaders([
-                'accept' => '*/*',
-                'accept-language' => 'es-419,es;q=0.9,en;q=0.8',
-                'priority' => 'u=1, i',
-                'referer' => 'https://arcgisportal.surtigas.com.co/geaportal/apps/webappviewer/index.html?id=7f01784d858d43f49acd9fd5bd4b3123',
-                'sec-ch-ua' => '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
-                'sec-ch-ua-mobile' => '?0',
-                'sec-ch-ua-platform' => '"Windows"',
-                'sec-fetch-dest' => 'empty',
-                'sec-fetch-mode' => 'cors',
-                'sec-fetch-site' => 'same-origin',
-                'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-            ])
-                ->withOptions(array_merge(['version' => 2.0, 'force_ip_resolve' => 'v4'], $this->proxyOptions()))
-                ->withoutRedirecting()
-                ->asForm()
-                ->post($url, [
-                    'oauth_state' => $login,
-                    'authorize' => true,
-                    'username' => env('KEY_GIS_USER'),
-                    'password' => env('KEY_GIS_PASSWORD'),
-                ]);
-
-            // redirect to the URL
-            $gisurl = $response->handlerStats()['redirect_url'] ?? null;
-            $parsedUrl = parse_url($gisurl, PHP_URL_FRAGMENT);
-            if ($parsedUrl) {
-                parse_str($parsedUrl, $params);
-                $token = $params['access_token'] ?? null;
-                if ($token) {
-                    return $token; // Return the token
-                } else {
-                    Log::error('Access token not found in the response.');
-
-                    return null; // Access token not found
-                }
-            } else {
-                Log::error('Failed to parse the redirect URL.');
-
-                return null; // Redirect URL parsing failed
-            }
+        if (! $login) {
+            return null;
         }
 
-        return $this; // Return the token
+        $url = 'https://arcgisportal.surtigas.com.co/geaportal/sharing/oauth2/signin';
+        // Use the token in the request
+        $response = Http::withoutVerifying()->withHeaders([
+            'accept' => '*/*',
+            'accept-language' => 'es-419,es;q=0.9,en;q=0.8',
+            'priority' => 'u=1, i',
+            'referer' => 'https://arcgisportal.surtigas.com.co/geaportal/apps/webappviewer/index.html?id=7f01784d858d43f49acd9fd5bd4b3123',
+            'sec-ch-ua' => '"Chromium";v="136", "Google Chrome";v="136", "Not.A/Brand";v="99"',
+            'sec-ch-ua-mobile' => '?0',
+            'sec-ch-ua-platform' => '"Windows"',
+            'sec-fetch-dest' => 'empty',
+            'sec-fetch-mode' => 'cors',
+            'sec-fetch-site' => 'same-origin',
+            'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+        ])
+            ->withOptions(array_merge(['version' => 2.0, 'force_ip_resolve' => 'v4'], $this->proxyOptions()))
+            ->withoutRedirecting()
+            ->asForm()
+            ->post($url, [
+                'oauth_state' => $login,
+                'authorize' => true,
+                'username' => config('services.gis.user'),
+                'password' => config('services.gis.password'),
+            ]);
+
+        // redirect to the URL
+        $gisurl = $response->handlerStats()['redirect_url'] ?? null;
+        $parsedUrl = $gisurl ? parse_url($gisurl, PHP_URL_FRAGMENT) : null;
+        if ($parsedUrl) {
+            parse_str($parsedUrl, $params);
+            $token = $params['access_token'] ?? null;
+            if ($token) {
+                return $token; // Return the token
+            } else {
+                Log::error('Access token not found in the response.');
+
+                return null; // Access token not found
+            }
+        } else {
+            Log::error('Failed to parse the redirect URL.');
+
+            return null; // Redirect URL parsing failed
+        }
     }
 
     public function getToken()
@@ -200,7 +200,7 @@ class DataGisServicesToken
 
             return $data['token'];
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Error al obtener token GIS: '.$e->getMessage());
 
             return null;

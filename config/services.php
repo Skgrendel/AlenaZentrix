@@ -28,6 +28,18 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'proxy' => [
+        'server' => env('PROXY_SERVER'),
+        'port' => env('PROXY_PORT'),
+        'user' => env('PROXY_USER'),
+        'pass' => env('PROXY_PASS'),
+    ],
+
+    'gis' => [
+        'user' => env('KEY_GIS_USER'),
+        'password' => env('KEY_GIS_PASSWORD'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

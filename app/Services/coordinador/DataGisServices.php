@@ -30,7 +30,6 @@ class DataGisServices
         'sec-fetch-mode' => 'cors',
         'sec-fetch-site' => 'same-origin',
         'user-agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
-        'Cookie' => 'AGS_ROLES="i96c/mmLorHlQpzmSue+ynS01g38XzWRs3bCji9jmlYtQYsgn+362nhRZI6qeQxH43OTAG6QyXzlprHFVVAM/g; esri_aopc=Yi0Y0Adj5UactyJn52KPjIcrLt6jIQo8kjLnkHK0lVIk8glqViOOnXLFuBJirQzjDr9lMeqybLtPgUjYH42uA-tpcJeDEbI8Dzr9n0c1FECF9cDeb--B8PfM7qq0vZKK-T3FrTXkCUCmaGF-VEGTy7w9FJACVF3FLI-CuxymitR_EM_WXLiHbDoFH-s75XfDPmqDEt_kb8mlCfqlvq8-4fnMEHNLXAov617EOI-V49vEt1iE9xBBU4X9i-NOVGFIlGrbdU5FuEwWOHtLE6n6nkUKJS654xnOK6GdguyKQ-Co7n6vcEw1jpMKvTjFZf0jtxCV7qmMiNosa4X8PAhLB_HGvRMHUzY_OrvwD5mmTr1cXwY-9WAIDJMiNnfznRFLTC7arXfscsSnK1SI1e51GuNJieXl7O7Z6EXhkRX6lladx3KoObo032STvsTKg2zV78ajbUMa5wUKGtgV61j3DHDTkIFRIn804ZIPiD8lIVmYiSyw7q-kqyfjQ4zd_mm2sM2mm9fooZmxoWeNhh6wuDRpHbTMxI0t0d0JlrAYMSe0KtUNrsLu5S_orZI6JcwZGXFxa2FVMgjRjCvZ1eXCRnsc7bY_wi8NzI2jFwdtNbSOsQHvqY7uu90T40CUVyHf; esri_auth=%7B%22portalApp%22%3Atrue%2C%22email%22%3A%22riesgosproderi%22%2C%22token%22%3A%22eFfNMlvqhk5_p00rjom9llmSWPkSpkI6AK9cgidnu9a9pM0KZVz98WD7q1B6iC6pyoTFF9YJAwSsJMZ93xoM9DkSn4af6SrVJM0agxyAdhP4b3eQ5QTZgoH1L-zZ10rWhZOesR3VPvBnVgonfKCtxjznT-BCjsHkc-tYLF8Yius0yhFmOVv6nZ3GyvbTkAE1msgOrhbD2kVgob_AGIHMlPCqwKmTlYP5p8dQOBTT6vk.%22%2C%22expires%22%3A1749055327383%2C%22allSSL%22%3Atrue%2C%22persistent%22%3Atrue%2C%22created%22%3A1747845787383%2C%22culture%22%3A%22es-es%22%2C%22region%22%3Anull%2C%22accountId%22%3A%220123456789ABCDEF%22%2C%22role%22%3A%22org_user%22%2C%22customBaseUrl%22%3A%22arcgisportal.surtigas.com.co%2Fgeaportal%22%7D',
     ];
 
     private function getToken(): string
@@ -88,7 +87,7 @@ class DataGisServices
 
             $response = Http::withoutVerifying()
                 ->withHeaders($this->headers)
-                ->withOptions(['version' => 2.0])
+                ->withOptions(array_merge(['version' => 2.0], $this->tokenService->proxyOptions()))
                 ->get($url);
 
             if ($response->failed()) {
@@ -105,8 +104,12 @@ class DataGisServices
                 return ['error' => 'No se encontraron datos para el contrato proporcionado.'];
             }
 
-            $attributes = $data['features'][0]['attributes'];
-            $geometry = $data['features'][0]['geometry'];
+            $attributes = $data['features'][0]['attributes'] ?? [];
+            $geometry = $data['features'][0]['geometry'] ?? null;
+
+            if (! isset($geometry['x'], $geometry['y'])) {
+                return ['error' => 'El contrato existe en GIS pero no tiene coordenadas registradas.'];
+            }
 
             [$lat, $lng] = $this->convertWebMercatorToLatLng($geometry['x'], $geometry['y']);
 
@@ -157,7 +160,14 @@ class DataGisServices
                     'maps_url' => "https://www.google.com/maps/place/{$lat},{$lng}",
                 ],
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error('Error en consultarContrato GIS: '.$e->getMessage(), [
+                'contrato' => $contrato,
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
             return ['error' => 'Se produjo un error al intentar acceder al servicio GIS.'];
         }
     }
@@ -176,9 +186,7 @@ class DataGisServices
 
             $urlConsulta = Http::withoutVerifying()
                 ->withHeaders($this->headers)
-                ->withOptions([
-                    'version' => 2.0,
-                ])
+                ->withOptions(array_merge(['version' => 2.0], $this->tokenService->proxyOptions()))
                 ->get($url);
 
             // Verificar el estado de la respuesta
@@ -214,9 +222,11 @@ class DataGisServices
                     'link' => 'https://www.google.com/maps/place/'.$lat.','.$lng,
                 ],
             ];
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            Log::error('Error en DataGisubicacion GIS: '.$e->getMessage(), ['contrato' => $contrato]);
+
             return [
-                'error' => 'Se produjo un error al intentar acceder al servicio : ', // . $e->getMessage()
+                'error' => 'Se produjo un error al intentar acceder al servicio GIS.',
             ];
         }
     }
