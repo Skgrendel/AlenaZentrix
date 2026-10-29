@@ -1,65 +1,45 @@
-# HANDOFF TEMPORAL — estado de la sesión (borrar al terminar)
+# HANDOFF TEMPORAL — estado final de la sesión (borrar cuando ya no haga falta)
 
-Creado: 2026-10-29. Dos proyectos hermanos, sin NINGÚN commit hecho en ninguno:
+Actualizado: 2026-10-29. Dos proyectos hermanos:
 
 | Proyecto | Ruta | Stack |
 |---|---|---|
 | WEB + API | `E:\www\AlenaZentrix` | Laravel 13, Livewire 4, Filament forms, Sanctum, Pest |
 | APP MÓVIL | `E:\www\AlenaZentrix_Mobile` | Laravel 12, NativePHP, Filament 5, Livewire 4, Pest |
 
-Cada repo tiene su `CLAUDE.md` (reglas Boost): leerlo primero. Reglas clave: seguir convenciones existentes, tests Pest por cada cambio, correr `vendor/bin/pint --dirty --format agent` antes de cerrar, no crear documentación salvo petición, no tocar dependencias, **no tocar `composer.json` de la móvil (tiene un cambio ajeno del usuario)**.
+Cada repo tiene su `CLAUDE.md` (reglas Boost): leerlo primero. Reglas clave: seguir convenciones, test Pest por cada cambio, `vendor/bin/pint --dirty --format agent` al cerrar, no crear documentación salvo petición, no tocar dependencias, **no tocar `composer.json` de la móvil (cambio ajeno del usuario)**.
 
 ## Cómo ejecutar cosas (Windows)
 - `php` NO está en el PATH de bash: usar **PowerShell**.
-- Tests: `php -d memory_limit=1G artisan test --compact tests/Feature/<Archivo>.php` (un archivo por vez; la suite completa se queda sin memoria con 128 MB).
-- En PowerShell un `|` dentro de `--filter` se interpreta como pipe: correr archivo por archivo.
-- Web: la BD de pruebas MySQL `alenacentrix_test` se comparte; si hay agentes en paralelo usar una BD propia (`$env:DB_DATABASE='alenacentrix_test_xx'`).
-- Móvil: no hay `.env` en esta máquina; `phpunit.xml` ya trae `APP_KEY` de prueba, los warnings `file_get_contents(.env)` son del entorno.
-- Si el usuario no ve cambios visuales: `npm run build` o `composer run dev`.
+- Tests: `php -d memory_limit=1G artisan test --compact tests/Feature/<Archivo>.php`, un archivo por vez (la suite entera se queda sin memoria con 128 MB). Un `|` en `--filter` se interpreta como pipe en PowerShell.
+- Web: la BD de pruebas MySQL `alenacentrix_test` es compartida; con agentes en paralelo usar una BD propia (`$env:DB_DATABASE='...'`).
+- Móvil: no hay `.env` en esta máquina; `phpunit.xml` trae `APP_KEY` de prueba; los warnings `file_get_contents(.env)` son del entorno. Los tests que simulan `TokenService` con Mockery deben incluir `shouldReceive('getOfflineOwnerId')->andReturn(null)`.
+- Para comparar contra el código original: `git worktree` del commit `420cab4` NECESITA copia real de `vendor` y de `public/build` (con junction carga las clases del proyecto actual). Ya se hizo y se eliminó.
 
-## Qué se hizo (todo con tests en verde al cierre de cada bloque)
-1. **Subtipo `visita_calidad_suspensiones`** (Auditoría de Campo) de punta a punta en la web: crear orden, formularios técnico crear/editar (`ReporteCreate`/`ReporteEdit`), revisión coordinador/auditor, PDF, informe Excel, API móvil. Datos en `reportes.datos_servicio`:
-   `categoria_campo`, `suspension_ejecutada`, `metodo_suspension`, `serie_sonda`, `serie_caps`, `lectura_medidor`, `anomalias_medidor` (array de ids de `TipoAnomalia`), `condicion_sellos`, `elementos_rotos`, `motivo_no_ejecucion`, `justificacion_no_ejecucion`, fotos en `fotos_fachada|fotos_suspension|fotos_medidor|fotos_no_ejecucion`.
-2. **`orden_jobs.lectura_referencia`** (migración `2026_10_28_222035_...`): la pide quien crea la orden; `OrdenJob::lecturaCoincide()` compara. Se muestra al técnico y se marca Coincide/No coincide en revisión/PDF/informe.
-3. **Botones Sí/No** (macro `ToggleButtons::siNo()` en `AppServiceProvider`) reemplazan los interruptores en `ReporteCreate/Edit`; guardan siempre booleano. `suspension_ejecutada` es caso aparte (obligatorio, sin preselección).
-4. **Campo `geo_referencia` eliminado** de los formularios (web y móvil); la API lo acepta opcional y conserva el valor previo al editar. La ubicación sale de latitud/longitud (GPS).
-5. **API** (`E:\www\AlenaZentrix`): `OrdenResource` expone `tipo_auditoria_campo(+_label)`, `tecnico`, `comentario_tecnico`, `lectura_referencia`, `turnos_por_corregir`; `ReporteResource` expone ids de catálogo y `requiere_correccion`; nuevas rutas `GET/PUT /api/tecnico/ordenes/{orden}/reportes/{reporte}` para corregir un turno de Vigilancia sin cambiar el estado de la orden.
-6. **App móvil**: `EvidenciasUploader`/`EvidenciasField`/`WithReportEvidences` con grupos de fotos (`->grupo()`), guardas en eventos nativos; páginas nuevas `ReporteAuditoriaSuspensiones` y `ReporteAuditoriaMedidoresDigitales`; enrutado por subtipo en `RedirigeAFormularioReporte`; corrección de turnos de Vigilancia; endurecimiento de la capa de servicios/offline (401/422/429, timeouts de subida, etc.).
-7. **Corregido tras auditoría**: PDF de Gestión Legal (500 por variables de fotos mal pegadas) y de Suspensiones (sin fotos); `requiere_correccion=false` en `actualizarFraudes`.
+## Estado: TODO LO PLANEADO ESTÁ IMPLEMENTADO Y VERIFICADO
+**Web (66 archivos de test)**: pasan todos, salvo 6 archivos con fallos que YA EXISTÍAN en el código original (verificado contra `420cab4`, mismo resultado): `ExampleTest` (GET `/` da 302), `OrdenesTrabajoIndexTest` (1 test), `Auth/AuthenticationTest` (1), `Auth/TwoFactorChallengeTest` (1), `Settings/ProfileUpdateTest` (2), `Settings/SecurityTest` (5). Son restos del starter kit (2FA/perfil) y no se tocaron.
+**Móvil (24 archivos de test)**: pasan todos (con warnings del `.env` ausente). Los 2 que fallaban por permisos en Windows ahora pasan.
 
-## EN CURSO al momento de este traspaso (5 agentes en paralelo; resultados desconocidos)
-Se pidió corregir TODO lo de la auditoría final, en orden de prioridad. Cada agente tenía archivos propios. **Verificar con `git status`/`git diff` en ambos repos qué alcanzó a hacerse y completar lo que falte.**
+### Funcionalidades (web + API)
+- Subtipo de Auditoría de Campo `visita_calidad_suspensiones`: crear orden, formularios técnico crear/editar, revisión coordinador/auditor, PDF, informe Excel, API. Datos en `reportes.datos_servicio` (`categoria_campo`, `suspension_ejecutada`, `metodo_suspension`, `serie_sonda`, `serie_caps`, `lectura_medidor`, `anomalias_medidor` [ids de `TipoAnomalia`], `condicion_sellos`, `elementos_rotos`, `motivo_no_ejecucion`, `justificacion_no_ejecucion`, fotos en `fotos_fachada|fotos_suspension|fotos_medidor|fotos_no_ejecucion`).
+- `orden_jobs.lectura_referencia` + `OrdenJob::lecturaCoincide()`; Coincide/No coincide en revisión/PDF/informe.
+- Botones Sí/No (macro `ToggleButtons::siNo()` en `AppServiceProvider`) en lugar de interruptores; campo `geo_referencia` eliminado de formularios.
+- Vigilancia: el rechazo (por turno o masivo) marca `requiere_correccion` y la orden sigue EnProgreso; API `GET/PUT /api/tecnico/ordenes/{orden}/reportes/{reporte}`; migración `2026_10_29_120000_normalizar_vigilancia_rechazada` reabre las rechazadas del flujo anterior; `ReporteEdit` ya no da 404 sin turnos.
+- Endurecimiento de la API: tenant fail-closed (403 si empresa inactiva/sin empresa; el tenant se fija ANTES del route-model-binding, lo que corrigió que las pantallas web resolvieran órdenes de otras empresas), usuario desactivado ⇒ tokens revocados y rechazados, propiedad de orden en show/iniciar/cerrar, auditorías con permiso `auditorias.registrar`/sin autoauditoría/solo pendientes, rutas de fotos estrictas (sin `..`), escritura de reportes solo dueño o `ordenes.editar`, idempotencia y bloqueo transaccional en reportes, catálogos y anomalías validados por empresa, firmas validadas, límites de uso (throttle), `mis-ordenes` con Completadas de últimos 90 días, versión mínima de app (`X-App-Version` ≥ 1.1.0 para subtipos nuevos; 426 si no), login devuelve `user.permissions`.
+- Revisión/PDF/Informes: actividades vacías no revientan, comentarios con fallback a la orden, rechazo valida estado y notifica al autor del turno, Excel con columnas de Investigación/Legal/Riesgo y todos los turnos de Vigilancia.
 
-**WEB — Agente W1 (seguridad/API)**: `SetTenantContext`, `CompanyScope`, `AuthController`, `OrdenController`, `OrdenResource`, `AuditoriaController`, `AuditoriaGuardarRequest`, `auditoria` model, `routes/api.php`, `bootstrap/app.php`, `config/api.php`. Tareas: (1) fail-closed del tenant (empresa inactiva/sin company ⇒ 403 JSON; login rechaza empresa inactiva; superadmin con token API ⇒ 403 JSON no 302); (2) middleware que rechaza usuario desactivado + revocar tokens al desactivar (ya aparecen `UserObserver` y `ApiRateLimiters` registrados en `AppServiceProvider`); (3) `OrdenController::show/iniciar/cerrarVigilancia` verifican propiedad; (4) auditorías: 404 si no hay orden visible, exigir `auditorias.registrar`, sin autoauditoría, solo si pendiente, rutas de evidencias sin `..`; (5) versión mínima: cabecera `X-App-Version` (>= 1.1.0) para ver/operar subtipos nuevos, 426 si no; (6) `puede_editar_reporte` coherente; (7) `mis-ordenes`: Completadas últimos 90 días (`?desde=`), sin N+1; (8) throttles (upload más estricto); (9) `iniciar`/`cerrar` idempotentes.
-Tests: `tests/Feature/ApiSeguridadW1Test.php`. BD de pruebas propia: `alenacentrix_test_w1`.
+### Funcionalidades (app móvil)
+- Páginas nuevas `ReporteAuditoriaSuspensiones` y `ReporteAuditoriaMedidoresDigitales`; enrutado por subtipo (`RedirigeAFormularioReporte`); grupos de fotos independientes (`EvidenciasField->grupo()`); corrección de turnos de Vigilancia.
+- Cola sin conexión: ítems con 4xx permanente pasan a `needs_attention` (no se reintentan solos), backoff exponencial, UI "Envíos pendientes con problemas" (reintentar/descartar; ancla `#envios-con-problemas` conectada al aviso de la orden), reconciliación de reintentos ya aplicados (422/409), limpieza de evidencias huérfanas, candado de sync 900 s, escritura serializada, token cifrado, cuota de caché de medios, purga de copias descifradas al arrancar y en logout.
+- Cliente API: `X-App-Version`, 426/403-empresa-inactiva/401 con mensajes en español, timeout de subida de 120 s, directorio de subida saneado.
+- Login: "modo auditor" para usuarios sin técnico con permisos de auditoría; se revoca el token si el login se rechaza. **Decisión tomada por un agente (revisar):** la sesión local ahora dura mínimo 7 días (`config/session.php`) para no dejar sin cola a un técnico sin red.
+- Cerrar Vigilancia sincroniza antes y se bloquea si quedan turnos pendientes o bloqueados; aviso "Envío con problema" en Mis Órdenes y detalle; Auditorías según `acciones.puede_auditar` y permisos del usuario.
 
-**WEB — Agente W2 (ReporteController)**: `ReporteController.php`, `ReporteResource.php`, migración nueva. Tareas: (1) `reglaPathDeLaEmpresa` estricta (sin `..`, `//`, `\`); (2) aceptar al editar las rutas ya guardadas del reporte (fotos web sin prefijo company); (3) escritura de reportes solo dueño (no `ordenes.ver`); (4) Vigilancia: idempotencia por `fecha_turno` antes del chequeo de estado, permitir turno con orden EnRevision, PUT idempotente; (5) `DB::transaction` + `lockForUpdate`; (6) `requiere_correccion=false` en `actualizarFraudes`; (7) foto del detector solo obligatoria en `store`; (8) `Rule::exists` con `company_id` en catálogos; (9) validar formato/tamaño de firmas; (10) normalizar `actividades[*].actividades` ausente a `''`; (11) migración: `sincronizado=false` en órdenes rechazadas con `sincronizado=true`.
-Tests: `tests/Feature/ApiReporteW2Test.php`. BD: `alenacentrix_test_w2`.
-
-**WEB — Agente W3 (revisión/PDF/informes)**: `ReportesVigilanciaIndex`, `ReporteRevisar` (+blade), `AuditoriaRevisar` (+blade), `ReportePdfController` + `resources/views/pdf/*`, `InformesIndex`, `ReporteCreate/Edit` (+blades). Tareas: (1) rechazo masivo de Vigilancia marca todos los turnos `requiere_correccion` y deja la orden EnProgreso; (2) blades con `?? '—'` en actividades; (3) fallback a `$orden->comentario_usuario/tecnico` en revisión/PDF de Auditoría de Campo; (4) `rechazar` valida estado y notifica al autor del turno; (5) foto detector solo requerida si no existe; (6) `actualizarUbicacion` no pisa con null, Bypass en `submitFraudes`; (7) Informes: columnas de Investigación/Legal/Riesgo y todos los turnos de Vigilancia; (8) limpieza. Tests: `tests/Feature/WebRevisionW3Test.php`. BD: `alenacentrix_test_w3`. También debía arreglar los 2 tests web que ya fallaban (`AuditoriaCampoTest` "evidenciasUrls…" y `Tecnico/ReporteEditTest` "muestra archivos sin previsualizacion").
-
-**MÓVIL — Agente M1 (offline/sesión/cliente)**: `app/Services/Offline/**`, `OfflineSyncManager`, `ApiClient`, `TokenService`, `AuthService`, `UploadService`, `ArchivoService`. Tareas: ítems de cola con 4xx permanente ⇒ `needs_attention` + backoff + `retryItem/discardItem` + UI mínima; reconciliar reintentos con 422 "ya aplicado"; enviar `X-App-Version` (config `api.app_version`, default 1.1.0), manejar 426 y 403-empresa-inactiva, traducir 401; login de auditor sin técnico y no dejar token huérfano; lock de sync (TTL 900 s) y escritura serializada de la cola; token cifrado; purga de `offline-secure` y cuota de caché de medios; sesión offline.
-
-**MÓVIL — Agente M2 (órdenes/formularios)**: `OrdenService`, `AuditoriaService`, `CatalogoService`, `MisOrdenes`, `OrdenDetalle`, `EditarReportes`, `Auditorias`, `RegistrarAuditoria`, `RedirigeAFormularioReporte`, `EditarReporteExistente`, `ReporteFraudes`, `ReporteVigilancia`, `ReporteAuditoriaSuspensiones`, `ReporteAuditoriaMedidoresDigitales`. Tareas: cerrar Vigilancia sincroniza antes y bloquea si quedan pendientes; manejar 426 ("Actualiza la aplicación"); sin override optimista si el envío está bloqueado; `puede_auditar`/servicios auditables desde la API; foto del detector opcional al corregir; normalizar la orden tras `iniciar`; formatos de `fecha_turno`; limpiezas.
-
-## Pasos de cierre (hacer en orden cuando los agentes terminen o se corten)
-1. `git status` y `git diff --stat` en ambos repos; revisar que nada quedó a medias (archivos con sintaxis rota: `php -l`).
-2. `vendor/bin/pint --dirty --format agent` en ambos repos.
-3. Correr en solitario (sin otros procesos usando la BD) y archivo por archivo:
-   - Web: `ToggleButtonsSiNoTest`, `Suspensiones*`, `ApiTecnicoTest`, `ApiSecurityTest`, `ApiSanctumTest`, `ApiVigilanciaCorreccionTest`, `ApiReporteMovilTest`, `ApiSeguridadW1Test`, `ApiReporteW2Test`, `WebRevisionW3Test`, `ReportePdfTest`, `InformesIndexTest`, `AuditoriaCampoTest`, `Tecnico/*`, `Api/AuditoriaApiTest`.
-   - Móvil: todos los de `tests/Feature` y `tests/Unit`, uno por uno.
-4. Borrar BDs temporales si sobraron: `alenacentrix_test_w1`, `_w2`, `_w3`, `_susp`.
-5. Reportar al usuario qué se cumplió y qué no; avisar del impacto de los endurecimientos (qué usuarios pierden qué acceso).
-
-## Fallos de tests CONOCIDOS que ya existían (no son de estos cambios)
-- Web: `AuditoriaCampoTest` "evidenciasUrls clasifies images…" (método inexistente en `ReporteRevisar`), `Tecnico/ReporteEditTest` "muestra archivos sin previsualizacion" (monta `ReporteEdit` sin reporte; verificado que el código original ya tenía el `firstOrFail`). W3 tenía el encargo de arreglarlos.
-- Móvil: `OfflineStoreTest` "uploads local evidence before sending its report" y `AuditoriaServiceTest` "sincroniza evidencias seguras…" (permisos de archivo temporal en Windows con el mock).
-
-## Pendiente del usuario (no automatizable)
-- `php artisan migrate` en la web (columna `lectura_referencia` y migraciones nuevas de esta ronda).
-- Probar en un celular real: cámara/galería con varios grupos de fotos, GPS, cola offline real, render de botones Sí/No en el WebView.
-- Confirmar `APP_LOCALE=es` en el `.env` de producción (en el código el default es `en`).
-- Decidir: ¿es intencional que el login móvil exija técnico asociado (auditor sin técnico)? (M1 implementa un "modo auditor" condicional).
-- Decidir: ¿PWA/offline en la web para Android o iPhone? (solo se discutió; nada implementado).
-- Pendiente opcional no hecho: convertir a botones Sí/No los interruptores que aún queden en las pantallas MÓVILES (`ReporteAuditoriaCampo` general y otras usan `Toggle`); actualizar `API_TECNICO.md` (web y móvil) con los endpoints/campos nuevos y quitar `geo_referencia`; commits (el usuario no los pidió aún).
-- Producción: `composer audit` no se ejecutó; `league/flysystem-aws-s3-v3` está muy desactualizado.
+## Pendiente (solo el usuario puede hacerlo / decidir)
+1. **Desplegar y correr `php artisan migrate`** en la web (producción): migraciones `2026_10_28_222035_add_lectura_referencia...`, `2026_10_29_120000_normalizar_vigilancia_rechazada` (CAMBIA DATOS: respaldo antes), `2026_10_29_133922_reiniciar_sincronizado_en_ordenes_rechazadas`.
+2. **Orden de despliegue**: publicar primero la API/web y luego la app móvil nueva (la API oculta los subtipos nuevos a apps sin `X-App-Version`≥1.1.0). Subir la versión de la app móvil (`ALENA_APP_VERSION`, default 1.1.0).
+3. **Probar en celular real** (nada de esto se pudo verificar sin dispositivo): cámara/galería con varios grupos de fotos, GPS, cola offline real, barra de "Envíos con problemas" (no tape la navegación), render de botones Sí/No, `TimePicker` con turnos creados en web, sesión de 7 días sin red.
+4. Confirmar `APP_LOCALE=es` en el `.env` de producción (el default del código es `en`).
+5. Decidir: ¿la sesión local móvil de 7 días es aceptable? ¿Se hace commit (ninguno pendiente de pedir; el usuario/otra sesión ya hizo `a7dbd08`, `39b3768` en la web y `77d6235` en la móvil, y quedan cambios sin commit en ambos repos)?
+6. Opcional no hecho: Sí/No como botones en pantallas MÓVILES que aún usan `Toggle` (`ReporteAuditoriaCampo` general, etc.); actualizar `API_TECNICO.md` (web y móvil) con endpoints/campos nuevos y quitar `geo_referencia`; PWA/offline para la web (solo se discutió); arreglar los 6 archivos web con fallos viejos del starter kit; `composer audit` (no ejecutado; `league/flysystem-aws-s3-v3` muy desactualizado).
+7. Limpieza: BDs temporales `alenacentrix_test_w1|w2|w3|susp` si quedaron en MySQL; este archivo.

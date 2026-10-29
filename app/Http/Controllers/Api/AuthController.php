@@ -64,6 +64,7 @@ class AuthController extends Controller
                 'iniciales' => $user->initials(),
                 'personals_id' => $user->personals_id,
                 'company_id' => $user->company_id,
+                'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
             ],
         ]);
     }

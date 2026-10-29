@@ -526,9 +526,6 @@ class ReportePdfController extends Controller
         return $pdf->download("reporte-auditoria-campo-{$orden->numero_orden}.pdf");
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     public function DownLoadInformeGestionRiesgo(OrdenJob $orden): Response
     {
         abort_unless($orden->tipo_servicio === TipoServicio::Gestion_Riesgo, 403);

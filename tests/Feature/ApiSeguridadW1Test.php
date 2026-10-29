@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\OrdenJob;
 use App\Models\reportes;
 use App\Models\User;
+use Database\Seeders\PermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
@@ -275,4 +276,16 @@ test('mis-ordenes acota completadas a los ultimos 90 dias por defecto y soporta 
 
     expect($ids)->toContain($reciente->id)
         ->and($ids)->not->toContain($antigua->id);
+});
+
+test('el login devuelve los permisos del usuario para que la app habilite el modo auditor', function () {
+    $this->seed(PermissionsSeeder::class);
+
+    $user = User::factory()->create(['password' => bcrypt('password'), 'personals_id' => null]);
+    $user->givePermissionTo('auditorias.registrar');
+
+    $this->postJson('/api/auth/login', ['email' => $user->email, 'password' => 'password'])
+        ->assertOk()
+        ->assertJsonPath('user.personals_id', null)
+        ->assertJsonPath('user.permissions', ['auditorias.registrar']);
 });
