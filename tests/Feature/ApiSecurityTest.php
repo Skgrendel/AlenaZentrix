@@ -176,9 +176,10 @@ test('POST reporte Vigilancia devuelve 403 si el usuario no tiene personals_id n
 // ── Vuln 5: GET ordenes/{orden}/reporte solo accesible al técnico dueño o con permiso ──
 
 test('GET reporte devuelve 403 si el usuario no es el técnico asignado ni tiene permiso', function () {
-    [, $token] = tecnicoSeguridad();
+    [$user, $token] = tecnicoSeguridad();
 
     $orden = OrdenJob::factory()->create([
+        'company_id' => $user->company_id,
         'tipo_servicio' => TipoServicio::Fraudes->value,
         'estado' => EstadoOrden::Rechazada->value,
     ]);

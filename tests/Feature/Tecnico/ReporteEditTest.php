@@ -90,17 +90,11 @@ test('editar reporte muestra archivos sin previsualizacion', function () {
     $component = Livewire::actingAs($user)
         ->test(ReporteEdit::class, ['orden' => $orden]);
 
-    $method = new ReflectionMethod($component->instance(), 'fraudesSchema');
-    $method->setAccessible(true);
-
-    $schema = $method->invoke($component->instance());
-
-    $fileUploads = collect($schema)
-        ->flatMap(fn ($section) => method_exists($section, 'getChildComponents') ? $section->getChildComponents() : [])
-        ->filter(fn ($component) => method_exists($component, 'getName') && in_array($component->getName(), ['imagenes', 'foto_detector_fuga'], true));
+    $fileUploads = collect($component->instance()->form->getFlatComponents(withHidden: true))
+        ->filter(fn ($field) => method_exists($field, 'getName') && in_array($field->getName(), ['imagenes', 'foto_detector_fuga'], true));
 
     expect($fileUploads)->not->toBeEmpty();
-    expect($fileUploads->every(fn ($component) => method_exists($component, 'isPreviewable') && ! $component->isPreviewable()))
+    expect($fileUploads->every(fn ($field) => method_exists($field, 'isPreviewable') && ! $field->isPreviewable()))
         ->toBeTrue();
 });
 

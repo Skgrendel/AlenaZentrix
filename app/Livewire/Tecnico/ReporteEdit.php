@@ -112,7 +112,14 @@ class ReporteEdit extends Component implements HasActions, HasForms
             } else {
                 // Orden Rechazada sin ningún turno marcado (compatibilidad con datos
                 // previos a que existiera requiere_correccion): se edita el más reciente.
-                $this->reporte = $orden->reportes()->latest()->firstOrFail();
+                $this->reporte = $orden->reportes()->latest()->first();
+
+                if (! $this->reporte) {
+                    session()->flash('error', 'Esta orden de vigilancia no tiene turnos por corregir. Agrega un nuevo reporte desde Mis Órdenes.');
+                    $this->redirectRoute('tecnico.mis-ordenes', navigate: true);
+
+                    return;
+                }
             }
         } else {
             // Prioriza el reporte específico marcado como rechazado. El fallback a latest()

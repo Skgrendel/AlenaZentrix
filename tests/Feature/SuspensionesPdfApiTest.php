@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    $this->withHeader('X-App-Version', '1.1.0');
+});
+
 function ordenSuspensiones(User $user): OrdenJob
 {
     return OrdenJob::factory()->create([

@@ -138,7 +138,7 @@ test('el técnico dueño de la orden puede ver su propia auditoría sin permiso 
 
 test('un técnico que no es dueño de la orden y sin permiso recibe 403', function () {
     [$user, $token] = auditoriaConToken();
-    $otroTecnico = User::factory()->create();
+    $otroTecnico = User::factory()->create(['company_id' => $user->company_id]);
     $auditoriaRecord = auditoriaDeOrdenDelTecnico($otroTecnico);
 
     $this->withToken($token)
@@ -153,7 +153,7 @@ test('un usuario con rol Auditor puede ver cualquier auditoría', function () {
     $auditor->assignRole('Auditor');
     $auditorToken = $auditor->createToken('test')->plainTextToken;
 
-    $tecnico = User::factory()->create();
+    $tecnico = User::factory()->create(['company_id' => $auditor->company_id]);
     $auditoriaRecord = auditoriaDeOrdenDelTecnico($tecnico);
 
     $this->withToken($auditorToken)
@@ -164,9 +164,24 @@ test('un usuario con rol Auditor puede ver cualquier auditoría', function () {
 
 // ── PUT /api/auditorias/{auditoria} ─────────────────────────────────────────
 
+function auditorAutorizadoPara(User $tecnico): array
+{
+    test()->seed(PermissionsSeeder::class);
+
+    $auditor = User::factory()->create(['company_id' => $tecnico->company_id]);
+    $auditor->assignRole('Auditor');
+    UsuarioServicioAuditable::firstOrCreate([
+        'user_id' => $auditor->id,
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+    ]);
+
+    return [$auditor, $auditor->createToken('test')->plainTextToken];
+}
+
 test('PUT /api/auditorias/{auditoria} guarda evidencias y resultado', function () {
-    [$user, $token] = auditoriaConToken();
-    $auditoriaRecord = auditoriaDeOrdenDelTecnico($user);
+    [$tecnico] = auditoriaConToken();
+    [$user, $token] = auditorAutorizadoPara($tecnico);
+    $auditoriaRecord = auditoriaDeOrdenDelTecnico($tecnico);
 
     $payload = [
         'evidencias' => ["{$user->company_id}/auditorias/evidencia1.jpg"],
@@ -187,8 +202,9 @@ test('PUT /api/auditorias/{auditoria} guarda evidencias y resultado', function (
 });
 
 test('PUT guarda capacidad_instalada cuando se envía y la deja en null cuando no', function () {
-    [$user, $token] = auditoriaConToken();
-    $auditoriaRecord = auditoriaDeOrdenDelTecnico($user);
+    [$tecnico] = auditoriaConToken();
+    [$user, $token] = auditorAutorizadoPara($tecnico);
+    $auditoriaRecord = auditoriaDeOrdenDelTecnico($tecnico);
 
     $payload = [
         'evidencias' => ["{$user->company_id}/auditorias/evidencia1.jpg"],
@@ -203,7 +219,7 @@ test('PUT guarda capacidad_instalada cuando se envía y la deja en null cuando n
 
     expect($auditoriaRecord->refresh()->capacidad_instalada)->toBe('20');
 
-    $otraAuditoria = auditoriaDeOrdenDelTecnico($user);
+    $otraAuditoria = auditoriaDeOrdenDelTecnico($tecnico);
 
     $this->withToken($token)
         ->putJson("/api/auditorias/{$otraAuditoria->id}", [
@@ -215,8 +231,9 @@ test('PUT guarda capacidad_instalada cuando se envía y la deja en null cuando n
 });
 
 test('PUT actualiza el contrato de la orden cuando se envía', function () {
-    [$user, $token] = auditoriaConToken();
-    $auditoriaRecord = auditoriaDeOrdenDelTecnico($user);
+    [$tecnico] = auditoriaConToken();
+    [$user, $token] = auditorAutorizadoPara($tecnico);
+    $auditoriaRecord = auditoriaDeOrdenDelTecnico($tecnico);
 
     $payload = [
         'evidencias' => ["{$user->company_id}/auditorias/evidencia1.jpg"],
@@ -232,11 +249,12 @@ test('PUT actualiza el contrato de la orden cuando se envía', function () {
 });
 
 test('PUT valida que resultado sea confirmado o negativo', function () {
-    [$user, $token] = auditoriaConToken();
-    $auditoriaRecord = auditoriaDeOrdenDelTecnico($user);
+    [$tecnico] = auditoriaConToken();
+    [$user, $token] = auditorAutorizadoPara($tecnico);
+    $auditoriaRecord = auditoriaDeOrdenDelTecnico($tecnico);
 
     $payload = [
-        'evidencias' => ['auditorias/evidencia1.jpg'],
+        'evidencias' => ["{$user->company_id}/auditorias/evidencia1.jpg"],
         'resultado' => EstadoAuditoria::PendienteAuditoria->value,
     ];
 
@@ -248,11 +266,11 @@ test('PUT valida que resultado sea confirmado o negativo', function () {
 
 test('PUT devuelve 403 para un usuario no autorizado', function () {
     [$user, $token] = auditoriaConToken();
-    $otroTecnico = User::factory()->create();
+    $otroTecnico = User::factory()->create(['company_id' => $user->company_id]);
     $auditoriaRecord = auditoriaDeOrdenDelTecnico($otroTecnico);
 
     $payload = [
-        'evidencias' => ['auditorias/evidencia1.jpg'],
+        'evidencias' => ["{$user->company_id}/auditorias/evidencia1.jpg"],
         'resultado' => EstadoAuditoria::Confirmado->value,
     ];
 
