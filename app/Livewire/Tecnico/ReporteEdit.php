@@ -160,13 +160,6 @@ class ReporteEdit extends Component implements HasActions, HasForms
         }
     }
 
-    /**
-     * Convierte un array de rutas (strings) en la estructura que FileUpload usa para previews.
-     * Solo genera URLs/metadata fuera de los tests para evitar llamadas a Storage en las pruebas.
-     *
-     * @param  array<int,string>|null  $paths
-     * @return array<int,array<string,mixed>>|null
-     */
     public function form(Schema $form): Schema
     {
         $schema = match ($this->orden->tipo_servicio) {
@@ -214,9 +207,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('Número de Medidor Encontrado')
                         ->helperText('Ingresa el número del medidor que encontraste en el sitio')
                         ->maxLength(255),
-                    Forms\Components\Toggle::make('coincide_medidor')
+                    Forms\Components\ToggleButtons::make('coincide_medidor')
                         ->label('¿Coincide con el medidor asignado?')
-                        ->helperText('Activo = Sí coincide · Inactivo = No coincide'),
+                        ->siNo()
+                        ->default(0),
                     Forms\Components\TextInput::make('lectura')
                         ->label('Lectura del Medidor')
                         ->maxLength(255),
@@ -299,11 +293,12 @@ class ReporteEdit extends Component implements HasActions, HasForms
             Section::make('5. Incidencias Detectadas')
                 ->icon('heroicon-o-exclamation-triangle')
                 ->schema([
-                    Forms\Components\Toggle::make('hay_fuga_gas')
+                    Forms\Components\ToggleButtons::make('hay_fuga_gas')
                         ->label('Hay Fuga de Gas')
+                        ->siNo()
                         ->helperText('Detecta fugas o escapes de gas')
                         ->live()
-                        ->default(false),
+                        ->default(0),
                     Forms\Components\FileUpload::make('foto_detector_fuga')
                         ->label('Foto del detector de fuga')
                         ->helperText('Toma o sube una foto del detector cuando se detecte fuga de gas')
@@ -318,13 +313,14 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->panelLayout('grid')
                         ->extraInputAttributes(['capture' => 'environment'])
                         ->visible(fn ($get) => (bool) $get('hay_fuga_gas'))
-                        ->required(fn ($get) => (bool) $get('hay_fuga_gas'))
+                        ->required(fn ($get) => (bool) $get('hay_fuga_gas') && ! $this->tieneFotoDetectorGuardada())
                         ->dehydrated(fn ($get) => (bool) $get('hay_fuga_gas'))
                         ->columnSpanFull(),
-                    Forms\Components\Toggle::make('excede_capacidad')
+                    Forms\Components\ToggleButtons::make('excede_capacidad')
                         ->label('Excede Capacidad')
+                        ->siNo()
                         ->helperText('La instalación supera capacidad permitida')
-                        ->default(false),
+                        ->default(0),
                 ]),
 
             Section::make('6. Observaciones')
@@ -360,10 +356,6 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
-                    Forms\Components\TextInput::make('geo_referencia')
-                        ->label('GeoReferencia')
-                        ->url()
-                        ->maxLength(500),
                 ]),
 
             ...$this->seccionFotosExistentes('8'),
@@ -389,9 +381,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->searchable()
                         ->required()
                         ->placeholder('Seleccionar'),
-                    Forms\Components\Toggle::make('acompanamiento_tecnico')
+                    Forms\Components\ToggleButtons::make('acompanamiento_tecnico')
                         ->label('¿Hubo acompañamiento técnico?')
-                        ->default(false)
+                        ->siNo()
+                        ->default(0)
                         ->live(),
                 ]),
 
@@ -528,10 +521,6 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
-                    Forms\Components\TextInput::make('geo_referencia')
-                        ->label('GeoReferencia')
-                        ->url()
-                        ->maxLength(500),
                 ]),
 
             ...$this->seccionFotosExistentes('7'),
@@ -634,10 +623,6 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
-                    Forms\Components\TextInput::make('geo_referencia')
-                        ->label('GeoReferencia')
-                        ->url()
-                        ->maxLength(500),
                 ]),
 
             ...$this->seccionFotosExistentes('5'),
@@ -710,10 +695,6 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
-                    Forms\Components\TextInput::make('geo_referencia')
-                        ->label('GeoReferencia')
-                        ->url()
-                        ->maxLength(500),
                 ]),
 
             ...$this->seccionFotosExistentes('4'),
@@ -742,10 +723,11 @@ class ReporteEdit extends Component implements HasActions, HasForms
             Section::make('2. Novedades')
                 ->icon('heroicon-o-bell-alert')
                 ->schema([
-                    Forms\Components\Toggle::make('hay_novedad')
+                    Forms\Components\ToggleButtons::make('hay_novedad')
                         ->label('¿Hay novedades?')
-                        ->helperText('Activa si hubo novedades durante el turno')
-                        ->default(false)
+                        ->siNo()
+                        ->helperText('Indica si hubo novedades durante el turno')
+                        ->default(0)
                         ->live(),
                     Forms\Components\Textarea::make('descripcion_novedad')
                         ->label('Descripción de las Novedades')
@@ -754,9 +736,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->required(fn ($get) => (bool) $get('hay_novedad'))
                         ->visible(fn ($get) => (bool) $get('hay_novedad'))
                         ->columnSpanFull(),
-                    Forms\Components\Toggle::make('hay_reincidencia')
+                    Forms\Components\ToggleButtons::make('hay_reincidencia')
                         ->label('¿Hay reincidencia detectada?')
-                        ->default(false)
+                        ->siNo()
+                        ->default(0)
                         ->visible(fn ($get) => (bool) $get('hay_novedad')),
                 ]),
 
@@ -808,10 +791,6 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->label('URL del Video')
                         ->url()
                         ->maxLength(500),
-                    Forms\Components\TextInput::make('geo_referencia')
-                        ->label('GeoReferencia')
-                        ->url()
-                        ->maxLength(500),
                 ]),
 
             ...$this->seccionFotosExistentes('6'),
@@ -825,10 +804,15 @@ class ReporteEdit extends Component implements HasActions, HasForms
             'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
             'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
             'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
+            'visita_calidad_suspensiones' => 'Visita de Calidad — Suspensiones',
             default => 'Auditoría de Campo',
         };
 
         $esMedidoresDigitales = $this->orden->tipo_auditoria_campo === 'visita_calidad_medidores_digitales';
+
+        if ($this->orden->tipo_auditoria_campo === 'visita_calidad_suspensiones') {
+            return $this->suspensionesSchema($subtipo);
+        }
 
         return [
             Section::make('1. Información General')
@@ -904,14 +888,14 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     ->icon('heroicon-o-check-circle')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\Toggle::make('recibio_visita')
+                        Forms\Components\ToggleButtons::make('recibio_visita')
                             ->label('¿Recibió la visita del técnico?')
-                            ->required()
-                            ->default(false),
-                        Forms\Components\Toggle::make('se_realizo_revision')
+                            ->siNo()
+                            ->default(0),
+                        Forms\Components\ToggleButtons::make('se_realizo_revision')
                             ->label('¿Se realizó revisión técnica o trabajos?')
-                            ->required()
-                            ->default(false),
+                            ->siNo()
+                            ->default(0),
                         Forms\Components\DatePicker::make('fecha_ejecucion')
                             ->label('Fecha de ejecución')
                             ->displayFormat('d/m/Y'),
@@ -929,9 +913,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     ->icon('heroicon-o-magnifying-glass')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\Toggle::make('se_detecto_fuga')
+                        Forms\Components\ToggleButtons::make('se_detecto_fuga')
                             ->label('¿Se detectó fuga o falla?')
-                            ->default(false)
+                            ->siNo()
+                            ->default(0)
                             ->live()
                             ->columnSpanFull(),
                         Forms\Components\TextInput::make('ppm')
@@ -942,15 +927,18 @@ class ReporteEdit extends Component implements HasActions, HasForms
                             ->label('VOL %')
                             ->maxLength(50)
                             ->visible(fn ($get) => (bool) $get('se_detecto_fuga')),
-                        Forms\Components\Toggle::make('problema_persiste')
+                        Forms\Components\ToggleButtons::make('problema_persiste')
                             ->label('¿Actualmente el problema persiste?')
-                            ->default(false),
-                        Forms\Components\Toggle::make('evidencia_reparacion')
+                            ->siNo()
+                            ->default(0),
+                        Forms\Components\ToggleButtons::make('evidencia_reparacion')
                             ->label('¿Se evidencia la reparación en el punto?')
-                            ->default(false),
-                        Forms\Components\Toggle::make('servicio_correcto')
+                            ->siNo()
+                            ->default(0),
+                        Forms\Components\ToggleButtons::make('servicio_correcto')
                             ->label('¿El servicio funciona correctamente?')
-                            ->default(false)
+                            ->siNo()
+                            ->default(0)
                             ->columnSpanFull(),
                     ]),
 
@@ -958,9 +946,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     ->icon('heroicon-o-currency-dollar')
                     ->columns(2)
                     ->schema([
-                        Forms\Components\Toggle::make('se_usaron_materiales')
+                        Forms\Components\ToggleButtons::make('se_usaron_materiales')
                             ->label('¿Se utilizaron materiales?')
-                            ->default(false)
+                            ->siNo()
+                            ->default(0)
                             ->live()
                             ->columnSpanFull(),
                         Forms\Components\Select::make('quien_suministro_materiales')
@@ -973,9 +962,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                             ->placeholder('Seleccionar')
                             ->visible(fn ($get) => (bool) $get('se_usaron_materiales'))
                             ->columnSpanFull(),
-                        Forms\Components\Toggle::make('usuario_asumio_costo')
+                        Forms\Components\ToggleButtons::make('usuario_asumio_costo')
                             ->label('¿El usuario asumió algún costo?')
-                            ->default(false)
+                            ->siNo()
+                            ->default(0)
                             ->live()
                             ->columnSpanFull(),
                         Forms\Components\TextInput::make('valor_pagado')
@@ -990,9 +980,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                             ])
                             ->placeholder('Seleccionar')
                             ->visible(fn ($get) => (bool) $get('usuario_asumio_costo')),
-                        Forms\Components\Toggle::make('entrego_factura')
+                        Forms\Components\ToggleButtons::make('entrego_factura')
                             ->label('¿Se entregó factura, IVT o soporte de cobro?')
-                            ->default(false)
+                            ->siNo()
+                            ->default(0)
                             ->columnSpanFull(),
                     ]),
 
@@ -1004,9 +995,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                             ->label('¿El técnico dejó algún documento (IVT, certificado)?')
                             ->maxLength(255)
                             ->columnSpanFull(),
-                        Forms\Components\Toggle::make('informaron_no_estaba')
+                        Forms\Components\ToggleButtons::make('informaron_no_estaba')
                             ->label('¿Le informaron erróneamente que no estaba en la vivienda?')
-                            ->default(false),
+                            ->siNo()
+                            ->default(0),
                     ]),
             ]),
 
@@ -1033,18 +1025,22 @@ class ReporteEdit extends Component implements HasActions, HasForms
                             ->required()
                             ->placeholder('Seleccionar')
                             ->columnSpanFull(),
-                        Forms\Components\Toggle::make('solicito_dinero_medidor')
+                        Forms\Components\ToggleButtons::make('solicito_dinero_medidor')
                             ->label('¿Solicitó, insinuó o recibió dinero?')
-                            ->default(false),
-                        Forms\Components\Toggle::make('gestion_conforme_medidor')
+                            ->siNo()
+                            ->default(0),
+                        Forms\Components\ToggleButtons::make('gestion_conforme_medidor')
                             ->label('¿Gestión conforme a procedimientos?')
-                            ->default(false),
-                        Forms\Components\Toggle::make('requiere_seguimiento_medidor')
+                            ->siNo()
+                            ->default(0),
+                        Forms\Components\ToggleButtons::make('requiere_seguimiento_medidor')
                             ->label('¿Requiere seguimiento?')
-                            ->default(false),
-                        Forms\Components\Toggle::make('informo_gratuidad_medidor')
+                            ->siNo()
+                            ->default(0),
+                        Forms\Components\ToggleButtons::make('informo_gratuidad_medidor')
                             ->label('¿Informó gratuidad medidor/instalación?')
-                            ->default(false),
+                            ->siNo()
+                            ->default(0),
                         Forms\Components\Textarea::make('hallazgos_medidor')
                             ->label('Hallazgos / observaciones')
                             ->rows(3)
@@ -1056,10 +1052,12 @@ class ReporteEdit extends Component implements HasActions, HasForms
                 ->icon('heroicon-o-pencil')
                 ->columns(2)
                 ->schema([
-                    Forms\Components\Toggle::make('autoriza')
+                    Forms\Components\ToggleButtons::make('autoriza')
                         ->label('¿El usuario autoriza la recolección de esta información?')
-                        ->required()
-                        ->default(false)
+                        ->siNo()
+                        ->rules(['accepted'])
+                        ->validationMessages(['accepted' => 'Debes contar con la autorización del usuario para enviar el reporte.'])
+                        ->default(0)
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('cedula_usuario')
                         ->label('Cédula del Usuario')
@@ -1109,10 +1107,6 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->placeholder('Pega una URL y presiona Enter')
                         ->hint('Agrega links a documentos, Google Drive, etc.')
                         ->columnSpanFull(),
-                    Forms\Components\TextInput::make('geo_referencia')
-                        ->label('GeoReferencia')
-                        ->url()
-                        ->maxLength(500),
                 ]),
 
             ...$this->seccionFotosExistentes('10'),
@@ -1151,6 +1145,251 @@ class ReporteEdit extends Component implements HasActions, HasForms
     }
 
     /**
+     * Esquema de la Visita de Calidad — Suspensiones.
+     * Las fotos de fachada y suspensión se guardan dentro de datos_servicio.
+     *
+     * @return array<int, Section>
+     */
+    private function suspensionesSchema(string $subtipo): array
+    {
+        $directorio = 'reportes/'.$this->orden->numero_orden;
+
+        return [
+            Section::make('1. Información General')
+                ->icon('heroicon-o-document-text')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\Placeholder::make('subtipo_display')
+                        ->label('Subtipo')
+                        ->content($subtipo),
+                    Forms\Components\Placeholder::make('ot_display')
+                        ->label('Número de orden')
+                        ->content($this->orden->numero_orden),
+                    Forms\Components\Placeholder::make('contrato_display')
+                        ->label('Contrato')
+                        ->content($this->orden->contrato ?? '—'),
+                    Forms\Components\Placeholder::make('tecnico_display')
+                        ->label('Nombre del Técnico')
+                        ->content($this->orden->tecnico ?? '—'),
+                    Forms\Components\Placeholder::make('cliente_display')
+                        ->label('Nombre del Usuario')
+                        ->content($this->orden->cliente ?? '—'),
+                    Forms\Components\Placeholder::make('barrio_display')
+                        ->label('Barrio / Municipio')
+                        ->content($this->orden->barrio ?? '—'),
+                    Forms\Components\Placeholder::make('direccion_display')
+                        ->label('Dirección')
+                        ->content($this->orden->direccion ?? '—')
+                        ->columnSpanFull(),
+                    Forms\Components\Placeholder::make('comentario_usuario_display')
+                        ->label('Comentario Usuario / Solicitud')
+                        ->content($this->orden->comentario_usuario ?? '—'),
+                    Forms\Components\Placeholder::make('comentario_tecnico_display')
+                        ->label('Comentario Técnico')
+                        ->content($this->orden->comentario_tecnico ?? '—'),
+                    Forms\Components\Select::make('categoria_campo')
+                        ->label('Categoría')
+                        ->options([
+                            'comercial' => 'Comercial',
+                            'residencial' => 'Residencial',
+                            'industrial' => 'Industrial',
+                        ])
+                        ->required()
+                        ->placeholder('Seleccionar')
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('2. Suspensión')
+                ->icon('heroicon-o-no-symbol')
+                ->columns(2)
+                ->schema([
+                    Forms\Components\ToggleButtons::make('suspension_ejecutada')
+                        ->label('¿Se ejecutó la suspensión?')
+                        ->boolean('Sí', 'No')
+                        ->colors([true => 'success', false => 'danger'])
+                        ->icons([true => 'heroicon-o-check-circle', false => 'heroicon-o-x-circle'])
+                        ->inline()
+                        ->required()
+                        ->live()
+                        ->columnSpanFull(),
+                    Forms\Components\Select::make('metodo_suspension')
+                        ->label('Método de suspensión')
+                        ->options([
+                            'sonda_ips' => 'Sonda (Dispositivo IPS)',
+                            'sonda_cts' => 'Sonda (Dispositivo CTS)',
+                            'taponamiento_acometida' => 'Taponamiento de acometida',
+                            'taponamiento_multifamiliar' => 'Taponamiento Multifamiliar',
+                        ])
+                        ->placeholder('Seleccionar')
+                        ->live()
+                        ->required()
+                        ->visible(fn ($get): bool => (bool) $get('suspension_ejecutada'))
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('serie_sonda')
+                        ->label('Serie de la sonda')
+                        ->numeric()
+                        ->dehydrateStateUsing(fn (mixed $state): ?string => filled($state) ? (string) $state : null)
+                        ->required()
+                        ->visible(fn ($get): bool => (bool) $get('suspension_ejecutada') && in_array($get('metodo_suspension'), ['sonda_ips', 'sonda_cts'], true)),
+                    Forms\Components\TextInput::make('serie_caps')
+                        ->label('Serie del CAPS')
+                        ->numeric()
+                        ->dehydrateStateUsing(fn (mixed $state): ?string => filled($state) ? (string) $state : null)
+                        ->required()
+                        ->visible(fn ($get): bool => (bool) $get('suspension_ejecutada') && in_array($get('metodo_suspension'), ['sonda_ips', 'sonda_cts'], true)),
+                    Forms\Components\Select::make('motivo_no_ejecucion')
+                        ->label('Motivo de no ejecución')
+                        ->options([
+                            'no_ubico_direccion' => 'No se ubicó la dirección',
+                            'predio_cerrado' => 'Predio cerrado o desocupado',
+                            'usuario_impide' => 'El usuario impide el procedimiento',
+                            'riesgo_sitio' => 'Riesgo en sitio (Perro, altura, etc)',
+                            'redes_terraza' => 'Redes por terraza',
+                            'usuario_taponado' => 'Se encontró el usuario taponado en campo',
+                        ])
+                        ->placeholder('Seleccionar')
+                        ->required()
+                        ->visible(fn ($get): bool => $get('suspension_ejecutada') !== null && ! $get('suspension_ejecutada'))
+                        ->columnSpanFull(),
+                    Forms\Components\Textarea::make('justificacion_no_ejecucion')
+                        ->label('Justificación')
+                        ->helperText('Justificación asociada al motivo seleccionado')
+                        ->rows(3)
+                        ->required()
+                        ->visible(fn ($get): bool => $get('suspension_ejecutada') !== null && ! $get('suspension_ejecutada'))
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('3. Estado del medidor')
+                ->icon('heroicon-o-cpu-chip')
+                ->schema([
+                    Forms\Components\Select::make('anomalias_medidor')
+                        ->label('Anomalías identificadas')
+                        ->helperText('Selecciona las anomalías del catálogo. Déjalo vacío si no hay')
+                        ->options(
+                            TipoAnomalia::query()
+                                ->where('activo', true)
+                                ->orderBy('nombre')
+                                ->pluck('nombre', 'id')
+                        )
+                        ->multiple()
+                        ->searchable()
+                        ->columnSpanFull(),
+                    Forms\Components\Textarea::make('condicion_sellos')
+                        ->label('Condición de los sellos')
+                        ->helperText('Describe el estado de los sellos del medidor')
+                        ->rows(3)
+                        ->columnSpanFull(),
+                    Forms\Components\Textarea::make('elementos_rotos')
+                        ->label('Elementos o componentes rotos')
+                        ->helperText('Indica elementos o componentes rotos, si los hay')
+                        ->rows(3)
+                        ->columnSpanFull(),
+                    Forms\Components\Placeholder::make('lectura_referencia_display')
+                        ->label('Lectura de referencia (proporcionada)')
+                        ->content($this->orden->lectura_referencia ?? '—')
+                        ->visible(fn ($get): bool => (bool) $get('suspension_ejecutada'))
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('lectura_medidor')
+                        ->label('Lectura del medidor')
+                        ->helperText('Debe coincidir con la lectura de referencia')
+                        ->numeric()
+                        ->dehydrateStateUsing(fn (mixed $state): ?string => filled($state) ? (string) $state : null)
+                        ->required()
+                        ->visible(fn ($get): bool => (bool) $get('suspension_ejecutada'))
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('4. Observaciones')
+                ->icon('heroicon-o-pencil-square')
+                ->schema([
+                    Forms\Components\Textarea::make('observaciones')
+                        ->label('Observaciones')
+                        ->placeholder('Observaciones adicionales...')
+                        ->rows(4)
+                        ->columnSpanFull(),
+                ]),
+
+            Section::make('5. Soporte Fotográfico')
+                ->icon('heroicon-o-camera')
+                ->schema([
+                    Forms\Components\FileUpload::make('fotos_fachada')
+                        ->label('Fotos de la fachada')
+                        ->disk('s3')
+                        ->directory($directorio)
+                        ->fetchFileInformation(false)
+                        ->multiple()
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->required()
+                        ->minFiles(3)
+                        ->maxFiles(10)
+                        ->maxSize(5120)
+                        ->reorderable()
+                        ->panelLayout('grid')
+                        ->extraInputAttributes(['capture' => 'environment'])
+                        ->columnSpanFull(),
+                    Forms\Components\FileUpload::make('fotos_suspension')
+                        ->label('Fotografías de la suspensión ejecutada y del método aplicado')
+                        ->disk('s3')
+                        ->directory($directorio)
+                        ->fetchFileInformation(false)
+                        ->multiple()
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->required()
+                        ->minFiles(3)
+                        ->maxFiles(10)
+                        ->maxSize(5120)
+                        ->reorderable()
+                        ->panelLayout('grid')
+                        ->extraInputAttributes(['capture' => 'environment'])
+                        ->visible(fn ($get): bool => (bool) $get('suspension_ejecutada'))
+                        ->columnSpanFull(),
+                    Forms\Components\FileUpload::make('fotos_medidor')
+                        ->label('Fotos del estado del medidor (sellos, anomalías, componentes)')
+                        ->disk('s3')
+                        ->directory($directorio)
+                        ->fetchFileInformation(false)
+                        ->multiple()
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->required()
+                        ->minFiles(1)
+                        ->maxFiles(10)
+                        ->maxSize(5120)
+                        ->reorderable()
+                        ->panelLayout('grid')
+                        ->extraInputAttributes(['capture' => 'environment'])
+                        ->visible(fn ($get): bool => (bool) $get('suspension_ejecutada'))
+                        ->columnSpanFull(),
+                    Forms\Components\FileUpload::make('fotos_no_ejecucion')
+                        ->label('Evidencia fotográfica de la causal')
+                        ->disk('s3')
+                        ->directory($directorio)
+                        ->fetchFileInformation(false)
+                        ->multiple()
+                        ->image()
+                        ->imagePreviewHeight('100')
+                        ->required()
+                        ->minFiles(1)
+                        ->maxFiles(10)
+                        ->maxSize(5120)
+                        ->reorderable()
+                        ->panelLayout('grid')
+                        ->extraInputAttributes(['capture' => 'environment'])
+                        ->visible(fn ($get): bool => $get('suspension_ejecutada') !== null && ! $get('suspension_ejecutada'))
+                        ->columnSpanFull(),
+                    Forms\Components\TagsInput::make('urls_evidencia')
+                        ->label('URLs de evidencia / documentos')
+                        ->placeholder('Pega una URL y presiona Enter')
+                        ->hint('Agrega links a documentos, Google Drive, etc.')
+                        ->columnSpanFull(),
+                ]),
+        ];
+    }
+
+    /**
      * Persiste las correcciones al reporte y lo vuelve a enviar a revisión del coordinador.
      * Fraudes actualiza también el comercio asociado; el resto usa datos_servicio.
      */
@@ -1160,10 +1399,14 @@ class ReporteEdit extends Component implements HasActions, HasForms
 
         // Descartar referencias temporales de Livewire que no llegaron a subirse a S3
         // (p.ej. un borrador restaurado con un archivo que quedó a medio subir).
-        foreach (['imagenes', 'foto_detector_fuga'] as $campoArchivo) {
+        foreach (['imagenes', 'foto_detector_fuga', 'fotos_fachada', 'fotos_suspension', 'fotos_medidor', 'fotos_no_ejecucion'] as $campoArchivo) {
             if (array_key_exists($campoArchivo, $data)) {
                 $data[$campoArchivo] = $this->descartarReferenciasTemporales($data[$campoArchivo]);
             }
+        }
+
+        if ($this->orden->tipo_auditoria_campo === 'visita_calidad_suspensiones') {
+            $data = $this->limpiarCamposSuspensionNoAplicables($data);
         }
 
         // Normalizar actividades con UUID
@@ -1182,8 +1425,21 @@ class ReporteEdit extends Component implements HasActions, HasForms
         };
     }
 
+    /**
+     * La foto del detector se guarda dentro de `imagenes` (sin marca propia): si el reporte ya
+     * se había enviado con fuga de gas, la foto exigida entonces ya está entre las existentes.
+     */
+    private function tieneFotoDetectorGuardada(): bool
+    {
+        return (bool) $this->reporte->hay_fuga_gas && $this->imagenesExistentes !== [];
+    }
+
     private function actualizarUbicacion(): void
     {
+        if (blank($this->latitud) || blank($this->longitud)) {
+            return;
+        }
+
         if ($this->reporte->ubicacion) {
             $this->reporte->ubicacion->update([
                 'latitud' => $this->latitud,
@@ -1226,13 +1482,34 @@ class ReporteEdit extends Component implements HasActions, HasForms
 
         $this->notificarCoordinador();
 
-        if (($data['hay_fuga_gas'] ?? false) || ($data['excede_capacidad'] ?? false)) {
+        if (($data['hay_fuga_gas'] ?? false) || ($data['excede_capacidad'] ?? false) || $this->tieneBypass($data)) {
             $this->notificarIncidencias($data, $fotoDetectorFuga, $fotoDetectorData, $fotoDetectorMimeType);
         }
 
         $this->dispatch('borrador-limpiar');
 
         $this->redirect(route('tecnico.mis-ordenes'), navigate: true);
+    }
+
+    /**
+     * Elimina los campos de la rama (ejecutada / no ejecutada) que no aplica, para que un
+     * cambio de Sí a No (o viceversa) no deje valores obsoletos guardados.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function limpiarCamposSuspensionNoAplicables(array $data): array
+    {
+        $camposEjecutada = ['metodo_suspension', 'serie_sonda', 'serie_caps', 'lectura_medidor', 'fotos_suspension', 'fotos_medidor'];
+        $camposNoEjecutada = ['motivo_no_ejecucion', 'justificacion_no_ejecucion', 'fotos_no_ejecucion'];
+
+        $descartar = ($data['suspension_ejecutada'] ?? false) ? $camposNoEjecutada : $camposEjecutada;
+
+        if (($data['suspension_ejecutada'] ?? false) && ! in_array($data['metodo_suspension'] ?? null, ['sonda_ips', 'sonda_cts'], true)) {
+            $descartar = [...$descartar, 'serie_sonda', 'serie_caps'];
+        }
+
+        return array_diff_key($data, array_flip($descartar));
     }
 
     /**
@@ -1344,7 +1621,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                 ? array_values(array_unique(array_merge($this->imagenesExistentes, $data['imagenes'])))
                 : ($this->imagenesExistentes ?: null),
             'video' => $data['video'] ?? null,
-            'geo_referencia' => $data['geo_referencia'] ?? null,
+            'geo_referencia' => $data['geo_referencia'] ?? $this->reporte->geo_referencia,
             'datos_servicio' => $datosServicio,
             'actividades' => $data['actividades'] ?? null,
             'requiere_correccion' => false,
@@ -1388,6 +1665,17 @@ class ReporteEdit extends Component implements HasActions, HasForms
     }
 
     /** @param array<string, mixed> $data */
+    private function tieneBypass(array $data): bool
+    {
+        $bypassId = TipoAnomalia::where('activo', true)->where('nombre', 'Bypass')->value('id');
+
+        return $bypassId
+            && ! empty($data['anomalia'])
+            && is_array($data['anomalia'])
+            && in_array($bypassId, $data['anomalia'], true);
+    }
+
+    /** @param array<string, mixed> $data */
     protected function notificarIncidencias(
         array $data,
         ?string $fotoDetectorFuga = null,
@@ -1408,6 +1696,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
 
         if ($data['excede_capacidad'] ?? false) {
             $incidencias[] = 'Excede Capacidad';
+        }
+
+        if ($this->tieneBypass($data)) {
+            $incidencias[] = 'Bypass';
         }
 
         foreach ($correos as $email) {

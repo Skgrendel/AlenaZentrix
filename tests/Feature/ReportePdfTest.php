@@ -403,3 +403,64 @@ test('coordinador can download vigilancia pdf with multiple reportes', function 
     $response->assertOk();
     $response->assertHeader('Content-Type', 'application/pdf');
 });
+
+test('coordinador can download pdf for gestion legal reporte', function () {
+    Storage::fake('s3');
+
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::GestionLegal->value,
+        'estado' => EstadoOrden::EnRevision->value,
+        'creado_por_id' => $user->id,
+        'company_id' => $user->company_id,
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
+        'imagenes' => [],
+        'datos_servicio' => [],
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo.reporte-gestion-legal', $orden))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf');
+});
+
+test('el pdf de auditoria campo suspensiones recibe las fotos de cada grupo', function () {
+    $user = User::factory()->create();
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'tipo_auditoria_campo' => 'visita_calidad_suspensiones',
+        'estado' => EstadoOrden::EnRevision->value,
+        'company_id' => $user->company_id,
+    ]);
+
+    $reporte = reportes::create([
+        'orden_job_id' => $orden->id,
+        'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
+        'datos_servicio' => [
+            'categoria_campo' => 'comercial',
+            'suspension_ejecutada' => true,
+            'fotos_fachada' => ["{$user->company_id}/reportes/f-1.jpg"],
+            'fotos_suspension' => ["{$user->company_id}/reportes/s-1.jpg"],
+        ],
+    ]);
+
+    $controlador = new ReportePdfController;
+    $metodo = new ReflectionMethod($controlador, 'resolveImagenes');
+    $metodo->setAccessible(true);
+
+    $vista = file_get_contents(resource_path('views/pdf/reporte-auditoria-campo.blade.php'));
+    $fuente = file_get_contents(app_path('Http/Controllers/ReportePdfController.php'));
+
+    expect($vista)->toContain('$fotosFachada')
+        ->and($reporte->datos_servicio['fotos_fachada'])->toHaveCount(1)
+        ->and(substr_count($fuente, "'fotosFachada' => \$fotosFachada"))->toBe(1);
+});

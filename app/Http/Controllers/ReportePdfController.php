@@ -476,6 +476,12 @@ class ReportePdfController extends Controller
 
         $imagenes = $this->resolveImagenes($reporte->imagenes ?? []);
 
+        $datosServicio = $reporte->datos_servicio ?? [];
+        $fotosFachada = $this->resolveImagenes($datosServicio['fotos_fachada'] ?? []);
+        $fotosSuspension = $this->resolveImagenes($datosServicio['fotos_suspension'] ?? []);
+        $fotosMedidor = $this->resolveImagenes($datosServicio['fotos_medidor'] ?? []);
+        $fotosNoEjecucion = $this->resolveImagenes($datosServicio['fotos_no_ejecucion'] ?? []);
+
         /** @var User $firmante */
         $firmante = auth()->user();
 
@@ -492,6 +498,7 @@ class ReportePdfController extends Controller
             'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
             'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
             'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
+            'visita_calidad_suspensiones' => 'Visita de Calidad — Suspensiones',
         ];
 
         $datosOrden = $this->buildDatosOrden($orden);
@@ -504,6 +511,10 @@ class ReportePdfController extends Controller
             'reporte' => $reporte,
             'logoProderi' => $logoProderi,
             'imagenes' => $imagenes,
+            'fotosFachada' => $fotosFachada,
+            'fotosSuspension' => $fotosSuspension,
+            'fotosMedidor' => $fotosMedidor,
+            'fotosNoEjecucion' => $fotosNoEjecucion,
             'fechaGeneracion' => now()->format('d-m-Y'),
             'firma' => $firma,
             'datosOrden' => $datosOrden,
@@ -722,6 +733,20 @@ class ReportePdfController extends Controller
     }
 
     /**
+     * @param  array<int, string>  $ids
+     */
+    private function resolveNombresAnomalias(array $ids): ?string
+    {
+        if ($ids === []) {
+            return null;
+        }
+
+        $nombres = TipoAnomalia::withTrashed()->whereIn('id', $ids)->orderBy('nombre')->pluck('nombre');
+
+        return $nombres->isEmpty() ? null : $nombres->implode(', ');
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function buildDatosReporteAuditoriaCampo(reportes $reporte): array
@@ -732,8 +757,8 @@ class ReportePdfController extends Controller
             'fecha_hora_atencion' => $datos['fecha_hora_atencion'] ?? null,
             'ciudad' => $datos['ciudad'] ?? null,
             'celular_usuario' => $datos['celular_usuario'] ?? null,
-            'comentario_usuario' => $datos['comentario_usuario'] ?? null,
-            'comentario_tecnico' => $datos['comentario_tecnico'] ?? null,
+            'comentario_usuario' => $datos['comentario_usuario'] ?? $reporte->ordenJob?->comentario_usuario,
+            'comentario_tecnico' => $datos['comentario_tecnico'] ?? $reporte->ordenJob?->comentario_tecnico,
             'nombre_atiende' => $datos['nombre_atiende'] ?? null,
             'vinculo_usuario' => $datos['vinculo_usuario'] ?? null,
             'celular_atiende' => $datos['celular_atiende'] ?? null,
@@ -746,6 +771,46 @@ class ReportePdfController extends Controller
             'observaciones' => $reporte->observaciones ?: 'Sin observaciones registradas.',
             'geo_referencia' => $reporte->geo_referencia ?? null,
         ];
+
+        if (($reporte->ordenJob?->tipo_auditoria_campo ?? null) === 'visita_calidad_suspensiones') {
+            $ejecutada = (bool) ($datos['suspension_ejecutada'] ?? false);
+            $metodo = $datos['metodo_suspension'] ?? null;
+            $esSonda = in_array($metodo, ['sonda_ips', 'sonda_cts'], true);
+
+            return [
+                ...$comunes,
+                'es_medidores_digitales' => false,
+                'es_suspensiones' => true,
+                'fecha_registro' => $reporte->created_at?->format('d/m/Y H:i'),
+                'categoria_campo' => ucfirst((string) ($datos['categoria_campo'] ?? '')) ?: null,
+                'suspension_ejecutada' => $ejecutada,
+                'lectura_medidor' => $ejecutada ? ($datos['lectura_medidor'] ?? null) : null,
+                'lectura_referencia' => $reporte->ordenJob?->lectura_referencia,
+                'lectura_coincide' => $ejecutada ? $reporte->ordenJob?->lecturaCoincide($datos['lectura_medidor'] ?? null) : null,
+                'anomalias_medidor' => $this->resolveNombresAnomalias($datos['anomalias_medidor'] ?? []),
+                'condicion_sellos' => $datos['condicion_sellos'] ?? null,
+                'elementos_rotos' => $datos['elementos_rotos'] ?? null,
+                'justificacion_no_ejecucion' => ! $ejecutada ? ($datos['justificacion_no_ejecucion'] ?? null) : null,
+                'metodo_suspension' => $ejecutada ? match ($metodo) {
+                    'sonda_ips' => 'Sonda (Dispositivo IPS)',
+                    'sonda_cts' => 'Sonda (Dispositivo CTS)',
+                    'taponamiento_acometida' => 'Taponamiento de acometida',
+                    'taponamiento_multifamiliar' => 'Taponamiento Multifamiliar',
+                    default => null,
+                } : null,
+                'serie_sonda' => $ejecutada && $esSonda ? ($datos['serie_sonda'] ?? null) : null,
+                'serie_caps' => $ejecutada && $esSonda ? ($datos['serie_caps'] ?? null) : null,
+                'motivo_no_ejecucion' => ! $ejecutada ? match ($datos['motivo_no_ejecucion'] ?? null) {
+                    'no_ubico_direccion' => 'No se ubicó la dirección',
+                    'predio_cerrado' => 'Predio cerrado o desocupado',
+                    'usuario_impide' => 'El usuario impide el procedimiento',
+                    'riesgo_sitio' => 'Riesgo en sitio (Perro, altura, etc)',
+                    'redes_terraza' => 'Redes por terraza',
+                    'usuario_taponado' => 'Se encontró el usuario taponado en campo',
+                    default => null,
+                } : null,
+            ];
+        }
 
         if (($reporte->ordenJob?->tipo_auditoria_campo ?? null) === 'visita_calidad_medidores_digitales') {
             return [

@@ -388,12 +388,12 @@
                             @if (!empty($actividad['descripcion_orden']))
                                 <div class="info-row">
                                     <div class="info-label">Actividad asignada:</div>
-                                    <div class="info-value">{{ $actividad['descripcion_orden'] }}</div>
+                                    <div class="info-value">{{ $actividad['descripcion_orden'] ?? '' }}</div>
                                 </div>
                             @endif
                             <div class="info-row">
                                 <div class="info-label">Respuesta del Gestor:</div>
-                                <div class="info-value">{{ $actividad['actividades'] }}</div>
+                                <div class="info-value">{{ $actividad['actividades'] ?? '—' }}</div>
                             </div>
                         </div>
                     </div>

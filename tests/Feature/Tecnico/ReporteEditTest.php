@@ -80,6 +80,13 @@ test('editar reporte muestra archivos sin previsualizacion', function () {
         'estado' => EstadoOrden::Rechazada->value,
     ]);
 
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $personal->id,
+        'numero_orden' => $orden->numero_orden,
+        'observaciones' => 'Reporte previo.',
+    ]);
+
     $component = Livewire::actingAs($user)
         ->test(ReporteEdit::class, ['orden' => $orden]);
 

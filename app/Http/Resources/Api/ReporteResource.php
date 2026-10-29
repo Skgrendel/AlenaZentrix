@@ -22,6 +22,11 @@ class ReporteResource extends JsonResource
             'coincide_medidor' => $reporte->coincide_medidor,
             'lectura' => $reporte->lectura,
             'anomalia' => $reporte->anomalia ?? [],
+            'marca_regulador_id' => $reporte->marca_regulador_id,
+            'tipo_regulador_id' => $reporte->tipo_regulador_id,
+            'marca_medidor_id' => $reporte->marca_medidor_id,
+            'tipo_notificacion_alerta_id' => $reporte->tipo_notificacion_alerta_id,
+            'tipo_imposibilidad_id' => $reporte->tipo_imposibilidad_id,
             'hay_fuga_gas' => $reporte->hay_fuga_gas,
             'excede_capacidad' => $reporte->excede_capacidad,
             'imagenes' => $reporte->imagenes ?? [],
@@ -29,6 +34,7 @@ class ReporteResource extends JsonResource
             'geo_referencia' => $reporte->geo_referencia,
             'observaciones' => $reporte->observaciones,
             'comentarios' => $reporte->comentarios,
+            'requiere_correccion' => (bool) $reporte->requiere_correccion,
             'conclusion' => $reporte->conclusion,
             'actividades' => $reporte->actividades ?? [],
             'datos_servicio' => $reporte->datos_servicio ?? [],
@@ -47,6 +53,7 @@ class ReporteResource extends JsonResource
                 $reporte->relationLoaded('comercio') && $reporte->comercio,
                 fn () => [
                     'nombre_comercio' => $reporte->comercio->nombre_comercio,
+                    'tipo_comercio_id' => $reporte->comercio->tipo_comercio_id,
                     'tipo_comercio' => $reporte->comercio->relationLoaded('tipoComercio')
                         ? $reporte->comercio->tipoComercio?->nombre
                         : null,

@@ -46,6 +46,14 @@ class OrdenResource extends JsonResource
             'objetivo' => $orden->objetivo,
             'antecedente' => $orden->antecedente,
             'comentario_usuario' => $orden->comentario_usuario,
+            'comentario_tecnico' => $orden->comentario_tecnico,
+            'tecnico' => $orden->tecnico,
+            'tipo_auditoria_campo' => $orden->tipo_auditoria_campo,
+            'tipo_auditoria_campo_label' => $this->when(
+                $orden->tipo_servicio === TipoServicio::AuditoriaCampo && $orden->tipo_auditoria_campo !== null,
+                fn () => $orden->subtipoLabel()
+            ),
+            'lectura_referencia' => $this->when($orden->lectura_referencia !== null, fn () => $orden->lectura_referencia),
             'actividades' => $orden->actividades ?? [],
             'documentos' => $orden->documentos ?? [],
             'proceso' => $orden->proceso_id ? [
@@ -68,7 +76,11 @@ class OrdenResource extends JsonResource
             'sincronizado' => $orden->sincronizado,
             'tiene_reporte' => $this->when(
                 $request->routeIs('api.tecnico.ordenes.show'),
-                fn () => $orden->reportes()->exists()
+                fn () => $this->tieneReportes($orden)
+            ),
+            'turnos_por_corregir' => $this->when(
+                $orden->tipo_servicio === TipoServicio::Vigilancia,
+                fn () => $this->turnosPorCorregir($orden)
             ),
             'acciones' => $acciones,
             'created_at' => $orden->created_at->toISOString(),
@@ -87,11 +99,47 @@ class OrdenResource extends JsonResource
             'puede_reportar' => $orden->estado === EstadoOrden::EnProgreso
                 && (
                     $orden->tipo_servicio === TipoServicio::Vigilancia
-                    || $orden->reportes()->doesntExist()
+                    || ! $this->tieneReportes($orden)
                 ),
             'puede_cerrar_vigilancia' => $orden->tipo_servicio === TipoServicio::Vigilancia
                 && $orden->estado === EstadoOrden::EnProgreso,
-            'puede_editar_reporte' => $orden->estado === EstadoOrden::Rechazada,
+            'puede_editar_reporte' => $orden->tipo_servicio === TipoServicio::Vigilancia
+                ? $this->turnosPorCorregir($orden) !== []
+                : $orden->estado === EstadoOrden::Rechazada && $this->tieneReportes($orden),
         ];
+    }
+
+    /** Usa el conteo precargado (withCount) cuando existe para evitar una consulta por orden. */
+    private function tieneReportes(OrdenJob $orden): bool
+    {
+        if (array_key_exists('reportes_count', $orden->getAttributes())) {
+            return (int) $orden->getAttribute('reportes_count') > 0;
+        }
+
+        return $orden->reportes()->exists();
+    }
+
+    /**
+     * Turnos de Vigilancia que el coordinador marcó para corrección. La orden sigue en progreso;
+     * solo esos turnos se corrigen (PUT ordenes/{orden}/reportes/{reporte}).
+     *
+     * @return array<int, array{id: string, fecha_turno: mixed, motivo: ?string}>
+     */
+    private function turnosPorCorregir(OrdenJob $orden): array
+    {
+        $porCorregir = $orden->relationLoaded('reportes')
+            ? $orden->reportes->where('requiere_correccion', true)->sortByDesc('updated_at')->values()
+            : $orden->reportes()
+                ->where('requiere_correccion', true)
+                ->latest('updated_at')
+                ->get(['id', 'datos_servicio', 'comentarios']);
+
+        return $porCorregir
+            ->map(fn ($reporte): array => [
+                'id' => $reporte->id,
+                'fecha_turno' => $reporte->datos_servicio['fecha_turno'] ?? null,
+                'motivo' => $reporte->comentarios,
+            ])
+            ->all();
     }
 }

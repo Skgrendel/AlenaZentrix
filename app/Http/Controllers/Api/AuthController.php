@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -33,7 +35,25 @@ class AuthController extends Controller
             return response()->json(['message' => 'Tu cuenta está desactivada.'], 403);
         }
 
-        $token = $user->createToken('nativephp')->plainTextToken;
+        if ($user->is_superadmin) {
+            Auth::logout();
+
+            return response()->json(['message' => 'Los superadministradores no pueden usar la API.'], 403);
+        }
+
+        $company = $user->company_id ? Company::withoutGlobalScopes()->find($user->company_id) : null;
+
+        if (! $company || ! $company->activo) {
+            Auth::logout();
+
+            return response()->json(['message' => 'Tu empresa no está activa o no tienes una empresa asignada.'], 403);
+        }
+
+        $nombreToken = Str::limit(trim((string) $request->input('device_name', '')), 60, '') ?: 'nativephp';
+
+        $user->tokens()->where('name', $nombreToken)->delete();
+
+        $token = $user->createToken($nombreToken)->plainTextToken;
 
         return response()->json([
             'token' => $token,

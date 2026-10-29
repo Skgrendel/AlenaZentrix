@@ -515,8 +515,16 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                             'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
                             'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
                             'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
+                            'visita_calidad_suspensiones' => 'Visita de Calidad — Suspensiones',
                         ])
+                        ->live()
                         ->placeholder('Seleccionar')
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('lectura_referencia')
+                        ->label('Lectura de referencia (al momento de la suspensión)')
+                        ->numeric()
+                        ->visible(fn ($get) => $get('tipo_auditoria_campo') === 'visita_calidad_suspensiones')
+                        ->required(fn ($get) => $get('tipo_auditoria_campo') === 'visita_calidad_suspensiones')
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('cliente')
                         ->label('Nombre del Usuario')

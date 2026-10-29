@@ -493,7 +493,7 @@
         @endif
 
         {{-- ── Validación de la Atención ── --}}
-        @unless ($datosReporte['es_medidores_digitales'] ?? false)
+        @unless (($datosReporte['es_medidores_digitales'] ?? false) || ($datosReporte['es_suspensiones'] ?? false))
         <div class="section">
             <div class="section-title">VALIDACIÓN DE LA ATENCIÓN Y EJECUCIÓN</div>
             <div class="info-box">
@@ -611,6 +611,99 @@
         </div>
         @endunless
 
+        {{-- ── Suspensiones ── --}}
+        @if ($datosReporte['es_suspensiones'] ?? false)
+        <div class="section">
+            <div class="section-title">DATOS DE LA SUSPENSIÓN</div>
+            <div class="info-box">
+                <table class="col2-tabla">
+                    <tr>
+                        <td class="col2-lbl">Fecha de registro:</td>
+                        <td class="col2-val">{{ $datosReporte['fecha_registro'] ?? '—' }}</td>
+                        <td class="col2-sep"></td>
+                        <td class="col2-lbl-r">Categoría:</td>
+                        <td class="col2-val-r">{{ $datosReporte['categoria_campo'] ?? '—' }}</td>
+                    </tr>
+                    <tr>
+                        <td class="col2-lbl">¿Suspensión ejecutada?</td>
+                        <td class="col2-val"><span
+                                class="badge {{ $datosReporte['suspension_ejecutada'] ? 'badge-green' : 'badge-red' }}">{{ $datosReporte['suspension_ejecutada'] ? 'SÍ' : 'NO' }}</span>
+                        </td>
+                        <td class="col2-sep"></td>
+                        @if ($datosReporte['suspension_ejecutada'])
+                            <td class="col2-lbl-r">Método de suspensión:</td>
+                            <td class="col2-val-r">{{ $datosReporte['metodo_suspension'] ?? '—' }}</td>
+                        @else
+                            <td class="col2-lbl-r">Motivo de no ejecución:</td>
+                            <td class="col2-val-r">{{ $datosReporte['motivo_no_ejecucion'] ?? '—' }}</td>
+                        @endif
+                    </tr>
+                    @if ($datosReporte['serie_sonda'] || $datosReporte['serie_caps'])
+                        <tr>
+                            <td class="col2-lbl">Serie de la sonda:</td>
+                            <td class="col2-val">{{ $datosReporte['serie_sonda'] ?? '—' }}</td>
+                            <td class="col2-sep"></td>
+                            <td class="col2-lbl-r">Serie del CAPS:</td>
+                            <td class="col2-val-r">{{ $datosReporte['serie_caps'] ?? '—' }}</td>
+                        </tr>
+                    @endif
+                </table>
+            </div>
+        </div>
+        @php
+            $tieneObsMedidor = filled($datosReporte['anomalias_medidor'] ?? null)
+                || filled($datosReporte['condicion_sellos'] ?? null)
+                || filled($datosReporte['elementos_rotos'] ?? null);
+        @endphp
+        @if ($datosReporte['suspension_ejecutada'] || $tieneObsMedidor)
+            <div class="section">
+                <div class="section-title">{{ $datosReporte['suspension_ejecutada'] ? 'ESTADO DEL MEDIDOR' : 'OBSERVACIONES DEL MEDIDOR' }}</div>
+                <div class="info-box">
+                    <table class="col2-tabla">
+                        @if ($datosReporte['suspension_ejecutada'])
+                            <tr>
+                                <td class="col2-lbl">Lectura registrada:</td>
+                                <td class="col2-val">{{ $datosReporte['lectura_medidor'] ?? '—' }}</td>
+                                <td class="col2-sep"></td>
+                                <td class="col2-lbl-r">Lectura de referencia:</td>
+                                <td class="col2-val-r">{{ $datosReporte['lectura_referencia'] ?? '—' }}</td>
+                            </tr>
+                            <tr>
+                                <td class="col2-lbl">Resultado:</td>
+                                <td class="col2-val" colspan="4">
+                                    @if ($datosReporte['lectura_coincide'] === true)
+                                        <span class="badge badge-green">Coincide</span>
+                                    @elseif ($datosReporte['lectura_coincide'] === false)
+                                        <span class="badge badge-red">No coincide</span>
+                                    @else
+                                        Sin referencia
+                                    @endif
+                                </td>
+                            </tr>
+                        @endif
+                        <tr>
+                            <td class="col2-lbl">Anomalías:</td>
+                            <td class="col2-val">{{ $datosReporte['anomalias_medidor'] ?? '—' }}</td>
+                            <td class="col2-sep"></td>
+                            <td class="col2-lbl-r">Condición de sellos:</td>
+                            <td class="col2-val-r">{{ $datosReporte['condicion_sellos'] ?? '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="col2-lbl">Elementos rotos:</td>
+                            <td class="col2-val" colspan="4">{{ $datosReporte['elementos_rotos'] ?? '—' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        @endif
+        @unless ($datosReporte['suspension_ejecutada'])
+            <div class="section">
+                <div class="section-title">JUSTIFICACIÓN DE NO EJECUCIÓN</div>
+                <div class="content-box">{{ $datosReporte['justificacion_no_ejecucion'] ?? '—' }}</div>
+            </div>
+        @endunless
+        @endif
+
         {{-- ── Validación y Hallazgos — Medidores Digitales ── --}}
         @if ($datosReporte['es_medidores_digitales'] ?? false)
         <div class="section">
@@ -681,6 +774,38 @@
         @endif
 
         {{-- ── Evidencias Fotográficas ── --}}
+        @if ($datosReporte['es_suspensiones'] ?? false)
+@php
+    $galerias = $datosReporte['suspension_ejecutada']
+        ? [['Fotos de fachada', $fotosFachada ?? []], ['Fotos del medidor', $fotosMedidor ?? []], ['Fotos de la suspensión', $fotosSuspension ?? []]]
+        : [['Fotos de fachada', $fotosFachada ?? []], ['Fotos de no ejecución', $fotosNoEjecucion ?? []]];
+@endphp
+            @foreach ($galerias as [$tituloGaleria, $galeria])
+                @continue(count($galeria) === 0 && $tituloGaleria === 'Fotos de la suspensión')
+                <div class="section">
+                    <div class="section-title">{{ mb_strtoupper($tituloGaleria) }}</div>
+                    @if (count($galeria) > 0)
+                        <table class="evidencias-tabla">
+                            @foreach (array_chunk($galeria, 2) as $rowIndex => $row)
+                                <tr>
+                                    @foreach ($row as $colIndex => $imgSrc)
+                                        <td class="evidencia-td">
+                                            <img src="{{ $imgSrc }}" class="evidencia-img" alt="{{ $tituloGaleria }}">
+                                            <div class="evidencia-num">{{ $tituloGaleria }} {{ $rowIndex * 2 + $colIndex + 1 }}</div>
+                                        </td>
+                                    @endforeach
+                                    @if (count($row) === 1)
+                                        <td class="evidencia-td"></td>
+                                    @endif
+                                </tr>
+                            @endforeach
+                        </table>
+                    @else
+                        <div class="content-box" style="color:#64748b; font-style:italic;">No se registraron fotografías.</div>
+                    @endif
+                </div>
+            @endforeach
+        @else
         <div class="section">
             <div class="section-title">EVIDENCIAS FOTOGRÁFICAS</div>
             @if (count($imagenes) > 0)
@@ -710,6 +835,8 @@
             @endif
         </div>
 
+        @endif
+
         {{-- ── URLs de Evidencia ── --}}
         @if (!empty($datosReporte['urls_evidencia']))
             <div class="section">
@@ -726,6 +853,7 @@
         @include('pdf.partials.destinacion-informe')
 
         {{-- ── Autorización y Firmas manuscritas ── --}}
+        @unless ($datosReporte['es_suspensiones'] ?? false)
         <div class="firma-section">
             <div class="section-title">AUTORIZACIÓN Y FIRMAS</div>
             <div class="info-box" style="margin-bottom:10px;">
@@ -765,6 +893,7 @@
                 </tr>
             </table>
         </div>
+        @endunless
 
         {{-- ── Firma Digital del Coordinador ── --}}
         <div class="firma-section">

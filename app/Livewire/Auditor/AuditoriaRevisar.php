@@ -190,6 +190,69 @@ class AuditoriaRevisar extends Component implements HasForms
     }
 
     /**
+     * @return array<int, string>
+     */
+    public function fotosFachadaUrls(): array
+    {
+        return $this->urlsDeFotosDatosServicio('fotos_fachada');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function fotosSuspensionUrls(): array
+    {
+        return $this->urlsDeFotosDatosServicio('fotos_suspension');
+    }
+
+    /**
+     * Resuelve ids de TipoAnomalia a sus nombres (incluye eliminadas/desactivadas e ignora ids inexistentes).
+     *
+     * @return array<int, string>
+     */
+    private function nombresAnomaliasMedidor(mixed $ids): array
+    {
+        if (! is_array($ids) || $ids === []) {
+            return [];
+        }
+
+        return TipoAnomalia::withTrashed()
+            ->whereIn('id', $ids)
+            ->orderBy('nombre')
+            ->pluck('nombre')
+            ->all();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function fotosMedidorUrls(): array
+    {
+        return $this->urlsDeFotosDatosServicio('fotos_medidor');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function fotosNoEjecucionUrls(): array
+    {
+        return $this->urlsDeFotosDatosServicio('fotos_no_ejecucion');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function urlsDeFotosDatosServicio(string $clave): array
+    {
+        return collect(($this->auditoria->reporte?->datos_servicio ?? [])[$clave] ?? [])
+            ->filter(fn ($path) => is_string($path) && $path !== '')
+            ->reject(fn (string $path) => ArchivoUrl::esReferenciaTemporal($path))
+            ->map(fn (string $path) => ArchivoUrl::temporal($path))
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return array<int, array{url: string, nombre: string, es_imagen: bool}>
      */
     public function archivosUrls(): array
@@ -274,6 +337,7 @@ class AuditoriaRevisar extends Component implements HasForms
                 'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
                 'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
                 'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
+                'visita_calidad_suspensiones' => 'Visita de Calidad — Suspensiones',
                 default => 'Auditoría de Campo',
             };
 
@@ -282,8 +346,8 @@ class AuditoriaRevisar extends Component implements HasForms
                 'fecha_hora_atencion' => $datos['fecha_hora_atencion'] ?? null,
                 'ciudad' => $datos['ciudad'] ?? null,
                 'celular_usuario' => $datos['celular_usuario'] ?? null,
-                'comentario_usuario' => $datos['comentario_usuario'] ?? null,
-                'comentario_tecnico' => $datos['comentario_tecnico'] ?? null,
+                'comentario_usuario' => $datos['comentario_usuario'] ?? $orden?->comentario_usuario,
+                'comentario_tecnico' => $datos['comentario_tecnico'] ?? $orden?->comentario_tecnico,
                 'nombre_atiende' => $datos['nombre_atiende'] ?? null,
                 'vinculo_usuario' => $datos['vinculo_usuario'] ?? null,
                 'celular_atiende' => $datos['celular_atiende'] ?? null,
@@ -295,10 +359,55 @@ class AuditoriaRevisar extends Component implements HasForms
                 'urls_evidencia' => $datos['urls_evidencia'] ?? [],
             ];
 
+            if ($orden?->tipo_auditoria_campo === 'visita_calidad_suspensiones') {
+                $ejecutada = (bool) ($datos['suspension_ejecutada'] ?? false);
+
+                return [
+                    ...$comunes,
+                    'fecha_hora_atencion' => $this->auditoria->reporte?->created_at?->format('d/m/Y H:i'),
+                    'es_medidores_digitales' => false,
+                    'es_suspensiones' => true,
+                    'categoria_campo' => match ($datos['categoria_campo'] ?? null) {
+                        'comercial' => 'Comercial',
+                        'residencial' => 'Residencial',
+                        'industrial' => 'Industrial',
+                        default => null,
+                    },
+                    'suspension_ejecutada' => $ejecutada,
+                    'metodo_suspension' => match ($datos['metodo_suspension'] ?? null) {
+                        'sonda_ips' => 'Sonda (Dispositivo IPS)',
+                        'sonda_cts' => 'Sonda (Dispositivo CTS)',
+                        'taponamiento_acometida' => 'Taponamiento de acometida',
+                        'taponamiento_multifamiliar' => 'Taponamiento Multifamiliar',
+                        default => null,
+                    },
+                    'serie_sonda' => $datos['serie_sonda'] ?? null,
+                    'serie_caps' => $datos['serie_caps'] ?? null,
+                    'motivo_no_ejecucion' => match ($datos['motivo_no_ejecucion'] ?? null) {
+                        'no_ubico_direccion' => 'No se ubicó la dirección',
+                        'predio_cerrado' => 'Predio cerrado o desocupado',
+                        'usuario_impide' => 'El usuario impide el procedimiento',
+                        'riesgo_sitio' => 'Riesgo en sitio (Perro, altura, etc)',
+                        'redes_terraza' => 'Redes por terraza',
+                        'usuario_taponado' => 'Se encontró el usuario taponado en campo',
+                        default => null,
+                    },
+                    'lectura_medidor' => $datos['lectura_medidor'] ?? null,
+                    'lectura_referencia' => $orden?->lectura_referencia,
+                    'lectura_coincide' => $orden?->lecturaCoincide($datos['lectura_medidor'] ?? null),
+                    'anomalias_medidor' => $this->nombresAnomaliasMedidor($datos['anomalias_medidor'] ?? []),
+                    'condicion_sellos' => $datos['condicion_sellos'] ?? null,
+                    'elementos_rotos' => $datos['elementos_rotos'] ?? null,
+                    'justificacion_no_ejecucion' => $datos['justificacion_no_ejecucion'] ?? null,
+                    'observaciones' => $this->auditoria->reporte?->observaciones,
+                ];
+            }
+
             if ($orden?->tipo_auditoria_campo === 'visita_calidad_medidores_digitales') {
                 return [
                     ...$comunes,
                     'es_medidores_digitales' => true,
+                    'es_suspensiones' => false,
                     'tecnico_atendio_medidor' => $datos['tecnico_atendio_medidor'] ?? null,
                     'numero_medidor_instalado' => $datos['numero_medidor_instalado'] ?? null,
                     'resultado_medidor' => match ($datos['resultado_medidor'] ?? null) {
@@ -318,6 +427,7 @@ class AuditoriaRevisar extends Component implements HasForms
             return [
                 ...$comunes,
                 'es_medidores_digitales' => false,
+                'es_suspensiones' => false,
                 'recibio_visita' => $datos['recibio_visita'] ?? false,
                 'se_realizo_revision' => $datos['se_realizo_revision'] ?? false,
                 'fecha_ejecucion' => $datos['fecha_ejecucion'] ?? null,
@@ -349,6 +459,10 @@ class AuditoriaRevisar extends Component implements HasForms
             'reporte' => $this->auditoria->reporte,
             'orden' => $this->auditoria->reporte?->ordenJob,
             'imagenUrls' => $this->imagenUrls(),
+            'fotosFachadaUrls' => $this->fotosFachadaUrls(),
+            'fotosSuspensionUrls' => $this->fotosSuspensionUrls(),
+            'fotosMedidorUrls' => $this->fotosMedidorUrls(),
+            'fotosNoEjecucionUrls' => $this->fotosNoEjecucionUrls(),
             'archivosUrls' => $this->archivosUrls(),
             'datosServicio' => $this->datosServicioDisplay(),
         ]);

@@ -48,6 +48,7 @@ class OrdenJob extends Model
         'tipo_investigacion',
         'tipo_gestion_legal',
         'tipo_auditoria_campo',
+        'lectura_referencia',
         'documentos',
         'prioridad',
         'estado',
@@ -186,6 +187,31 @@ class OrdenJob extends Model
         return $this->hasMany(reportes::class, 'orden_job_id');
     }
 
+    /**
+     * Compara la lectura de referencia con la registrada en campo.
+     * Devuelve null si alguna está vacía o no es numérica.
+     */
+    public function lecturaCoincide(mixed $lecturaRegistrada): ?bool
+    {
+        $normalizar = function (mixed $valor): ?float {
+            if (! is_scalar($valor)) {
+                return null;
+            }
+            $texto = str_replace(',', '.', preg_replace('/\s+/', '', (string) $valor));
+
+            return $texto !== '' && is_numeric($texto) ? (float) $texto : null;
+        };
+
+        $referencia = $normalizar($this->lectura_referencia);
+        $registrada = $normalizar($lecturaRegistrada);
+
+        if ($referencia === null || $registrada === null) {
+            return null;
+        }
+
+        return abs($referencia - $registrada) < 0.0001;
+    }
+
     public function subtipoLabel(): string
     {
         return match ($this->tipo_servicio) {
@@ -195,6 +221,7 @@ class OrdenJob extends Model
                 'visita_calidad_emergencia' => 'Visita de Calidad — Emergencia',
                 'visita_calidad_trabajos_varios' => 'Visita de Calidad — Trabajos Varios',
                 'visita_calidad_medidores_digitales' => 'Visita de Calidad — Medidores Digitales',
+                'visita_calidad_suspensiones' => 'Visita de Calidad — Suspensiones',
                 default => '—',
             },
             default => '—',
