@@ -1,4 +1,4 @@
-﻿<div class="mx-auto max-w-4xl px-4 py-8">
+<div class="mx-auto max-w-4xl px-4 py-8">
 
     {{-- Page header --}}
     <div class="mb-6">
