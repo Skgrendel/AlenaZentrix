@@ -1,4 +1,4 @@
-<div class="mx-auto max-w-4xl px-4 py-8">
+﻿<div class="mx-auto max-w-4xl px-4 py-8">
 
     {{-- Page header --}}
     <div class="mb-6">
@@ -27,11 +27,6 @@
                         <span wire:loading.remove wire:target="buscar">Buscar</span>
                         <span wire:loading wire:target="buscar">Consultando...</span>
                     </flux:button>
-                    @if ($resultado || $error)
-                        <flux:button type="button" wire:click="limpiar" variant="ghost" icon="arrow-path">
-                            Nueva consulta
-                        </flux:button>
-                    @endif
                 </div>
             </form>
         </div>
@@ -120,60 +115,184 @@
                 </div>
             </div>
 
-            {{-- Filament infolist: Ubicación, Servicio, Medidor --}}
-            {{ $this->gisResultado }}
+            @php
+                $ubicacion = $resultado['ubicacion'] ?? [];
+                $servicio = $resultado['servicio'] ?? [];
+                $medidor = $resultado['medidor'] ?? [];
 
-            {{-- Consumos bar chart --}}
-            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900">
-                <div class="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
-                    <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
-                        <flux:icon.chart-bar class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                $anillado = match (strtoupper((string) ($servicio['anillado'] ?? ''))) {
+                    'Y' => 'Sí',
+                    'N' => 'No',
+                    default => $servicio['anillado'] ?? null,
+                };
+
+                $estadoClases = match (strtoupper((string) ($servicio['estado'] ?? ''))) {
+                    'ACTIVO' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+                    'SUSPENDIDO' => 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+                    'CORTADO' => 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+                    default => 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+                };
+
+                $cardClasses = 'flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-900';
+                $labelClasses = 'text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500';
+                $valueClasses = 'mt-0.5 text-sm font-semibold text-gray-900 dark:text-gray-100 wrap-break-word';
+            @endphp
+
+            {{-- Fila 1: Ubicación y Servicio --}}
+            <div class="grid gap-4 md:grid-cols-2">
+
+                {{-- Ubicación --}}
+                <div class="{{ $cardClasses }}">
+                    <div class="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
+                        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-100 dark:bg-sky-900/40">
+                            <flux:icon.map-pin class="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                        </div>
+                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Ubicación</span>
                     </div>
-                    <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Consumos — últimos 6 meses</span>
+                    <dl class="grid flex-1 grid-cols-2 content-start gap-x-4 gap-y-4 px-5 py-4">
+                        <div class="col-span-2">
+                            <dt class="{{ $labelClasses }}">Dirección</dt>
+                            <dd class="{{ $valueClasses }}">{{ $ubicacion['direccion'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="{{ $labelClasses }}">Municipio</dt>
+                            <dd class="{{ $valueClasses }}">{{ $ubicacion['municipio'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="{{ $labelClasses }}">Barrio</dt>
+                            <dd class="{{ $valueClasses }}">{{ $ubicacion['barrio'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="{{ $labelClasses }}">Latitud</dt>
+                            <dd class="{{ $valueClasses }} font-mono">{{ number_format($resultado['coordenadas']['lat'], 6) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="{{ $labelClasses }}">Longitud</dt>
+                            <dd class="{{ $valueClasses }} font-mono">{{ number_format($resultado['coordenadas']['lng'], 6) }}</dd>
+                        </div>
+                    </dl>
                 </div>
-                <div class="px-5 py-4">
-                    @if (count($consumosFiltrados))
-                        <div class="space-y-3">
-                            @foreach ($consumosFiltrados as $mes => $consumo)
-                                @php $pct = $maxConsumo > 0 ? round(intval($consumo) / $maxConsumo * 100) : 0; @endphp
-                                <div class="flex items-center gap-3">
-                                    <span class="w-8 shrink-0 text-right text-xs font-semibold text-gray-400 dark:text-gray-500">{{ $mes }}</span>
-                                    <div class="flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
-                                        <div @class([
-                                                'h-2.5 rounded-full transition-all duration-500',
-                                                'bg-red-400'   => $pct >= 80,
-                                                'bg-amber-400' => $pct >= 50 && $pct < 80,
-                                                'bg-emerald-400' => $pct < 50,
-                                            ])
-                                            style="width: {{ $pct }}%"></div>
-                                    </div>
-                                    <span class="w-20 shrink-0 text-right text-xs font-semibold tabular-nums text-gray-700 dark:text-gray-200">
-                                        {{ number_format(intval($consumo)) }} m³
-                                    </span>
-                                </div>
-                            @endforeach
+
+                {{-- Servicio --}}
+                <div class="{{ $cardClasses }}">
+                    <div class="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
+                        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900/40">
+                            <flux:icon.bolt class="h-4 w-4 text-amber-600 dark:text-amber-400" />
                         </div>
-                    @else
-                        <div class="flex flex-col items-center justify-center py-6 text-center">
-                            <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
-                                <flux:icon.chart-bar class="h-5 w-5 text-gray-400" />
+                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Servicio</span>
+                    </div>
+                    <dl class="grid flex-1 grid-cols-2 content-start gap-x-4 gap-y-4 px-5 py-4">
+                        <div>
+                            <dt class="{{ $labelClasses }}">Estado</dt>
+                            <dd class="mt-1">
+                                @if ($servicio['estado'] ?? null)
+                                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $estadoClases }}">{{ $servicio['estado'] }}</span>
+                                @else
+                                    <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">—</span>
+                                @endif
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="{{ $labelClasses }}">Estado de corte</dt>
+                            <dd class="{{ $valueClasses }}">{{ $servicio['estado_corte'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="{{ $labelClasses }}">Categoría</dt>
+                            <dd class="{{ $valueClasses }}">{{ $servicio['categoria'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="{{ $labelClasses }}">TAG</dt>
+                            <dd class="{{ $valueClasses }}">{{ $ubicacion['tag'] ?? '—' }}</dd>
+                        </div>
+                        <div class="col-span-2">
+                            <dt class="{{ $labelClasses }}">Descripción</dt>
+                            <dd class="{{ $valueClasses }}">{{ $servicio['descripcion'] ?? '—' }}</dd>
+                        </div>
+                        <div class="col-span-2 grid grid-cols-3 gap-x-4">
+                            <div>
+                                <dt class="{{ $labelClasses }}">Estrato</dt>
+                                <dd class="{{ $valueClasses }}">{{ $servicio['estrato'] ?? '—' }}</dd>
                             </div>
-                            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Sin datos de consumo registrados</p>
+                            <div>
+                                <dt class="{{ $labelClasses }}">Ciclo</dt>
+                                <dd class="{{ $valueClasses }}">{{ $servicio['ciclo'] ?? '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="{{ $labelClasses }}">Anillado</dt>
+                                <dd class="{{ $valueClasses }}">{{ $anillado ?? '—' }}</dd>
+                            </div>
                         </div>
-                    @endif
+                    </dl>
                 </div>
             </div>
 
-            {{-- Coordenadas footer --}}
-            <div class="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gray-50 px-5 py-3.5 dark:border-gray-700 dark:bg-gray-800/50">
-                <flux:icon.map-pin class="h-4 w-4 shrink-0 text-gray-400" />
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                    Coordenadas:
-                    <span class="ml-1 font-mono font-semibold text-gray-700 dark:text-gray-200">
-                        {{ number_format($resultado['coordenadas']['lat'], 6) }},
-                        {{ number_format($resultado['coordenadas']['lng'], 6) }}
-                    </span>
-                </p>
+            {{-- Fila 2: Medidor y Consumos --}}
+            <div class="grid gap-4 md:grid-cols-2">
+
+                {{-- Medidor --}}
+                <div class="{{ $cardClasses }}">
+                    <div class="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
+                        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-900/40">
+                            <flux:icon.cog-6-tooth class="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                        </div>
+                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Medidor</span>
+                    </div>
+                    <dl class="grid flex-1 grid-cols-2 content-start gap-x-4 gap-y-4 px-5 py-4">
+                        <div class="col-span-2">
+                            <dt class="{{ $labelClasses }}">Serie actual</dt>
+                            <dd class="{{ $valueClasses }} font-mono">{{ $medidor['serie_actual'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="{{ $labelClasses }}">Serie anterior</dt>
+                            <dd class="{{ $valueClasses }} font-mono">{{ $medidor['serie_anterior'] ?? '—' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="{{ $labelClasses }}">Fecha anterior</dt>
+                            <dd class="{{ $valueClasses }}">{{ $medidor['fecha_anterior'] ?? '—' }}</dd>
+                        </div>
+                    </dl>
+                </div>
+
+                {{-- Consumos --}}
+                <div class="{{ $cardClasses }}">
+                    <div class="flex items-center gap-2.5 border-b border-gray-100 px-5 py-3.5 dark:border-gray-800">
+                        <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/40">
+                            <flux:icon.chart-bar class="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">Consumos — últimos 6 meses</span>
+                    </div>
+                    <div class="flex flex-1 flex-col justify-center px-5 py-4">
+                        @if (count($consumosFiltrados))
+                            <div class="space-y-3">
+                                @foreach ($consumosFiltrados as $mes => $consumo)
+                                    @php $pct = $maxConsumo > 0 ? round(intval($consumo) / $maxConsumo * 100) : 0; @endphp
+                                    <div class="flex items-center gap-3">
+                                        <span class="w-8 shrink-0 text-right text-xs font-semibold text-gray-400 dark:text-gray-500">{{ $mes }}</span>
+                                        <div class="flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                                            <div @class([
+                                                    'h-2.5 rounded-full transition-all duration-500',
+                                                    'bg-red-400'   => $pct >= 80,
+                                                    'bg-amber-400' => $pct >= 50 && $pct < 80,
+                                                    'bg-emerald-400' => $pct < 50,
+                                                ])
+                                                style="width: {{ $pct }}%"></div>
+                                        </div>
+                                        <span class="w-20 shrink-0 text-right text-xs font-semibold tabular-nums text-gray-700 dark:text-gray-200">
+                                            {{ number_format(intval($consumo)) }} m³
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="flex flex-col items-center justify-center py-4 text-center">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+                                    <flux:icon.chart-bar class="h-5 w-5 text-gray-400" />
+                                </div>
+                                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">Sin datos de consumo registrados</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
 
         </div>

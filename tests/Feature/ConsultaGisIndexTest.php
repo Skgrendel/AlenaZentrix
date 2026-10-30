@@ -16,7 +16,7 @@ function resultadoGis(string $contrato, string $direccion): array
     ];
 }
 
-test('nueva consulta muestra los datos completos del siguiente contrato', function () {
+test('buscar otro contrato muestra los datos completos del nuevo contrato', function () {
     $servicio = Mockery::mock(DataGisServices::class);
     $servicio->shouldReceive('consultarContrato')->with('111')->andReturn(resultadoGis('111', 'DIRECCION UNO'));
     $servicio->shouldReceive('consultarContrato')->with('222')->andReturn(resultadoGis('222', 'DIRECCION DOS'));
@@ -26,7 +26,6 @@ test('nueva consulta muestra los datos completos del siguiente contrato', functi
         ->set('data.contrato', '111')
         ->call('buscar')
         ->assertSee('DIRECCION UNO')
-        ->call('limpiar')
         ->set('data.contrato', '222')
         ->call('buscar')
         ->assertSee('DIRECCION DOS')
