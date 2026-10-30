@@ -169,13 +169,23 @@ class ConsultaGisIndex extends Component implements HasSchemas
         }
 
         $this->resultado = $resultado;
+        $this->reiniciarInfolistResultado();
     }
 
     public function limpiar(): void
     {
         $this->resultado = null;
         $this->error = null;
+        $this->reiniciarInfolistResultado();
         $this->form->fill();
+    }
+
+    /**
+     * Descarta el schema cacheado para que se reconstruya con el resultado actual.
+     */
+    protected function reiniciarInfolistResultado(): void
+    {
+        unset($this->cachedSchemas['gisResultado']);
     }
 
     public function render(): View
