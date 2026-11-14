@@ -207,6 +207,7 @@ class InformesIndex extends Component
             $reporte?->tipoImposibilidad?->nombre ?? '',
             $reporte?->tipoRegulador?->nombre ?? '',
             $reporte ? implode(' | ', array_filter(array_map(fn ($item) => is_array($item) ? ($item['actividades'] ?? '') : '', $reporte->actividades ?? []))) : '',
+            $this->nombresAnomalias($reporte?->datos_servicio['anomalias_medidor'] ?? []),
             // Columnas específicas del servicio/subtipo filtrado (ver columnasAdicionalesDefinicion())
             ...array_map(fn (array $columna) => ($columna['value'])($reporte, $o), $this->columnasAdicionalesDefinicion()),
             $reporte?->observaciones ?? '',
@@ -247,12 +248,12 @@ class InformesIndex extends Component
             'Cliente', 'Contrato', 'Dirección', 'Barrio', 'Medidor', 'Objetivo', 'N° Noticia Criminal',
             'Fecha Asignación', 'Fecha Límite', 'Fecha Completado',
             'Tiene Reporte', 'Lectura', 'N° Medidor Reporte', 'Comercio', 'Imposibilidad',
-            'Tipo Regulador', 'Actividades', 'Observaciones Técnico', 'Conclusión', 'Fecha Reporte',
+            'Tipo Regulador', 'Actividades', 'Anomalías medidor', 'Observaciones Técnico', 'Conclusión', 'Fecha Reporte',
             'Estado Auditoría', 'Observaciones Auditoría', 'Fecha Auditoría',
         ];
 
         $columnasAdicionales = array_column($this->columnasAdicionalesDefinicion(), 'label');
-        array_splice($headers, 26, 0, $columnasAdicionales);
+        array_splice($headers, 27, 0, $columnasAdicionales);
 
         $rows = $this->baseQuery()
             ->get()
@@ -294,6 +295,7 @@ class InformesIndex extends Component
                     'Investigador' => $investigador ? "{$investigador->nombres} {$investigador->apellidos}" : '—',
                     'Cliente' => $orden->cliente ?? '—',
                     'Tiene Reporte' => $reporte ? 'Sí' : 'No',
+                    'Anomalías medidor' => $this->nombresAnomalias($reporte?->datos_servicio['anomalias_medidor'] ?? []),
                     ...$this->columnasAdicionalesValores($orden, $reporte),
                     'Conclusión' => $reporte?->conclusion ?? '—',
                     'Estado Auditoría' => $auditoria instanceof auditoria
@@ -533,7 +535,6 @@ class InformesIndex extends Component
                 ['label' => 'Lectura medidor', 'value' => $dato('lectura_medidor')],
                 ['label' => 'Lectura referencia', 'value' => fn ($reporte, ?OrdenJob $orden = null) => $orden?->lectura_referencia ?? '—'],
                 ['label' => 'Coincide lectura', 'value' => fn ($reporte, ?OrdenJob $orden = null) => $yesNo($orden?->lecturaCoincide($reporte?->datos_servicio['lectura_medidor'] ?? null))],
-                ['label' => 'Anomalías medidor', 'value' => fn ($reporte) => $this->nombresAnomalias($reporte?->datos_servicio['anomalias_medidor'] ?? [])],
                 ['label' => 'Condición sellos', 'value' => $dato('condicion_sellos')],
                 ['label' => 'Elementos rotos', 'value' => $dato('elementos_rotos')],
                 ['label' => 'Justificación no ejecución', 'value' => $dato('justificacion_no_ejecucion')],
