@@ -207,7 +207,7 @@ class InformesIndex extends Component
             $reporte?->tipoImposibilidad?->nombre ?? '',
             $reporte?->tipoRegulador?->nombre ?? '',
             $reporte ? implode(' | ', array_filter(array_map(fn ($item) => is_array($item) ? ($item['actividades'] ?? '') : '', $reporte->actividades ?? []))) : '',
-            $this->nombresAnomalias($reporte?->datos_servicio['anomalias_medidor'] ?? []),
+            $this->anomaliasReporte($reporte),
             // Columnas específicas del servicio/subtipo filtrado (ver columnasAdicionalesDefinicion())
             ...array_map(fn (array $columna) => ($columna['value'])($reporte, $o), $this->columnasAdicionalesDefinicion()),
             $reporte?->observaciones ?? '',
@@ -295,7 +295,7 @@ class InformesIndex extends Component
                     'Investigador' => $investigador ? "{$investigador->nombres} {$investigador->apellidos}" : '—',
                     'Cliente' => $orden->cliente ?? '—',
                     'Tiene Reporte' => $reporte ? 'Sí' : 'No',
-                    'Anomalías medidor' => $this->nombresAnomalias($reporte?->datos_servicio['anomalias_medidor'] ?? []),
+                    'Anomalías medidor' => $this->anomaliasReporte($reporte),
                     ...$this->columnasAdicionalesValores($orden, $reporte),
                     'Conclusión' => $reporte?->conclusion ?? '—',
                     'Estado Auditoría' => $auditoria instanceof auditoria
@@ -455,6 +455,15 @@ class InformesIndex extends Component
             ['label' => '¿Hay Reincidencia?', 'value' => fn ($reporte) => $yesNo($reporte?->datos_servicio['hay_reincidencia'] ?? null)],
             ['label' => 'Resultado Turno', 'value' => fn ($reporte) => $this->nombreResultadoReporte($reporte?->datos_servicio['resultado_reporte_id'] ?? null)],
         ];
+    }
+
+    /** Anomalías del reporte: columna `anomalia` (Fraudes/inspección) y `datos_servicio.anomalias_medidor` (suspensiones). */
+    private function anomaliasReporte(?reportes $reporte): string
+    {
+        return $this->nombresAnomalias([
+            ...(array) ($reporte?->anomalia ?? []),
+            ...(array) ($reporte?->datos_servicio['anomalias_medidor'] ?? []),
+        ]);
     }
 
     /**
