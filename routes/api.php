@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\InformeController;
 use App\Http\Controllers\Api\Tecnico\OrdenController;
 use App\Http\Controllers\Api\Tecnico\ReporteController;
 use App\Http\Controllers\Api\UploadController;
+use App\Http\Middleware\EnsureApiUserIsActive;
+use App\Http\Middleware\RequireAppVersionParaSubtipo;
 use App\Http\Middleware\SetTenantContext;
 use Illuminate\Support\Facades\Route;
 
@@ -25,14 +27,14 @@ Route::post('/auth/login', [AuthController::class, 'login'])
 | Rutas protegidas con token Sanctum
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth:sanctum', SetTenantContext::class])->group(function () {
+Route::middleware(['auth:sanctum', EnsureApiUserIsActive::class, SetTenantContext::class, 'throttle:api-usuario'])->group(function () {
 
     Route::delete('/auth/logout', [AuthController::class, 'logout'])->name('api.auth.logout');
 
     /*
      | Técnico: órdenes
      */
-    Route::prefix('tecnico')->name('api.tecnico.')->group(function () {
+    Route::prefix('tecnico')->name('api.tecnico.')->middleware(RequireAppVersionParaSubtipo::class)->group(function () {
 
         Route::get('mis-ordenes', [OrdenController::class, 'index'])
             ->name('mis-ordenes');
@@ -57,6 +59,12 @@ Route::middleware(['auth:sanctum', SetTenantContext::class])->group(function () 
 
         Route::put('ordenes/{orden}/reporte', [ReporteController::class, 'update'])
             ->name('ordenes.reporte.update');
+
+        Route::get('ordenes/{orden}/reportes/{reporte}', [ReporteController::class, 'showTurnoVigilancia'])
+            ->name('ordenes.reportes.show-turno');
+
+        Route::put('ordenes/{orden}/reportes/{reporte}', [ReporteController::class, 'updateTurnoVigilancia'])
+            ->name('ordenes.reportes.update-turno');
     });
 
     /*
@@ -88,12 +96,15 @@ Route::middleware(['auth:sanctum', SetTenantContext::class])->group(function () 
      */
     Route::get('/archivos/{path}', [ArchivoController::class, 'show'])
         ->where('path', '.*')
+        ->middleware('throttle:api-archivos')
         ->name('api.archivos.show');
 
     /*
      | Subida de archivos a S3
      */
-    Route::post('/upload', [UploadController::class, 'store'])->name('api.upload');
+    Route::post('/upload', [UploadController::class, 'store'])
+        ->middleware('throttle:api-upload')
+        ->name('api.upload');
 
     /*
      | Informes (Power BI)

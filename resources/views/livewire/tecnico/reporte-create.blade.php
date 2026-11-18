@@ -36,7 +36,7 @@
         // temporal de Livewire (formato 'livewire-file:...'); si esa referencia se
         // persiste en localStorage y luego se restaura, queda un enlace roto porque
         // el archivo real nunca se subió al disco S3.
-        fileFields: ['imagenes', 'foto_detector_fuga'],
+        fileFields: ['imagenes', 'foto_detector_fuga', 'fotos_fachada', 'fotos_suspension', 'fotos_medidor', 'fotos_no_ejecucion'],
 
         saveDraft() {
             const data = $wire.data;

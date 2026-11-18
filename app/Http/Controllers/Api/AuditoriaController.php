@@ -59,10 +59,13 @@ class AuditoriaController extends Controller
     {
         $user = $request->user();
 
-        if (
-            ! $user->can('auditorias.ver')
-            && $auditoria->reporte?->ordenJob?->personals_id !== $user->personals_id
-        ) {
+        $orden = $auditoria->reporte?->ordenJob;
+
+        abort_if($orden === null, 404);
+
+        $esDueno = filled($user->personals_id) && $orden->personals_id === $user->personals_id;
+
+        if (! $user->can('auditorias.ver') && ! $esDueno) {
             return response()->json(['message' => 'No autorizado.'], 403);
         }
 

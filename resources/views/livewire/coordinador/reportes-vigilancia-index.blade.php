@@ -72,13 +72,13 @@
                             class="w-full justify-center"
                             @click="rechazo = true"
                         >
-                            Rechazar Orden
+                            Rechazar Turnos
                         </flux:button>
                     </div>
 
                     <div x-show="rechazo" x-cloak>
                         <p class="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
-                            Indica el motivo del rechazo. El investigador podrá agregar nuevos reportes.
+                            Indica el motivo del rechazo. Todos los turnos quedarán marcados para corrección y la orden seguirá activa para que los investigadores los editen.
                         </p>
                         <textarea
                             wire:model="comentarios"

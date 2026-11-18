@@ -30,7 +30,10 @@ test('users without ordenes.ver permission cannot download pdf', function () {
     $user = User::factory()->create();
     $user->assignRole('Lector');
 
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value]);
+    $orden = OrdenJob::factory()->create([
+        'company_id' => $user->company_id,
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+    ]);
 
     $this->actingAs($user)
         ->get(route('operaciones.ordenes-trabajo.reporte-fraude', $orden))
@@ -41,7 +44,10 @@ test('pdf download returns 403 for non-fraudes service types', function () {
     $user = User::factory()->create();
     $user->assignRole('Coordinador');
 
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Investigacion->value]);
+    $orden = OrdenJob::factory()->create([
+        'company_id' => $user->company_id,
+        'tipo_servicio' => TipoServicio::Investigacion->value,
+    ]);
 
     $this->actingAs($user)
         ->get(route('operaciones.ordenes-trabajo.reporte-fraude', $orden))
@@ -66,7 +72,10 @@ test('pdf gestion-legal returns 403 for non-gestion-legal orders', function () {
     $user = User::factory()->create();
     $user->assignRole('Coordinador');
 
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value]);
+    $orden = OrdenJob::factory()->create([
+        'company_id' => $user->company_id,
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+    ]);
 
     $this->actingAs($user)
         ->get(route('operaciones.ordenes-trabajo.reporte-gestion-legal', $orden))
@@ -200,7 +209,10 @@ test('pdf vigilancia returns 403 for non-vigilancia service types', function () 
     $user = User::factory()->create();
     $user->assignRole('Coordinador');
 
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Investigacion->value]);
+    $orden = OrdenJob::factory()->create([
+        'company_id' => $user->company_id,
+        'tipo_servicio' => TipoServicio::Investigacion->value,
+    ]);
 
     $this->actingAs($user)
         ->get(route('operaciones.ordenes-trabajo.reporte-vigilancia', $orden))
@@ -211,7 +223,10 @@ test('user without informes permission cannot download vigilancia pdf', function
     $user = User::factory()->create();
     $user->assignRole('Lector');
 
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Vigilancia->value]);
+    $orden = OrdenJob::factory()->create([
+        'company_id' => $user->company_id,
+        'tipo_servicio' => TipoServicio::Vigilancia->value,
+    ]);
 
     $this->actingAs($user)
         ->get(route('operaciones.ordenes-trabajo.reporte-vigilancia', $orden))
@@ -402,4 +417,65 @@ test('coordinador can download vigilancia pdf with multiple reportes', function 
 
     $response->assertOk();
     $response->assertHeader('Content-Type', 'application/pdf');
+});
+
+test('coordinador can download pdf for gestion legal reporte', function () {
+    Storage::fake('s3');
+
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::GestionLegal->value,
+        'estado' => EstadoOrden::EnRevision->value,
+        'creado_por_id' => $user->id,
+        'company_id' => $user->company_id,
+    ]);
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
+        'imagenes' => [],
+        'datos_servicio' => [],
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo.reporte-gestion-legal', $orden))
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf');
+});
+
+test('el pdf de auditoria campo suspensiones recibe las fotos de cada grupo', function () {
+    $user = User::factory()->create();
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'tipo_auditoria_campo' => 'visita_calidad_suspensiones',
+        'estado' => EstadoOrden::EnRevision->value,
+        'company_id' => $user->company_id,
+    ]);
+
+    $reporte = reportes::create([
+        'orden_job_id' => $orden->id,
+        'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
+        'datos_servicio' => [
+            'categoria_campo' => 'comercial',
+            'suspension_ejecutada' => true,
+            'fotos_fachada' => ["{$user->company_id}/reportes/f-1.jpg"],
+            'fotos_suspension' => ["{$user->company_id}/reportes/s-1.jpg"],
+        ],
+    ]);
+
+    $controlador = new ReportePdfController;
+    $metodo = new ReflectionMethod($controlador, 'resolveImagenes');
+    $metodo->setAccessible(true);
+
+    $vista = file_get_contents(resource_path('views/pdf/reporte-auditoria-campo.blade.php'));
+    $fuente = file_get_contents(app_path('Http/Controllers/ReportePdfController.php'));
+
+    expect($vista)->toContain('$fotosFachada')
+        ->and($reporte->datos_servicio['fotos_fachada'])->toHaveCount(1)
+        ->and(substr_count($fuente, "'fotosFachada' => \$fotosFachada"))->toBe(1);
 });

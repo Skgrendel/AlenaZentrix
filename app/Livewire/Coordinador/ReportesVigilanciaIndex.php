@@ -7,6 +7,7 @@ use App\Enums\TipoServicio;
 use App\Mail\OrdenCompletada;
 use App\Mail\OrdenRechazada;
 use App\Models\OrdenJob;
+use App\Models\personals;
 use App\Models\reportes;
 use App\Models\ResultadoReporte;
 use Filament\Actions\Action;
@@ -147,7 +148,7 @@ class ReportesVigilanciaIndex extends Component implements HasActions, HasForms,
             ->action(function (): void {
                 $this->orden->update(['estado' => EstadoOrden::Completada]);
 
-                $this->notificarPersonal(new OrdenCompletada($this->orden, $this->orden->personal));
+                $this->notificarPersonal($this->orden->personal, new OrdenCompletada($this->orden, $this->orden->personal));
 
                 session()->flash('success', "Orden {$this->orden->numero_orden} completada.");
 
@@ -156,10 +157,11 @@ class ReportesVigilanciaIndex extends Component implements HasActions, HasForms,
     }
 
     /**
-     * Rechaza la orden completa (todos los turnos acumulados) sin señalar un reporte puntual.
-     * A diferencia de ReporteRevisar::rechazar(), aquí no hay un reporte individual bajo
-     * revisión, por lo que ningún registro se marca con requiere_correccion; ReporteEdit
-     * recurrirá a su fallback (el reporte más reciente).
+     * Rechaza todos los turnos de la orden: cada uno queda marcado con requiere_correccion y el
+     * motivo en `comentarios` (igual que ReporteRevisar::rechazar() por turno). La orden NO pasa
+     * a Rechazada: sigue activa para que los investigadores corrijan sus turnos (ReporteEdit y la
+     * API móvil bloquean la edición cuando ningún turno está marcado). Se notifica al autor de
+     * cada turno.
      */
     public function rechazar(): void
     {
@@ -170,18 +172,51 @@ class ReportesVigilanciaIndex extends Component implements HasActions, HasForms,
             'comentarios.min' => 'El motivo debe tener al menos 10 caracteres.',
         ]);
 
-        $this->orden->update(['estado' => EstadoOrden::Rechazada]);
+        if (! in_array($this->orden->estado, [EstadoOrden::EnProgreso, EstadoOrden::EnRevision], true)) {
+            $this->addError('comentarios', 'Solo se pueden rechazar órdenes de vigilancia En Progreso o En Revisión.');
 
-        $this->notificarPersonal(new OrdenRechazada($this->orden, $this->orden->personal, $this->comentarios));
+            return;
+        }
 
-        session()->flash('success', "Orden {$this->orden->numero_orden} rechazada.");
+        $turnos = reportes::query()
+            ->where('orden_job_id', $this->orden->id)
+            ->with('personal.usuario')
+            ->get();
+
+        if ($turnos->isEmpty()) {
+            $this->addError('comentarios', 'La orden no tiene turnos registrados para rechazar.');
+
+            return;
+        }
+
+        foreach ($turnos as $turno) {
+            $turno->update([
+                'comentarios' => $this->comentarios,
+                'requiere_correccion' => true,
+            ]);
+        }
+
+        if ($this->orden->estado !== EstadoOrden::EnProgreso) {
+            $this->orden->update(['estado' => EstadoOrden::EnProgreso]);
+        }
+
+        $destinatarios = $turnos
+            ->map(fn (reportes $turno) => $turno->personal ?? $this->orden->personal)
+            ->filter()
+            ->unique('id');
+
+        foreach ($destinatarios as $personal) {
+            $this->notificarPersonal($personal, new OrdenRechazada($this->orden, $personal, $this->comentarios));
+        }
+
+        session()->flash('success', "Turnos de la orden {$this->orden->numero_orden} marcados para corrección. Los investigadores podrán editarlos.");
 
         $this->redirect(route('operaciones.ordenes-trabajo'), navigate: true);
     }
 
-    protected function notificarPersonal(Mailable $mail): void
+    protected function notificarPersonal(?personals $personal, Mailable $mail): void
     {
-        $email = $this->orden->personal?->usuario?->email;
+        $email = $personal?->usuario?->email;
 
         if (! $email) {
             return;

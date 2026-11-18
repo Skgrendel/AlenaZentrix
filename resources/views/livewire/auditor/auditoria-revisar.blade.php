@@ -12,7 +12,7 @@
                     </flux:badge>
                 @endif
                 @if ($orden?->tipo_servicio === \App\Enums\TipoServicio::AuditoriaCampo && ($datosServicio['subtipo'] ?? null))
-                    <flux:badge color="zinc" size="sm">{{ $datosServicio['subtipo'] }}</flux:badge>
+                    <flux:badge color="zinc" size="sm">{{ $datosServicio['subtipo'] ?? '—' }}</flux:badge>
                 @endif
                 @if ($auditoria->estado === \App\Enums\EstadoAuditoria::PendienteAuditoria)
                     <flux:badge color="warning">Pendiente por auditar</flux:badge>
@@ -191,7 +191,7 @@
                             <div class="sm:col-span-2">
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Resultado</dt>
                                 <dd class="mt-0.5">
-                                    <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] }}</flux:badge>
+                                    <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] ?? '—' }}</flux:badge>
                                 </dd>
                             </div>
                         @endif
@@ -207,28 +207,28 @@
                                 <div>
                                     <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Nombre</dt>
                                     <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                        {{ $datosServicio['acompanante_nombre'] }}</dd>
+                                        {{ $datosServicio['acompanante_nombre'] ?? '—' }}</dd>
                                 </div>
                             @endif
                             @if ($datosServicio['acompanante_identificacion'] ?? null)
                                 <div>
                                     <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Identificación</dt>
                                     <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                        {{ $datosServicio['acompanante_identificacion'] }}</dd>
+                                        {{ $datosServicio['acompanante_identificacion'] ?? '—' }}</dd>
                                 </div>
                             @endif
                             @if ($datosServicio['acompanante_cargo'] ?? null)
                                 <div>
                                     <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Cargo / Empresa</dt>
                                     <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                        {{ $datosServicio['acompanante_cargo'] }}</dd>
+                                        {{ $datosServicio['acompanante_cargo'] ?? '—' }}</dd>
                                 </div>
                             @endif
                             @if ($datosServicio['acompanante_cuadrilla'] ?? null)
                                 <div>
                                     <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Código de Cuadrilla</dt>
                                     <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                        {{ $datosServicio['acompanante_cuadrilla'] }}</dd>
+                                        {{ $datosServicio['acompanante_cuadrilla'] ?? '—' }}</dd>
                                 </div>
                             @endif
                         </dl>
@@ -246,21 +246,21 @@
                                     <div>
                                         <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Nombre</dt>
                                         <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                            {{ $datosServicio['nombre_investigado'] }}</dd>
+                                            {{ $datosServicio['nombre_investigado'] ?? '—' }}</dd>
                                     </div>
                                 @endif
                                 @if ($datosServicio['identificacion'] ?? null)
                                     <div>
                                         <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Identificación</dt>
                                         <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                            {{ $datosServicio['identificacion'] }}</dd>
+                                            {{ $datosServicio['identificacion'] ?? '—' }}</dd>
                                     </div>
                                 @endif
                                 @if ($datosServicio['descripcion_fisica'] ?? null)
                                     <div class="sm:col-span-2">
                                         <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Descripción Física</dt>
                                         <dd class="mt-0.5 whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
-                                            {{ $datosServicio['descripcion_fisica'] }}</dd>
+                                            {{ $datosServicio['descripcion_fisica'] ?? '—' }}</dd>
                                     </div>
                                 @endif
                             @else
@@ -268,14 +268,14 @@
                                     <div>
                                         <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Nombre del Comercio</dt>
                                         <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                            {{ $datosServicio['nombre_comercio_inv'] }}</dd>
+                                            {{ $datosServicio['nombre_comercio_inv'] ?? '—' }}</dd>
                                     </div>
                                 @endif
                                 @if ($datosServicio['tipo_comercio_inv'] ?? null)
                                     <div>
                                         <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Comercio</dt>
                                         <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                            {{ $datosServicio['tipo_comercio_inv'] }}</dd>
+                                            {{ $datosServicio['tipo_comercio_inv'] ?? '—' }}</dd>
                                     </div>
                                 @endif
                             @endif
@@ -294,7 +294,7 @@
                             <div class="sm:col-span-2">
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipo de Gestión</dt>
                                 <dd class="mt-0.5">
-                                    <flux:badge color="blue" size="sm">{{ $datosServicio['tipo_gestion_label'] }}</flux:badge>
+                                    <flux:badge color="blue" size="sm">{{ $datosServicio['tipo_gestion_label'] ?? '—' }}</flux:badge>
                                 </dd>
                             </div>
                         @endif
@@ -302,14 +302,14 @@
                             <div>
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">N° Noticia Criminal</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                    {{ $datosServicio['numero_noticia_criminal'] }}</dd>
+                                    {{ $datosServicio['numero_noticia_criminal'] ?? '—' }}</dd>
                             </div>
                         @endif
                         @if ($datosServicio['tipologia'] ?? null)
                             <div>
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Tipología</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                    {{ $datosServicio['tipologia'] }}</dd>
+                                    {{ $datosServicio['tipologia'] ?? '—' }}</dd>
                             </div>
                         @endif
                         @if ($datosServicio['fecha_ejecucion'] ?? null)
@@ -324,28 +324,28 @@
                             <div>
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Departamento</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                    {{ $datosServicio['departamento'] }}</dd>
+                                    {{ $datosServicio['departamento'] ?? '—' }}</dd>
                             </div>
                         @endif
                         @if ($datosServicio['municipio'] ?? null)
                             <div>
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Municipio</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                    {{ $datosServicio['municipio'] }}</dd>
+                                    {{ $datosServicio['municipio'] ?? '—' }}</dd>
                             </div>
                         @endif
                         @if ($datosServicio['radio_objetivo'] ?? null)
                             <div class="sm:col-span-2">
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Radio del Objetivo</dt>
                                 <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                    {{ $datosServicio['radio_objetivo'] }}</dd>
+                                    {{ $datosServicio['radio_objetivo'] ?? '—' }}</dd>
                             </div>
                         @endif
                         @if ($datosServicio['resultado'] ?? null)
                             <div class="sm:col-span-2">
                                 <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Resultado</dt>
                                 <dd class="mt-0.5">
-                                    <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] }}</flux:badge>
+                                    <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] ?? '—' }}</flux:badge>
                                 </dd>
                             </div>
                         @endif
@@ -361,7 +361,7 @@
                         <div>
                             <dt class="text-xs font-medium uppercase tracking-wide text-zinc-400">Fecha</dt>
                             <dd class="mt-0.5 text-sm font-medium text-zinc-900 dark:text-white">
-                                {{ $datosServicio['fecha_turno'] ? \Illuminate\Support\Carbon::parse($datosServicio['fecha_turno'])->format('d/m/Y') : '—' }}
+                                {{ ($datosServicio['fecha_turno'] ?? null) ? \Illuminate\Support\Carbon::parse($datosServicio['fecha_turno'])->format('d/m/Y') : '—' }}
                             </dd>
                         </div>
                         <div>
@@ -389,7 +389,7 @@
                             </div>
                             @if ($datosServicio['descripcion_novedad'] ?? null)
                                 <p class="whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">
-                                    {{ $datosServicio['descripcion_novedad'] }}</p>
+                                    {{ $datosServicio['descripcion_novedad'] ?? '—' }}</p>
                             @endif
                         </div>
                     @else
@@ -401,7 +401,7 @@
                     <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                         <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                             Resultado del Turno</h3>
-                        <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] }}</flux:badge>
+                        <flux:badge color="blue" size="sm">{{ $datosServicio['resultado'] ?? '—' }}</flux:badge>
                     </div>
                 @endif
 
@@ -448,24 +448,241 @@
                         @if ($datosServicio['ciudad'] ?? null)
                             <div>
                                 <dt class="text-xs font-medium uppercase text-zinc-400">Ciudad</dt>
-                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['ciudad'] }}</dd>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['ciudad'] ?? '—' }}</dd>
                             </div>
                         @endif
                         @if ($datosServicio['comentario_usuario'] ?? null)
                             <div class="col-span-full">
                                 <dt class="text-xs font-medium uppercase text-zinc-400">Solicitud del Usuario</dt>
-                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['comentario_usuario'] }}</dd>
+                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['comentario_usuario'] ?? '—' }}</dd>
                             </div>
                         @endif
                         @if ($datosServicio['comentario_tecnico'] ?? null)
                             <div class="col-span-full">
                                 <dt class="text-xs font-medium uppercase text-zinc-400">Comentario Técnico</dt>
-                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['comentario_tecnico'] }}</dd>
+                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['comentario_tecnico'] ?? '—' }}</dd>
                             </div>
                         @endif
                     </dl>
                 </div>
 
+
+                @if ($datosServicio['es_suspensiones'] ?? false)
+                    <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">Suspensión</h3>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Categoría</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['categoria_campo'] ?? '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Suspensión ejecutada</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ ($datosServicio['suspension_ejecutada'] ?? false) ? 'Sí' : 'No' }}</dd>
+                            </div>
+                            @if ($datosServicio['suspension_ejecutada'] ?? false)
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Método de suspensión</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['metodo_suspension'] ?? '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Serie sonda</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['serie_sonda'] ?? '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Serie CAPS</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['serie_caps'] ?? '—' }}</dd>
+                            </div>
+                            @else
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Motivo de no ejecución</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['motivo_no_ejecucion'] ?? '—' }}</dd>
+                            </div>
+                            @endif
+                        </dl>
+                    </div>
+                    <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false" class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">Fotos de Fachada ({{ count($fotosFachadaUrls) }} {{ count($fotosFachadaUrls) === 1 ? 'foto' : 'fotos' }})</h3>
+                        @if (!empty($fotosFachadaUrls))
+                            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                @foreach ($fotosFachadaUrls as $url)
+                                    <button type="button" @click="src = '{{ $url }}'; open = true"
+                                        class="group relative block overflow-hidden rounded-xl border border-zinc-200 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                        <img src="{{ $url }}" alt="Foto de fachada"
+                                            class="h-40 w-full object-cover transition duration-300 group-hover:scale-105">
+                                    </button>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-zinc-400">Sin fotos.</p>
+                        @endif
+
+                        {{-- Lightbox --}}
+                        <div x-show="open" x-transition.opacity @click.self="open = false"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" style="display: none">
+                            <div class="relative max-h-full max-w-4xl">
+                                <button type="button" @click="open = false"
+                                    class="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-800 shadow-lg hover:bg-zinc-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <img :src="src" alt="Foto ampliada" class="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl">
+                            </div>
+                        </div>
+                    </div>
+                    @if (! empty($datosServicio['anomalias_medidor']) || filled($datosServicio['condicion_sellos'] ?? null) || filled($datosServicio['elementos_rotos'] ?? null))
+                    <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">{{ ($datosServicio['suspension_ejecutada'] ?? false) ? 'Estado del medidor' : 'Observaciones del medidor' }}</h3>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Anomalías</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
+                                    @forelse ($datosServicio['anomalias_medidor'] ?? [] as $nombreAnomalia)
+                                        <span class="mb-1 mr-1 inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">{{ $nombreAnomalia }}</span>
+                                    @empty
+                                        —
+                                    @endforelse
+                                </dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Condición de sellos</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['condicion_sellos'] ?? '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Elementos rotos</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['elementos_rotos'] ?? '—' }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                    @endif
+                    @if ($datosServicio['suspension_ejecutada'] ?? false)
+                    <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">Lectura del medidor</h3>
+                        <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Lectura registrada</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['lectura_medidor'] ?? '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Lectura de referencia</dt>
+                                <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $datosServicio['lectura_referencia'] ?? '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-medium uppercase text-zinc-400">Verificación de lectura</dt>
+                                <dd class="mt-0.5">
+                                    @php $coincide = $datosServicio['lectura_coincide'] ?? null; @endphp
+                                    @if ($coincide === true)
+                                        <span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-900/30 dark:text-green-300">Coincide</span>
+                                    @elseif ($coincide === false)
+                                        <span class="inline-flex rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-900/30 dark:text-red-300">No coincide — revisar</span>
+                                    @else
+                                        <span class="inline-flex rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">Sin referencia</span>
+                                    @endif
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                    <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false" class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">Fotos del medidor ({{ count($fotosMedidorUrls) }} {{ count($fotosMedidorUrls) === 1 ? 'foto' : 'fotos' }})</h3>
+                        @if (!empty($fotosMedidorUrls))
+                            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                @foreach ($fotosMedidorUrls as $url)
+                                    <button type="button" @click="src = '{{ $url }}'; open = true"
+                                        class="group relative block overflow-hidden rounded-xl border border-zinc-200 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                        <img src="{{ $url }}" alt="Foto del medidor"
+                                            class="h-40 w-full object-cover transition duration-300 group-hover:scale-105">
+                                    </button>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-zinc-400">Sin fotos.</p>
+                        @endif
+
+                        {{-- Lightbox --}}
+                        <div x-show="open" x-transition.opacity @click.self="open = false"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" style="display: none">
+                            <div class="relative max-h-full max-w-4xl">
+                                <button type="button" @click="open = false"
+                                    class="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-800 shadow-lg hover:bg-zinc-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <img :src="src" alt="Foto ampliada" class="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl">
+                            </div>
+                        </div>
+                    </div>
+                    @if (!empty($fotosSuspensionUrls))
+                    <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false" class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">Fotos de Suspensión ejecutada ({{ count($fotosSuspensionUrls) }} {{ count($fotosSuspensionUrls) === 1 ? 'foto' : 'fotos' }})</h3>
+                        @if (!empty($fotosSuspensionUrls))
+                            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                @foreach ($fotosSuspensionUrls as $url)
+                                    <button type="button" @click="src = '{{ $url }}'; open = true"
+                                        class="group relative block overflow-hidden rounded-xl border border-zinc-200 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                        <img src="{{ $url }}" alt="Foto de suspensión"
+                                            class="h-40 w-full object-cover transition duration-300 group-hover:scale-105">
+                                    </button>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-zinc-400">Sin fotos.</p>
+                        @endif
+
+                        {{-- Lightbox --}}
+                        <div x-show="open" x-transition.opacity @click.self="open = false"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" style="display: none">
+                            <div class="relative max-h-full max-w-4xl">
+                                <button type="button" @click="open = false"
+                                    class="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-800 shadow-lg hover:bg-zinc-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <img :src="src" alt="Foto ampliada" class="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl">
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                    @else
+                    <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">Justificación de no ejecución</h3>
+                        <p class="whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">{{ $datosServicio['justificacion_no_ejecucion'] ?? '—' }}</p>
+                    </div>
+                    <div x-data="{ open: false, src: '' }" @keydown.escape.window="open = false" class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
+                        <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">Evidencia de la causal ({{ count($fotosNoEjecucionUrls) }} {{ count($fotosNoEjecucionUrls) === 1 ? 'foto' : 'fotos' }})</h3>
+                        @if (!empty($fotosNoEjecucionUrls))
+                            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                                @foreach ($fotosNoEjecucionUrls as $url)
+                                    <button type="button" @click="src = '{{ $url }}'; open = true"
+                                        class="group relative block overflow-hidden rounded-xl border border-zinc-200 shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700">
+                                        <img src="{{ $url }}" alt="Evidencia de la causal"
+                                            class="h-40 w-full object-cover transition duration-300 group-hover:scale-105">
+                                    </button>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-sm text-zinc-400">Sin fotos.</p>
+                        @endif
+
+                        {{-- Lightbox --}}
+                        <div x-show="open" x-transition.opacity @click.self="open = false"
+                            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" style="display: none">
+                            <div class="relative max-h-full max-w-4xl">
+                                <button type="button" @click="open = false"
+                                    class="absolute -right-3 -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white text-zinc-800 shadow-lg hover:bg-zinc-100">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <img :src="src" alt="Foto ampliada" class="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl">
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                @endif
+
+                @unless ($datosServicio['es_suspensiones'] ?? false)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">2. Quién Atendió la Visita</h3>
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
@@ -484,18 +701,20 @@
                     </dl>
                 </div>
 
-                @unless ($datosServicio['es_medidores_digitales'] ?? false)
+                @endunless
+
+                @unless (($datosServicio['es_medidores_digitales'] ?? false) || ($datosServicio['es_suspensiones'] ?? false))
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">3–6. Validación y Hallazgos</h3>
                     <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
                         @php $yesno = fn($v) => $v ? 'Sí' : 'No'; @endphp
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Recibió visita</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['recibio_visita']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['recibio_visita'] ?? null) }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Se realizó revisión</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['se_realizo_revision']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['se_realizo_revision'] ?? null) }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Fecha ejecución</dt>
@@ -508,52 +727,52 @@
                         @if ($datosServicio['descripcion_trabajo'] ?? null)
                             <div class="col-span-full">
                                 <dt class="text-xs font-medium uppercase text-zinc-400">Trabajo realizado</dt>
-                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['descripcion_trabajo'] }}</dd>
+                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['descripcion_trabajo'] ?? '—' }}</dd>
                             </div>
                         @endif
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Fuga / falla detectada</dt>
                             <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
-                                {{ $yesno($datosServicio['se_detecto_fuga']) }}{{ $datosServicio['ppm'] ?? null ? ' · PPM: ' . $datosServicio['ppm'] : '' }}{{ $datosServicio['vol_porcentaje'] ?? null ? ' · VOL%: ' . $datosServicio['vol_porcentaje'] : '' }}
+                                {{ $yesno($datosServicio['se_detecto_fuga'] ?? null) }}{{ $datosServicio['ppm'] ?? null ? ' · PPM: ' . $datosServicio['ppm'] : '' }}{{ $datosServicio['vol_porcentaje'] ?? null ? ' · VOL%: ' . $datosServicio['vol_porcentaje'] : '' }}
                             </dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Problema persiste</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['problema_persiste']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['problema_persiste'] ?? null) }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Evidencia reparación</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['evidencia_reparacion']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['evidencia_reparacion'] ?? null) }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Servicio correcto</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['servicio_correcto']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['servicio_correcto'] ?? null) }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Se usaron materiales</dt>
                             <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
-                                {{ $yesno($datosServicio['se_usaron_materiales']) }}{{ $datosServicio['quien_suministro_materiales'] ?? null ? ' · ' . $datosServicio['quien_suministro_materiales'] : '' }}
+                                {{ $yesno($datosServicio['se_usaron_materiales'] ?? null) }}{{ $datosServicio['quien_suministro_materiales'] ?? null ? ' · ' . $datosServicio['quien_suministro_materiales'] : '' }}
                             </dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Usuario asumió costo</dt>
                             <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
-                                {{ $yesno($datosServicio['usuario_asumio_costo']) }}{{ $datosServicio['valor_pagado'] ?? null ? ' · $' . $datosServicio['valor_pagado'] . ' (' . ($datosServicio['medio_pago'] ?? '—') . ')' : '' }}
+                                {{ $yesno($datosServicio['usuario_asumio_costo'] ?? null) }}{{ $datosServicio['valor_pagado'] ?? null ? ' · $' . $datosServicio['valor_pagado'] . ' (' . ($datosServicio['medio_pago'] ?? '—') . ')' : '' }}
                             </dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Entregó factura/IVT</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['entrego_factura']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['entrego_factura'] ?? null) }}</dd>
                         </div>
                         @if ($datosServicio['tecnico_dejo_documento'] ?? null)
                             <div class="col-span-full">
                                 <dt class="text-xs font-medium uppercase text-zinc-400">Documento dejado</dt>
-                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['tecnico_dejo_documento'] }}</dd>
+                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['tecnico_dejo_documento'] ?? '—' }}</dd>
                             </div>
                         @endif
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Informaron que no estaba</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['informaron_no_estaba']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['informaron_no_estaba'] ?? null) }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -578,30 +797,31 @@
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Informó gratuidad medidor/instalación</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['informo_gratuidad_medidor']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['informo_gratuidad_medidor'] ?? null) }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Solicitó, insinuó o recibió dinero</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['solicito_dinero_medidor']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['solicito_dinero_medidor'] ?? null) }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Gestión conforme a procedimientos</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['gestion_conforme_medidor']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['gestion_conforme_medidor'] ?? null) }}</dd>
                         </div>
                         <div>
                             <dt class="text-xs font-medium uppercase text-zinc-400">Requiere seguimiento</dt>
-                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['requiere_seguimiento_medidor']) }}</dd>
+                            <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">{{ $yesno($datosServicio['requiere_seguimiento_medidor'] ?? null) }}</dd>
                         </div>
                         @if ($datosServicio['hallazgos_medidor'] ?? null)
                             <div class="col-span-full">
                                 <dt class="text-xs font-medium uppercase text-zinc-400">Hallazgos / observaciones</dt>
-                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['hallazgos_medidor'] }}</dd>
+                                <dd class="mt-0.5 text-zinc-700 dark:text-zinc-300">{{ $datosServicio['hallazgos_medidor'] ?? '—' }}</dd>
                             </div>
                         @endif
                     </dl>
                 </div>
                 @endif
 
+                @unless ($datosServicio['es_suspensiones'] ?? false)
                 <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
                     <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">7. Autorización y Firmas</h3>
                     <p class="mb-4 text-sm"><span class="font-medium">Autoriza:</span>
@@ -611,7 +831,7 @@
                         <div>
                             <p class="mb-1 text-xs font-medium uppercase text-zinc-400">Firma del Usuario</p>
                             @if ($datosServicio['firma_usuario'] ?? null)
-                                <img src="{{ $datosServicio['firma_usuario'] }}" alt="Firma usuario"
+                                <img src="{{ $datosServicio['firma_usuario'] ?? '—' }}" alt="Firma usuario"
                                     class="rounded border border-zinc-200 bg-white dark:border-zinc-600"
                                     style="max-height:120px;">
                             @else
@@ -622,7 +842,7 @@
                         <div>
                             <p class="mb-1 text-xs font-medium uppercase text-zinc-400">Firma del Auditor</p>
                             @if ($datosServicio['firma_auditor'] ?? null)
-                                <img src="{{ $datosServicio['firma_auditor'] }}" alt="Firma auditor"
+                                <img src="{{ $datosServicio['firma_auditor'] ?? '—' }}" alt="Firma auditor"
                                     class="rounded border border-zinc-200 bg-white dark:border-zinc-600"
                                     style="max-height:120px;">
                             @else
@@ -633,6 +853,7 @@
                     </div>
                     @endif
                 </div>
+                @endunless
 
                 @if (!empty($datosServicio['urls_evidencia']))
                     <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900">
@@ -664,7 +885,7 @@
                                 @if (!empty($actividad['descripcion_orden']))
                                     <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
                                         Actividad asignada</p>
-                                    <p class="mb-2 text-sm text-zinc-500 dark:text-zinc-400">{{ $actividad['descripcion_orden'] }}</p>
+                                    <p class="mb-2 text-sm text-zinc-500 dark:text-zinc-400">{{ $actividad['descripcion_orden'] ?? '' }}</p>
                                     <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
                                         Respuesta del investigador</p>
                                 @endif
@@ -672,7 +893,7 @@
                                     <div class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white">
                                         ✓
                                     </div>
-                                    <p class="wrap-break-word text-sm text-zinc-900 dark:text-white">{{ $actividad['actividades'] }}</p>
+                                    <p class="wrap-break-word text-sm text-zinc-900 dark:text-white">{{ $actividad['actividades'] ?? '—' }}</p>
                                 </div>
                             </li>
                         @endforeach

@@ -22,7 +22,10 @@ beforeEach(function () {
 });
 
 it('retorna 403 para órdenes que no son de revisión de medidores', function () {
-    $orden = OrdenJob::factory()->create(['tipo_servicio' => TipoServicio::Fraudes->value]);
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::Fraudes->value,
+        'company_id' => $this->company->id,
+    ]);
 
     $this->actingAs($this->user)
         ->get(route('operaciones.revision-medidores.reporte', $orden))

@@ -13,7 +13,7 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-it('rechaza la orden completa sin marcar ningun reporte individual', function () {
+it('rechaza la orden marcando todos los turnos para correccion y la deja en progreso', function () {
     $company = Company::factory()->create();
     $user = User::factory()->create(['company_id' => $company->id]);
     $this->actingAs($user);
@@ -34,7 +34,10 @@ it('rechaza la orden completa sin marcar ningun reporte individual', function ()
         ->call('rechazar')
         ->assertHasNoErrors();
 
-    expect($orden->fresh()->estado)->toBe(EstadoOrden::Rechazada)
-        ->and($turno1->fresh()->requiere_correccion)->toBeFalse()
-        ->and($turno2->fresh()->requiere_correccion)->toBeFalse();
+    // La orden no pasa a Rechazada: sigue activa y cada turno queda marcado con el motivo, para que
+    // el investigador corrija o agregue turnos (la API móvil no permite editar una orden Rechazada de Vigilancia).
+    expect($orden->fresh()->estado)->toBe(EstadoOrden::EnProgreso)
+        ->and($turno1->fresh()->requiere_correccion)->toBeTrue()
+        ->and($turno2->fresh()->requiere_correccion)->toBeTrue()
+        ->and($turno1->fresh()->comentarios)->toBe('Rechazo de todo el conjunto de turnos por inconsistencias.');
 });

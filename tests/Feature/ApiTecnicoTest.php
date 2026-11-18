@@ -9,6 +9,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+beforeEach(function () {
+    $this->withHeader('X-App-Version', '1.1.0');
+});
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function tecnicoConToken(): array
@@ -130,12 +134,18 @@ test('POST /api/tecnico/ordenes/{orden}/iniciar cambia estado a EnProgreso', fun
     expect($orden->fresh()->estado)->toBe(EstadoOrden::EnProgreso);
 });
 
-test('POST /api/tecnico/ordenes/{orden}/iniciar falla si ya está en progreso', function () {
+test('POST /api/tecnico/ordenes/{orden}/iniciar es idempotente en EnProgreso y falla en EnRevision', function () {
     [$user, $token] = tecnicoConToken();
-    $orden = ordenAsignada($user, ['estado' => EstadoOrden::EnProgreso->value]);
+    $ordenEnProgreso = ordenAsignada($user, ['estado' => EstadoOrden::EnProgreso->value]);
 
     $this->withToken($token)
-        ->postJson("/api/tecnico/ordenes/{$orden->id}/iniciar")
+        ->postJson("/api/tecnico/ordenes/{$ordenEnProgreso->id}/iniciar")
+        ->assertOk();
+
+    $ordenEnRevision = ordenAsignada($user, ['estado' => EstadoOrden::EnRevision->value]);
+
+    $this->withToken($token)
+        ->postJson("/api/tecnico/ordenes/{$ordenEnRevision->id}/iniciar")
         ->assertStatus(422);
 });
 
