@@ -32,6 +32,8 @@ trait FiltraPorDashboard
 
     public ?string $procesoId = null;
 
+    public ?string $origenInformacionId = null;
+
     #[On('dashboard-filtros-aplicados')]
     public function actualizarFiltrosDashboard(
         ?string $desde = null,
@@ -44,6 +46,7 @@ trait FiltraPorDashboard
         ?string $estadoAuditoria = null,
         ?string $tipoAnomaliaId = null,
         ?string $procesoId = null,
+        ?string $origenInformacionId = null,
     ): void {
         $this->desde = $desde;
         $this->hasta = $hasta;
@@ -55,6 +58,7 @@ trait FiltraPorDashboard
         $this->estadoAuditoria = $estadoAuditoria;
         $this->tipoAnomaliaId = $tipoAnomaliaId;
         $this->procesoId = $procesoId;
+        $this->origenInformacionId = $origenInformacionId;
     }
 
     /** Aplica los criterios de selección (sin fechas) a una consulta de OrdenJob. */
@@ -67,6 +71,7 @@ trait FiltraPorDashboard
             ->when($this->personalsId, fn ($q, $v) => $q->where('personals_id', $v))
             ->when($this->resultado, fn ($q, $v) => $q->where('resultado', $v))
             ->when($this->procesoId, fn ($q, $v) => $q->where('proceso_id', $v))
+            ->when($this->origenInformacionId, fn ($q, $v) => $q->where('origen_informacion_id', $v))
             ->when($this->estadoAuditoria, fn ($q, $v) => $q->whereHas(
                 'reportes.auditoria', fn ($qq) => $qq->where('estado', $v)
             ))
@@ -101,7 +106,8 @@ trait FiltraPorDashboard
                     ->when($this->tipoServicio, fn ($qq, $v) => $qq->where('tipo_servicio', $v))
                     ->when($this->personalsId, fn ($qq, $v) => $qq->where('personals_id', $v))
                     ->when($this->resultado, fn ($qq, $v) => $qq->where('resultado', $v))
-                    ->when($this->procesoId, fn ($qq, $v) => $qq->where('proceso_id', $v));
+                    ->when($this->procesoId, fn ($qq, $v) => $qq->where('proceso_id', $v))
+                    ->when($this->origenInformacionId, fn ($qq, $v) => $qq->where('origen_informacion_id', $v));
             });
     }
 }

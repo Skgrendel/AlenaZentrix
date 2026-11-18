@@ -6,6 +6,7 @@ use App\Enums\EstadoAuditoria;
 use App\Enums\EstadoOrden;
 use App\Enums\PrioridadOrden;
 use App\Enums\TipoServicio;
+use App\Models\OrigenInformacion;
 use App\Models\personals;
 use App\Models\Proceso;
 use App\Models\TipoAnomalia;
@@ -39,6 +40,8 @@ class DashboardFiltros extends Component
     public ?string $tipoAnomaliaId = null;
 
     public ?string $procesoId = null;
+
+    public ?string $origenInformacionId = null;
 
     /** Solo coordinadores/administradores ven los criterios de selección adicionales a las fechas. */
     public function puedeFiltrarPorCriterios(): bool
@@ -90,6 +93,13 @@ class DashboardFiltros extends Component
 
     /** @return array<string, string> */
     #[Computed]
+    public function origenesInformacion(): array
+    {
+        return OrigenInformacion::query()->orderBy('nombre')->pluck('nombre', 'id')->all();
+    }
+
+    /** @return array<string, string> */
+    #[Computed]
     public function personales(): array
     {
         return personals::query()
@@ -113,6 +123,7 @@ class DashboardFiltros extends Component
             estadoAuditoria: $this->estadoAuditoria,
             tipoAnomaliaId: $this->tipoAnomaliaId,
             procesoId: $this->procesoId,
+            origenInformacionId: $this->origenInformacionId,
         );
     }
 
@@ -128,6 +139,7 @@ class DashboardFiltros extends Component
         $this->estadoAuditoria = null;
         $this->tipoAnomaliaId = null;
         $this->procesoId = null;
+        $this->origenInformacionId = null;
 
         $this->aplicar();
     }

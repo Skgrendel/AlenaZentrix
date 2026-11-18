@@ -40,7 +40,8 @@ class OrdenesStatsOverview extends BaseWidget
 
         $filtroActivo = $this->desde || $this->hasta || $this->estado || $this->prioridad
             || $this->tipoServicio || $this->personalsId || $this->resultado
-            || $this->estadoAuditoria || $this->tipoAnomaliaId || $this->procesoId;
+            || $this->estadoAuditoria || $this->tipoAnomaliaId || $this->procesoId
+            || $this->origenInformacionId;
 
         $total = $enRango()->count();
         $pendientes = $enRango()->where('estado', EstadoOrden::Pendiente)->count();

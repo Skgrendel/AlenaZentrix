@@ -81,6 +81,16 @@
             </div>
 
             <div>
+                <flux:label>Origen de Información</flux:label>
+                <flux:select wire:model="origenInformacionId">
+                    <flux:select.option value="">Todos</flux:select.option>
+                    @foreach ($this->origenesInformacion as $id => $nombre)
+                        <flux:select.option value="{{ $id }}">{{ $nombre }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+            </div>
+
+            <div>
                 <flux:label>Personal Asignado</flux:label>
                 <flux:select wire:model="personalsId" searchable>
                     <flux:select.option value="">Todos</flux:select.option>
