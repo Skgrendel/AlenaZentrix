@@ -16,6 +16,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('company_id')->unique()->constrained('companies')->cascadeOnDelete();
             $table->boolean('activo')->default(false);
+            // Desde cuándo está encendido: el primer correo trae lo que llegue a partir de ese momento.
+            $table->timestamp('activo_desde')->nullable();
             $table->string('hora', 5)->default('18:00');
             $table->json('dias');
             $table->text('destinatarios');
@@ -30,6 +32,9 @@ return new class extends Migration
             $table->string('origen', 20);
             $table->string('estado', 20);
             $table->json('destinatarios');
+            // Ventana de registros que cubrió el envío (por el momento en que llegaron al sistema): el siguiente empieza en $hasta.
+            $table->timestamp('desde')->nullable();
+            $table->timestamp('hasta')->nullable();
             $table->unsignedInteger('registros')->default(0);
             $table->text('error')->nullable();
             $table->timestamps();

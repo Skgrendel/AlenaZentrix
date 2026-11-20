@@ -23,11 +23,11 @@ class AjusteEnvioExcel extends Model
 
     public const MENSAJE_POR_DEFECTO = "Buen día.\n\nAdjunto el Excel con los registros de suspensiones del día para su revisión.";
 
-    protected $fillable = ['company_id', 'activo', 'hora', 'dias', 'destinatarios', 'asunto', 'mensaje'];
+    protected $fillable = ['company_id', 'activo', 'activo_desde', 'hora', 'dias', 'destinatarios', 'asunto', 'mensaje'];
 
     protected function casts(): array
     {
-        return ['activo' => 'boolean', 'dias' => 'array'];
+        return ['activo' => 'boolean', 'activo_desde' => 'datetime', 'dias' => 'array'];
     }
 
     /** @return BelongsTo<Company, $this> */

@@ -11,6 +11,7 @@ use App\Services\survey123\EnvioDiarioDeExcel;
 use Database\Seeders\PermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
@@ -30,6 +31,7 @@ function ajusteDeEnvio(?Company $empresa = null, array $datos = []): AjusteEnvio
     return AjusteEnvioExcel::query()->create($datos + [
         'company_id' => $empresa->id,
         'activo' => true,
+        'activo_desde' => '2026-11-01 00:00:00',
         'hora' => '18:00',
         'dias' => [1, 2, 3, 4, 5],
         'destinatarios' => "jefe@empresa.com\ncontrol@empresa.com",
@@ -38,9 +40,24 @@ function ajusteDeEnvio(?Company $empresa = null, array $datos = []): AjusteEnvio
     ]);
 }
 
-function registroDelEnvio(Company $empresa, string $ot, string $fecha, array $extra = []): SurveyRegistro
+/** Un registro que llegó al sistema en el momento indicado (la hora en que lo hizo el técnico puede ser anterior). */
+function registroLlegado(Company $empresa, string $ot, string $llegoEn, array $extra = []): SurveyRegistro
 {
-    return SurveyRegistro::factory()->create($extra + ['company_id' => $empresa->id, 'orden_trabajo' => $ot, 'fecha_registro' => $fecha]);
+    $registro = SurveyRegistro::factory()->create($extra + ['company_id' => $empresa->id, 'orden_trabajo' => $ot]);
+    DB::table('survey_registros')->where('id', $registro->id)->update(['created_at' => $llegoEn]);
+
+    return $registro;
+}
+
+/** @return array<int, int> las órdenes de trabajo que trae el Excel adjunto al correo */
+function otsDelCorreo(ExcelDiarioDeAuditoria $mail): array
+{
+    $ruta = tempnam(sys_get_temp_dir(), 'ex').'.xlsx';
+    file_put_contents($ruta, $mail->contenidoExcel);
+    $libro = IOFactory::load($ruta);
+    @unlink($ruta);
+
+    return collect($libro->getSheetByName('Auditoría')->toArray(null, false, false, false))->slice(1)->pluck(10)->sort()->values()->all();
 }
 
 function administradorDeEnvio(?Company $empresa = null): User
@@ -124,68 +141,128 @@ test('cada empresa tiene su propia hora y no se mezclan', function () {
 
 // ── Qué se envía ─────────────────────────────────────────────────────────────
 
-test('el correo lleva solo los registros de hoy hasta la hora del envío, de esa empresa, con su Excel adjunto', function () {
+test('cada correo trae lo que llegó desde el anterior: nada se repite y nada se pierde', function () {
     Mail::fake();
-    Carbon::setTestNow(LUNES_6_05_PM);
-    $a = ajusteDeEnvio();
+    $a = ajusteDeEnvio(datos: ['activo_desde' => '2026-11-22 12:00:00']);
     $otra = Company::factory()->create();
 
-    registroDelEnvio($a->empresa, '300000001', '2026-11-23 00:00:00');                         // hoy, primer segundo: entra
-    registroDelEnvio($a->empresa, '300000002', '2026-11-23 17:30:00', ['total_errores' => 2, 'auditado_en' => now()]);
-    registroDelEnvio($a->empresa, '300000003', '2026-11-23 18:00:00', ['total_alertas' => 1, 'auditado_en' => now()]);
-    registroDelEnvio($a->empresa, '300000004', '2026-11-22 23:59:59');                         // ayer: no entra
-    registroDelEnvio($a->empresa, '300000005', '2026-11-23 18:30:00');                         // después de la hora del envío: no entra
-    registroDelEnvio($otra, '399999999', '2026-11-23 10:00:00');                               // otra empresa: no entra
+    registroLlegado($a->empresa, '300000001', '2026-11-21 23:00:00'); // llegó antes de encender el envío: no entra
+    registroLlegado($a->empresa, '300000002', '2026-11-22 20:00:00', ['total_errores' => 2, 'auditado_en' => now()]);
+    registroLlegado($a->empresa, '300000003', '2026-11-23 17:30:00', ['total_alertas' => 1, 'auditado_en' => now()]);
+    registroLlegado($a->empresa, '300000004', '2026-11-23 18:05:00'); // justo a la hora del primer envío: entra en el primero
+    registroLlegado($a->empresa, '300000005', '2026-11-23 18:30:00'); // después: sale en el segundo
+    registroLlegado($otra, '399999999', '2026-11-23 10:00:00');       // otra empresa: nunca
 
-    $envio = app(EnvioDiarioDeExcel::class)->enviar($a);
+    $servicio = app(EnvioDiarioDeExcel::class);
 
-    Mail::assertSent(ExcelDiarioDeAuditoria::class, function (ExcelDiarioDeAuditoria $mail) {
-        return $mail->hasTo('jefe@empresa.com') && $mail->hasTo('control@empresa.com')
-            && $mail->asunto === 'Auditoría — 23/11/2026 (3)'
-            && $mail->registros === 3 && $mail->conErrores === 1 && $mail->conAlertas === 1
-            && str_contains($mail->mensaje, 'Adjunto el Excel del día.')
-            && $mail->hasSubject('Auditoría — 23/11/2026 (3)')
-            && count($mail->attachments()) === 1
-            && str_starts_with($mail->nombreDelArchivo, 'auditoria-suspensiones-20261123-1805');
-    });
+    $primero = $servicio->enviar($a, EnvioExcel::AUTOMATICO, null, Carbon::parse('2026-11-23 18:05:00'));
 
-    $mail = Mail::sent(ExcelDiarioDeAuditoria::class)->first();
-    $ruta = tempnam(sys_get_temp_dir(), 'ex').'.xlsx';
-    file_put_contents($ruta, $mail->contenidoExcel);
-    $libro = IOFactory::load($ruta);
-    @unlink($ruta);
+    Mail::assertSent(ExcelDiarioDeAuditoria::class, fn (ExcelDiarioDeAuditoria $m) => $m->hasTo('jefe@empresa.com') && $m->hasTo('control@empresa.com')
+        && $m->asunto === 'Auditoría — 23/11/2026 (3)' && $m->registros === 3 && $m->conErrores === 1 && $m->conAlertas === 1
+        && count($m->attachments()) === 1 && str_starts_with($m->nombreDelArchivo, 'auditoria-suspensiones-20261123-1805'));
 
-    $ots = collect($libro->getSheetByName('Auditoría')->toArray(null, false, false, false))->slice(1)->pluck(10)->sort()->values()->all();
-    $portada = collect($libro->getSheetByName('Informe')->toArray(null, false, false, false))->flatten()->filter()->values();
+    expect(otsDelCorreo(Mail::sent(ExcelDiarioDeAuditoria::class)->first()))->toBe([300000002, 300000003, 300000004])
+        ->and($primero->estado)->toBe('enviado')
+        ->and($primero->registros)->toBe(3)
+        ->and($primero->desde->format('Y-m-d H:i:s'))->toBe('2026-11-22 12:00:00')
+        ->and($primero->hasta->format('Y-m-d H:i:s'))->toBe('2026-11-23 18:05:00')
+        ->and($primero->destinatarios)->toBe(['jefe@empresa.com', 'control@empresa.com']);
 
-    expect($ots)->toBe([300000001, 300000002, 300000003])
-        ->and($portada)->toContain('Fecha de registro: hoy 23/11/2026, de 00:00 a 18:05')
-        ->and($envio->estado)->toBe('enviado')
-        ->and($envio->registros)->toBe(3)
-        ->and($envio->destinatarios)->toBe(['jefe@empresa.com', 'control@empresa.com'])
-        ->and($envio->origen)->toBe('automatico');
+    // Al día siguiente: empieza donde terminó el anterior.
+    Mail::fake();
+    registroLlegado($a->empresa, '300000006', '2026-11-24 09:00:00');
+    $servicio->enviar($a, EnvioExcel::AUTOMATICO, null, Carbon::parse('2026-11-24 18:05:00'));
+
+    expect(otsDelCorreo(Mail::sent(ExcelDiarioDeAuditoria::class)->first()))->toBe([300000005, 300000006]);
 });
 
-test('si hoy no hubo registros se envía igual, avisándolo y sin adjunto', function () {
+test('un registro hecho antes del envío pero sincronizado después no se pierde: sale en el correo siguiente', function () {
     Mail::fake();
-    Carbon::setTestNow(LUNES_6_05_PM);
-    $a = ajusteDeEnvio();
-    registroDelEnvio($a->empresa, '300000004', '2026-11-22 10:00:00'); // ayer
+    $a = ajusteDeEnvio(datos: ['activo_desde' => '2026-11-23 00:00:00']);
+    $servicio = app(EnvioDiarioDeExcel::class);
 
-    $envio = app(EnvioDiarioDeExcel::class)->enviar($a);
+    // El técnico lo registró a las 5:50 p. m. (antes del envío de las 6:00), pero llegó al sistema a las 6:20 p. m.
+    registroLlegado($a->empresa, '300000001', '2026-11-23 18:20:00', ['fecha_registro' => '2026-11-23 17:50:00']);
+
+    $servicio->enviar($a, EnvioExcel::AUTOMATICO, null, Carbon::parse('2026-11-23 18:05:00'));
+    expect(Mail::sent(ExcelDiarioDeAuditoria::class)->first()->registros)->toBe(0);
+
+    Mail::fake();
+    $servicio->enviar($a, EnvioExcel::AUTOMATICO, null, Carbon::parse('2026-11-24 18:05:00'));
+    expect(otsDelCorreo(Mail::sent(ExcelDiarioDeAuditoria::class)->first()))->toBe([300000001]);
+});
+
+test('el primer correo empieza cuando se encendió el envío, no con todo lo que ya estaba cargado', function () {
+    Mail::fake();
+    $a = ajusteDeEnvio(datos: ['activo_desde' => '2026-11-23 09:00:00']);
+
+    foreach (range(1, 5) as $i) {
+        registroLlegado($a->empresa, '30000000'.$i, '2026-11-20 10:00:00'); // la carga inicial, antes de encender
+    }
+
+    registroLlegado($a->empresa, '300000009', '2026-11-23 10:00:00');
+
+    app(EnvioDiarioDeExcel::class)->enviar($a, EnvioExcel::AUTOMATICO, null, Carbon::parse('2026-11-23 18:05:00'));
+
+    expect(otsDelCorreo(Mail::sent(ExcelDiarioDeAuditoria::class)->first()))->toBe([300000009]);
+});
+
+test('un envío fallido no mueve el punto de partida: lo que no salió se manda en el siguiente', function () {
+    $a = ajusteDeEnvio(datos: ['activo_desde' => '2026-11-23 00:00:00']);
+    registroLlegado($a->empresa, '300000001', '2026-11-23 10:00:00');
+    $servicio = app(EnvioDiarioDeExcel::class);
+
+    Mail::shouldReceive('to')->once()->andThrow(new RuntimeException('SMTP caído'));
+    $fallo = $servicio->enviar($a, EnvioExcel::AUTOMATICO, null, Carbon::parse('2026-11-23 18:05:00'));
+    expect($fallo->estado)->toBe('fallido');
+
+    // Quita el correo simulado que fallaba y vuelve a simular uno que sí envía.
+    app()->forgetInstance('mail.manager');
+    Mail::clearResolvedInstance('mail.manager');
+    Mail::fake();
+    $servicio->enviar($a, EnvioExcel::AUTOMATICO, null, Carbon::parse('2026-11-23 18:25:00'));
+
+    expect(otsDelCorreo(Mail::sent(ExcelDiarioDeAuditoria::class)->first()))->toBe([300000001]);
+});
+
+test('una prueba trae lo que llevaría el próximo envío y no mueve el punto de partida', function () {
+    Mail::fake();
+    $a = ajusteDeEnvio(datos: ['activo_desde' => '2026-11-23 00:00:00']);
+    registroLlegado($a->empresa, '300000001', '2026-11-23 10:00:00');
+    $servicio = app(EnvioDiarioDeExcel::class);
+
+    $servicio->enviar($a, EnvioExcel::PRUEBA, ['admin@empresa.com'], Carbon::parse('2026-11-23 12:00:00'));
+    $servicio->enviar($a, EnvioExcel::AUTOMATICO, null, Carbon::parse('2026-11-23 18:05:00'));
+
+    Mail::assertSent(ExcelDiarioDeAuditoria::class, fn ($m) => $m->hasTo('admin@empresa.com') && $m->registros === 1);
+    Mail::assertSent(ExcelDiarioDeAuditoria::class, fn ($m) => $m->hasTo('jefe@empresa.com') && $m->registros === 1);
+});
+
+test('si nunca se ha encendido (una prueba suelta), cubre desde las 00:00 de hoy', function () {
+    $a = new AjusteEnvioExcel(['company_id' => Company::factory()->create()->id]);
+
+    expect(app(EnvioDiarioDeExcel::class)->desdeDelEnvio($a, Carbon::parse('2026-11-23 18:05:00'))->format('Y-m-d H:i:s'))->toBe('2026-11-23 00:00:00');
+});
+
+test('si en ese periodo no llegó nada se envía igual, avisándolo y sin adjunto', function () {
+    Mail::fake();
+    $a = ajusteDeEnvio(datos: ['activo_desde' => '2026-11-23 00:00:00']);
+    registroLlegado($a->empresa, '300000004', '2026-11-22 10:00:00'); // antes de encender
+
+    $envio = app(EnvioDiarioDeExcel::class)->enviar($a, EnvioExcel::AUTOMATICO, null, Carbon::parse(LUNES_6_05_PM));
 
     Mail::assertSent(ExcelDiarioDeAuditoria::class, fn (ExcelDiarioDeAuditoria $m) => $m->registros === 0 && $m->contenidoExcel === null && $m->attachments() === []);
     expect($envio->estado)->toBe('enviado')->and($envio->registros)->toBe(0);
 
     $html = Mail::sent(ExcelDiarioDeAuditoria::class)->first()->render();
-    expect($html)->toContain('no hubo registros')->toContain('no lleva archivo adjunto');
+    expect($html)->toContain('no llegaron registros')->toContain('no lleva archivo adjunto');
 });
 
 test('el correo muestra el mensaje con sus saltos de línea y no deja pasar HTML', function () {
     Mail::fake();
     Carbon::setTestNow(LUNES_6_05_PM);
     $a = ajusteDeEnvio(datos: ['mensaje' => "Línea uno\nLínea <b>dos</b> <script>alert(1)</script>"]);
-    registroDelEnvio($a->empresa, '300000001', '2026-11-23 10:00:00');
+    registroLlegado($a->empresa, '300000001', '2026-11-23 10:00:00');
 
     app(EnvioDiarioDeExcel::class)->enviar($a);
     $html = Mail::sent(ExcelDiarioDeAuditoria::class)->first()->render();
@@ -209,7 +286,7 @@ test('el comando envía lo pendiente una sola vez al día', function () {
     Mail::fake();
     Carbon::setTestNow(LUNES_6_05_PM);
     $a = ajusteDeEnvio();
-    registroDelEnvio($a->empresa, '300000001', '2026-11-23 10:00:00');
+    registroLlegado($a->empresa, '300000001', '2026-11-23 10:00:00');
 
     $this->artisan('survey123:enviar-excel-diario')->expectsOutputToContain('Excel enviado a jefe@empresa.com, control@empresa.com (1 registros)')->assertSuccessful();
     $this->artisan('survey123:enviar-excel-diario')->expectsOutputToContain('Ningún envío pendiente')->assertSuccessful();
@@ -274,6 +351,42 @@ test('la configuración se valida: hora, días, correos, asunto y mensaje', func
     expect(AjusteEnvioExcel::query()->count())->toBe(0);
 });
 
+test('el envío cuenta desde que se enciende: se fija una vez, se conserva al seguir guardando y se reinicia al volver a encenderlo', function () {
+    $admin = administradorDeEnvio();
+    $datos = fn ($pantalla) => $pantalla->set('dias', ['1'])->set('destinatarios', 'jefe@empresa.com')->set('asunto', 'Asunto')->set('mensaje', 'Mensaje');
+
+    Carbon::setTestNow('2026-11-23 09:00:00');
+    $pantalla = Livewire::actingAs($admin)->test(ConfiguracionEnvioDiarioExcel::class);
+    $datos($pantalla)->set('activo', true)->call('guardar')->assertHasNoErrors();
+    expect(AjusteEnvioExcel::de($admin->company_id)->activo_desde->format('Y-m-d H:i:s'))->toBe('2026-11-23 09:00:00');
+
+    // Seguir guardando (por ejemplo, cambiando la hora) no mueve el punto de partida.
+    Carbon::setTestNow('2026-11-24 10:00:00');
+    $pantalla->set('hora', '19:00')->call('guardar')->assertHasNoErrors();
+    expect(AjusteEnvioExcel::de($admin->company_id)->activo_desde->format('Y-m-d H:i:s'))->toBe('2026-11-23 09:00:00');
+
+    // Apagarlo lo borra; al volver a encenderlo se empieza de nuevo.
+    $pantalla->set('activo', false)->call('guardar');
+    expect(AjusteEnvioExcel::de($admin->company_id)->activo_desde)->toBeNull();
+
+    Carbon::setTestNow('2026-11-25 08:30:00');
+    $pantalla->set('activo', true)->call('guardar')->assertHasNoErrors();
+    expect(AjusteEnvioExcel::de($admin->company_id)->activo_desde->format('Y-m-d H:i:s'))->toBe('2026-11-25 08:30:00');
+});
+
+test('la prueba usa el punto de partida guardado aunque no se haya guardado lo demás', function () {
+    Mail::fake();
+    Carbon::setTestNow('2026-11-23 18:05:00');
+    $admin = administradorDeEnvio();
+    ajusteDeEnvio($admin->company, ['activo_desde' => '2026-11-23 12:00:00']);
+    registroLlegado($admin->company, '300000001', '2026-11-23 10:00:00'); // antes del punto de partida
+    registroLlegado($admin->company, '300000002', '2026-11-23 15:00:00');
+
+    Livewire::actingAs($admin)->test(ConfiguracionEnvioDiarioExcel::class)->call('enviarPrueba')->assertHasNoErrors();
+
+    Mail::assertSent(ExcelDiarioDeAuditoria::class, fn ($m) => $m->hasTo('admin@empresa.com') && $m->registros === 1);
+});
+
 test('apagado se puede guardar con los demás campos vacíos', function () {
     $admin = administradorDeEnvio();
 
@@ -317,7 +430,7 @@ test('«Enviarme una prueba» manda solo a quien la pide, con lo que hay en pant
     Mail::fake();
     Carbon::setTestNow(LUNES_6_05_PM);
     $admin = administradorDeEnvio();
-    registroDelEnvio($admin->company, '300000001', '2026-11-23 10:00:00');
+    registroLlegado($admin->company, '300000001', '2026-11-23 10:00:00');
 
     Livewire::actingAs($admin)->test(ConfiguracionEnvioDiarioExcel::class)
         ->set('destinatarios', 'otros@empresa.com')->set('asunto', 'Prueba {registros}')->set('mensaje', 'Mensaje de prueba')

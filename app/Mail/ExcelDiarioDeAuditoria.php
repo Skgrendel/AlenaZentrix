@@ -17,7 +17,7 @@ class ExcelDiarioDeAuditoria extends Mailable
         public readonly string $asunto,
         public readonly string $mensaje,
         public readonly string $empresa,
-        public readonly string $fecha,
+        public readonly string $desde,
         public readonly string $hasta,
         public readonly int $registros,
         public readonly int $conErrores,

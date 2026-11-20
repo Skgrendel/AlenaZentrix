@@ -18,8 +18,9 @@ use Maatwebsite\Excel\Facades\Excel;
 use Throwable;
 
 /**
- * Envía por correo el Excel de la auditoría de suspensiones con los registros del día (de las 00:00 a la hora del envío),
- * a la hora, los días y los destinatarios que cada empresa configura. Todo en hora de Colombia (la zona de la aplicación).
+ * Envía por correo el Excel de la auditoría de suspensiones, a la hora, los días y los destinatarios que cada empresa configura.
+ * Cada correo trae los registros que llegaron al sistema desde el último envío, así no queda nada por fuera aunque un
+ * registro tarde en sincronizarse. Todo en hora de Colombia (la zona de la aplicación).
  */
 class EnvioDiarioDeExcel
 {
@@ -58,10 +59,12 @@ class EnvioDiarioDeExcel
     {
         $ahora ??= now();
         $destinatarios ??= $ajuste->correos();
+        $desde = $this->desdeDelEnvio($ajuste, $ahora);
         $registros = SurveyRegistro::query()
             ->withoutGlobalScopes()
             ->where('company_id', $ajuste->company_id)
-            ->whereBetween('fecha_registro', [$ahora->copy()->startOfDay(), $ahora]);
+            ->where('created_at', '>', $desde)
+            ->where('created_at', '<=', $ahora);
 
         $total = 0;
 
@@ -71,6 +74,7 @@ class EnvioDiarioDeExcel
             $conAlertas = (clone $registros)->where('total_alertas', '>', 0)->count();
             $empresa = Company::query()->withoutGlobalScopes()->find($ajuste->company_id)?->nombre ?? 'Alena Zentrix';
             $fecha = $ahora->format('d/m/Y');
+            $formato = 'd/m/Y h:i a';
 
             $contenido = null;
 
@@ -79,7 +83,7 @@ class EnvioDiarioDeExcel
                 $contenido = Excel::raw(new SurveyAuditoriaExport($registros, [
                     'empresa' => $empresa,
                     'generado_por' => $origen === EnvioExcel::PRUEBA ? 'Envío de prueba' : 'Envío automático',
-                    'filtros' => ["Fecha de registro: hoy {$fecha}, de 00:00 a {$ahora->format('H:i')}"],
+                    'filtros' => ["Registros recibidos entre {$desde->format($formato)} y {$ahora->format($formato)}"],
                 ]), TipoExcel::XLSX);
             }
 
@@ -87,8 +91,8 @@ class EnvioDiarioDeExcel
                 asunto: str_replace(['{fecha}', '{registros}'], [$fecha, (string) $total], $ajuste->asunto),
                 mensaje: $ajuste->mensaje,
                 empresa: $empresa,
-                fecha: $fecha,
-                hasta: $ahora->format('h:i a'),
+                desde: $desde->format($formato),
+                hasta: $ahora->format($formato),
                 registros: $total,
                 conErrores: $conErrores,
                 conAlertas: $conAlertas,
@@ -96,22 +100,49 @@ class EnvioDiarioDeExcel
                 nombreDelArchivo: 'auditoria-suspensiones-'.$ahora->format('Ymd-Hi').'.xlsx',
             ));
 
-            return $this->constancia($ajuste, $origen, EnvioExcel::ENVIADO, $destinatarios, $total);
+            return $this->constancia($ajuste, $origen, EnvioExcel::ENVIADO, $destinatarios, $total, $desde, $ahora);
         } catch (Throwable $e) {
             Log::error('No se pudo enviar el Excel diario por correo.', ['empresa' => $ajuste->company_id, 'error' => $e->getMessage()]);
 
-            return $this->constancia($ajuste, $origen, EnvioExcel::FALLIDO, $destinatarios, $total, mb_substr($e->getMessage(), 0, 500));
+            return $this->constancia($ajuste, $origen, EnvioExcel::FALLIDO, $destinatarios, $total, $desde, $ahora, mb_substr($e->getMessage(), 0, 500));
         }
     }
 
+    /**
+     * Desde cuándo cubre el próximo correo: el momento hasta el que llegó el último envío exitoso. Si todavía no hubo
+     * ninguno, desde que se encendió el envío (así no se manda de golpe todo lo que ya estaba cargado); y si nunca se
+     * encendió (una prueba), desde las 00:00 de hoy. Un envío fallido no mueve el corte: lo que no salió se manda en el siguiente.
+     */
+    public function desdeDelEnvio(AjusteEnvioExcel $ajuste, CarbonInterface $ahora): CarbonInterface
+    {
+        $ultimo = EnvioExcel::query()
+            ->where('company_id', $ajuste->company_id)
+            ->where('origen', EnvioExcel::AUTOMATICO)
+            ->where('estado', EnvioExcel::ENVIADO)
+            ->whereNotNull('hasta')
+            ->max('hasta');
+
+        $candidatos = array_values(array_filter([$ultimo === null ? null : Carbon::parse($ultimo), $ajuste->activo_desde]));
+
+        if ($candidatos === []) {
+            return $ahora->copy()->startOfDay();
+        }
+
+        usort($candidatos, fn ($a, $b): int => $b->getTimestamp() <=> $a->getTimestamp());
+
+        return $candidatos[0];
+    }
+
     /** @param  array<int, string>  $destinatarios */
-    private function constancia(AjusteEnvioExcel $ajuste, string $origen, string $estado, array $destinatarios, int $registros, ?string $error = null): EnvioExcel
+    private function constancia(AjusteEnvioExcel $ajuste, string $origen, string $estado, array $destinatarios, int $registros, CarbonInterface $desde, CarbonInterface $hasta, ?string $error = null): EnvioExcel
     {
         return EnvioExcel::query()->create([
             'company_id' => $ajuste->company_id,
             'origen' => $origen,
             'estado' => $estado,
             'destinatarios' => $destinatarios,
+            'desde' => $desde,
+            'hasta' => $hasta,
             'registros' => $registros,
             'error' => $error,
         ]);

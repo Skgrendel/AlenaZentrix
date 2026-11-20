@@ -22,10 +22,10 @@ class EnvioExcel extends Model
 
     protected $table = 'envios_excel';
 
-    protected $fillable = ['company_id', 'origen', 'estado', 'destinatarios', 'registros', 'error'];
+    protected $fillable = ['company_id', 'origen', 'estado', 'destinatarios', 'desde', 'hasta', 'registros', 'error'];
 
     protected function casts(): array
     {
-        return ['destinatarios' => 'array'];
+        return ['destinatarios' => 'array', 'desde' => 'datetime', 'hasta' => 'datetime'];
     }
 }

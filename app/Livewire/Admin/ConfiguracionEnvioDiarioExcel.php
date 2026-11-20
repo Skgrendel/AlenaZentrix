@@ -98,14 +98,23 @@ class ConfiguracionEnvioDiarioExcel extends Component
 
         $this->validate();
 
-        AjusteEnvioExcel::query()->updateOrCreate(['company_id' => $empresa], $this->datos());
+        $anterior = AjusteEnvioExcel::query()->where('company_id', $empresa)->first();
+
+        // El primer correo trae lo que llegue desde que se enciende el envío; si se apaga, al encenderlo de nuevo se empieza otra vez.
+        $activoDesde = match (true) {
+            ! $this->activo => null,
+            $anterior?->activo && $anterior->activo_desde !== null => $anterior->activo_desde,
+            default => now(),
+        };
+
+        AjusteEnvioExcel::query()->updateOrCreate(['company_id' => $empresa], $this->datos() + ['activo_desde' => $activoDesde]);
 
         $this->destinatarios = implode("\n", $this->ajusteDeLaPantalla()->correos());
 
         Flux::toast(text: 'Configuración guardada.', variant: 'success');
     }
 
-    /** Envía hoy el Excel solo al correo de quien está en sesión, con lo que hay en pantalla (guardado o no). */
+    /** Envía el Excel solo al correo de quien está en sesión, con lo que hay en pantalla (guardado o no) y lo que llevaría el próximo envío. */
     public function enviarPrueba(EnvioDiarioDeExcel $envios): void
     {
         abort_unless(auth()->user()?->can('admin.configuracion'), 403);
@@ -122,10 +131,13 @@ class ConfiguracionEnvioDiarioExcel extends Component
         $this->validateOnly('asunto');
         $this->validateOnly('mensaje');
 
-        $envio = $envios->enviar($this->ajusteDeLaPantalla(), EnvioExcel::PRUEBA, [$correo]);
+        $prueba = $this->ajusteDeLaPantalla();
+        $prueba->activo_desde = AjusteEnvioExcel::de($empresa)->activo_desde;
+
+        $envio = $envios->enviar($prueba, EnvioExcel::PRUEBA, [$correo]);
 
         $envio->estado === EnvioExcel::ENVIADO
-            ? Flux::toast(text: "Prueba enviada a {$correo} con {$envio->registros} registro(s) de hoy.", variant: 'success')
+            ? Flux::toast(text: "Prueba enviada a {$correo} con {$envio->registros} registro(s) nuevos.", variant: 'success')
             : Flux::toast(heading: 'No se pudo enviar la prueba', text: (string) $envio->error, variant: 'danger');
     }
 

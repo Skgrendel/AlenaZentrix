@@ -2,8 +2,9 @@
     <div>
         <flux:heading size="lg">Envío diario del Excel por correo</flux:heading>
         <flux:text class="mt-1 text-sm">
-            Cada día, a la hora que elijas, el sistema envía por correo el Excel de la auditoría de suspensiones con los
-            registros de ese día, de las 00:00 hasta la hora del envío. La hora es la de Colombia.
+            A la hora y los días que elijas, el sistema envía por correo el Excel de la auditoría de suspensiones con los
+            registros que llegaron desde el último envío: cada correo empieza donde terminó el anterior y no queda nada por fuera.
+            El primero trae lo que llegue desde que enciendes el envío. La hora es la de Colombia.
         </flux:text>
     </div>
 
@@ -17,7 +18,7 @@
             <div>
                 <flux:input type="time" wire:model="hora" label="Hora del envío" />
                 @error('hora') <flux:text class="mt-1 text-xs text-red-600">{{ $message }}</flux:text> @enderror
-                <flux:text class="mt-1 text-xs">Hora de Colombia. Los registros que lleguen después de esta hora no entran en el correo del día.</flux:text>
+                <flux:text class="mt-1 text-xs">Hora de Colombia. Lo que llegue después de esta hora sale en el correo del siguiente día elegido.</flux:text>
             </div>
 
             <div>
@@ -59,7 +60,7 @@
                 <span wire:loading wire:target="enviarPrueba">Enviando…</span>
             </flux:button>
         </div>
-        <flux:text class="text-xs">La prueba se envía solo a tu correo, con lo que ves en pantalla y los registros de hoy.</flux:text>
+        <flux:text class="text-xs">La prueba se envía solo a tu correo, con lo que ves en pantalla y lo que llevaría el próximo envío. No cuenta como un envío: no mueve el punto desde el cual empieza el siguiente.</flux:text>
     </form>
 
     <flux:separator />
@@ -74,7 +75,7 @@
                         {{ $envio->created_at->format('d/m/Y h:i a') }}
                         <span class="text-xs font-normal text-zinc-500">· {{ $envio->origen === 'prueba' ? 'prueba' : 'automático' }}</span>
                     </div>
-                    <div class="text-xs text-zinc-500">{{ implode(', ', $envio->destinatarios) }} · {{ $envio->registros }} registro(s)</div>
+                    <div class="text-xs text-zinc-500">{{ implode(', ', $envio->destinatarios) }} · {{ $envio->registros }} registro(s)@if ($envio->desde && $envio->hasta) · llegados del {{ $envio->desde->format('d/m h:i a') }} al {{ $envio->hasta->format('d/m h:i a') }}@endif</div>
                     @if ($envio->error)
                         <div class="mt-1 text-xs text-red-600">{{ $envio->error }}</div>
                     @endif
