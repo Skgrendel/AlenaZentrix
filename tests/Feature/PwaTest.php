@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
+
+uses(RefreshDatabase::class);
 
 /** @return array<string, mixed> */
 function manifiesto(): array
@@ -90,4 +94,21 @@ test('las páginas enlazan el manifiesto y registran el service worker', functio
         ->assertSee('<meta name="theme-color" content="#17222e">', false)
         ->assertSee('apple-mobile-web-app-capable', false)
         ->assertSee("navigator.serviceWorker.register('/sw.js'", false);
+});
+
+test('el encabezado guarda el aviso de instalación del navegador', function () {
+    $this->get('/login')
+        ->assertOk()
+        ->assertSee("addEventListener('beforeinstallprompt'", false)
+        ->assertSee('window.__avisoInstalacion', false)
+        ->assertSee("addEventListener('appinstalled'", false);
+});
+
+test('el menú lateral ofrece el botón para instalar la app con ayuda para iPhone', function () {
+    $this->actingAs(User::factory()->create())
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('data-test="instalar-app"', false)
+        ->assertSee('Instalar app')
+        ->assertSee('Añadir a pantalla de inicio');
 });

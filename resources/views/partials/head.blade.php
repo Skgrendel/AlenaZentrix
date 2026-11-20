@@ -20,6 +20,18 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {}));
     }
+
+    // El navegador avisa una sola vez por carga completa que la app se puede instalar: se guarda el aviso
+    // para que el botón "Instalar app" del menú lo use aunque se navegue entre páginas.
+    window.addEventListener('beforeinstallprompt', (evento) => {
+        evento.preventDefault();
+        window.__avisoInstalacion = evento;
+        window.dispatchEvent(new CustomEvent('app-instalable'));
+    });
+    window.addEventListener('appinstalled', () => {
+        window.__avisoInstalacion = null;
+        window.dispatchEvent(new CustomEvent('app-instalada'));
+    });
 </script>
 
 @fonts

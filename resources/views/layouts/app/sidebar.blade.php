@@ -128,6 +128,10 @@
             @endcanany
         </flux:sidebar.nav>
 
+        <flux:sidebar.nav>
+            <x-instalar-app />
+        </flux:sidebar.nav>
+
         <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
     </flux:sidebar>
 
