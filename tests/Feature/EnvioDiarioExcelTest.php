@@ -387,6 +387,31 @@ test('la prueba usa el punto de partida guardado aunque no se haya guardado lo d
     Mail::assertSent(ExcelDiarioDeAuditoria::class, fn ($m) => $m->hasTo('admin@empresa.com') && $m->registros === 1);
 });
 
+test('la pantalla muestra los siete días con su nombre y su número, con los de lunes a viernes marcados', function () {
+    $admin = administradorDeEnvio();
+
+    $html = Livewire::actingAs($admin)->test(ConfiguracionEnvioDiarioExcel::class)->html();
+
+    foreach ([1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'] as $numero => $nombre) {
+        expect($html)->toContain($nombre)->toContain('value="'.$numero.'"');
+    }
+
+    // El día «0» no existe: era el síntoma de pintar los días elegidos como si fueran los nombres.
+    expect($html)->not->toContain('value="0"');
+});
+
+test('marcar y guardar los días desde la pantalla funciona sin errores de validación', function () {
+    $admin = administradorDeEnvio();
+
+    Livewire::actingAs($admin)->test(ConfiguracionEnvioDiarioExcel::class)
+        ->assertSet('dias', ['1', '2', '3', '4', '5'])
+        ->set('dias', ['1', '2', '3', '4', '5', '6', '7'])
+        ->set('activo', true)->set('destinatarios', 'jefe@empresa.com')
+        ->call('guardar')->assertHasNoErrors();
+
+    expect(AjusteEnvioExcel::de($admin->company_id)->dias)->toBe([1, 2, 3, 4, 5, 6, 7]);
+});
+
 test('apagado se puede guardar con los demás campos vacíos', function () {
     $admin = administradorDeEnvio();
 

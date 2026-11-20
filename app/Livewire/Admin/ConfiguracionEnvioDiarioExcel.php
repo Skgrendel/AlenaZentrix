@@ -146,7 +146,8 @@ class ConfiguracionEnvioDiarioExcel extends Component
         $empresa = $this->empresaId();
 
         return view('livewire.admin.configuracion-envio-diario-excel', [
-            'dias' => self::DIAS,
+            // No se llama «dias»: Livewire ya entrega a la vista la propiedad pública $dias (los días elegidos) y la pisaría.
+            'nombresDeDias' => self::DIAS,
             'envios' => $empresa === null ? collect() : EnvioExcel::query()->where('company_id', $empresa)->latest()->limit(10)->get(),
         ]);
     }
