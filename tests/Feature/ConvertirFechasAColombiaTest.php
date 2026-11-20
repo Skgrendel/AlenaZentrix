@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\ConvertirFechasAColombia;
 use App\Models\SurveyRegistro;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -109,18 +110,40 @@ test('no toca su propia constancia ni el historial de migraciones', function () 
     });
 });
 
-test('se niega si la base de datos no está en UTC, salvo que se fuerce', function () {
+test('acepta una base con desfase fijo, como la de Colombia (-05:00), y la convierte igual', function () {
     $registro = SurveyRegistro::factory()->create(['fecha_registro' => '2026-11-20 21:23:00']);
 
-    conZonaDeLaBase('+03:00', function () {
+    conZonaDeLaBase('-05:00', function () {
         $this->artisan('fechas:convertir-a-colombia', ['--ejecutar' => true, '--respaldo-hecho' => true])
-            ->expectsOutputToContain('no es UTC')
-            ->assertFailed();
-
-        $this->artisan('fechas:convertir-a-colombia', ['--forzar' => true])->assertSuccessful();
+            ->expectsOutputToContain('desfase fijo')
+            ->assertSuccessful();
     });
 
-    expect(fechaGuardada('survey_registros', 'fecha_registro', $registro->id))->toBe('2026-11-20 21:23:00');
+    expect(fechaGuardada('survey_registros', 'fecha_registro', $registro->id))->toBe('2026-11-20 16:23:00');
+});
+
+test('reconoce qué zonas de la base tienen desfase fijo y cuáles tienen horario de verano', function (string $zona, bool $fijo) {
+    expect(ConvertirFechasAColombia::zonaTieneDesfaseFijo($zona))->toBe($fijo);
+})->with([
+    'UTC' => ['UTC', true],
+    'más cero' => ['+00:00', true],
+    'Colombia abreviada' => ['-05', true],
+    'Colombia con minutos' => ['-05:00', true],
+    'COT' => ['COT', true],
+    'Bogotá por nombre' => ['America/Bogota', true],
+    'Madrid' => ['Europe/Madrid', false],
+    'Nueva York' => ['America/New_York', false],
+    'CET' => ['CET', false],
+    'EST' => ['EST', false],
+    'vacío' => ['', false],
+]);
+
+test('no convierte los trabajos fallidos: su fecha la pone la propia base y ya está en su hora', function () {
+    conZonaDeLaBase('+00:00', function () {
+        $this->artisan('fechas:convertir-a-colombia')
+            ->doesntExpectOutputToContain('failed_jobs')
+            ->assertSuccessful();
+    });
 });
 
 test('se niega a convertir si la aplicación no está en hora de Colombia', function () {

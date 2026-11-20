@@ -20,14 +20,17 @@ class ConvertirFechasAColombia extends Command
     /** Colombia es UTC-5 todo el año (no tiene horario de verano). */
     private const HORAS = 5;
 
-    /** Tablas que no se tocan: la propia constancia y el historial de migraciones. */
-    private const EXCLUIDAS = ['conversiones_de_hora', 'migrations'];
+    /**
+     * Tablas que no se tocan: la propia constancia, el historial de migraciones y los trabajos fallidos, cuya fecha
+     * la pone la propia base de datos (DEFAULT CURRENT_TIMESTAMP) y ya está en la hora del servidor.
+     */
+    private const EXCLUIDAS = ['conversiones_de_hora', 'migrations', 'failed_jobs'];
 
     protected $signature = 'fechas:convertir-a-colombia
         {--ejecutar : Aplica el cambio. Sin esto solo simula y no modifica nada}
         {--respaldo-hecho : Confirmo que hice un respaldo de la base de datos antes de ejecutar}
         {--revertir : Deshace la conversión (suma las 5 horas de nuevo)}
-        {--forzar : Permite ejecutar aunque la zona horaria del servidor de base de datos no sea UTC}';
+        {--forzar : Permite ejecutar aunque la zona horaria de la base de datos tenga horario de verano}';
 
     protected $description = 'Convierte una sola vez las fechas guardadas en UTC a hora de Colombia (resta 5 horas). Por defecto solo simula.';
 
@@ -54,12 +57,15 @@ class ConvertirFechasAColombia extends Command
             return self::FAILURE;
         }
 
-        if (! $this->zonaDeLaBaseEsUtc() && ! $this->option('forzar')) {
-            $zona = DB::selectOne('select @@session.time_zone as sesion, @@system_time_zone as sistema');
-            $this->error("La zona horaria de la base de datos no es UTC (sesión: {$zona->sesion}, sistema: {$zona->sistema}). Las columnas timestamp podrían quedar mal. Revísalo con quien administra la base, o usa --forzar si estás seguro.");
+        $zonaDeLaBase = $this->zonaDeLaBase();
+
+        if (! self::zonaTieneDesfaseFijo($zonaDeLaBase) && ! $this->option('forzar')) {
+            $this->error("La zona horaria de la base de datos ({$zonaDeLaBase}) puede tener horario de verano, y las columnas timestamp podrían quedar mal. Revísalo con quien administra la base, o usa --forzar si estás seguro.");
 
             return self::FAILURE;
         }
+
+        $this->line("Zona horaria de la base de datos: {$zonaDeLaBase} (desfase fijo, la resta es exacta).");
 
         $columnas = $this->columnasDeFecha();
         $total = 0;
@@ -124,13 +130,25 @@ class ConvertirFechasAColombia extends Command
         return self::SUCCESS;
     }
 
-    /** Con la base en UTC (o +00:00) restar horas a un timestamp es exacto; con otra zona o con horario de verano no. */
-    private function zonaDeLaBaseEsUtc(): bool
+    /** La zona con la que la base lee y escribe las fechas: la de la sesión o, si es «SYSTEM», la del servidor. */
+    private function zonaDeLaBase(): string
     {
         $zona = DB::selectOne('select @@session.time_zone as sesion, @@system_time_zone as sistema');
-        $efectiva = $zona->sesion === 'SYSTEM' ? $zona->sistema : $zona->sesion;
 
-        return in_array(strtoupper((string) $efectiva), ['UTC', '+00:00', 'GMT', 'Z', '-00:00'], true);
+        return (string) ($zona->sesion === 'SYSTEM' ? $zona->sistema : $zona->sesion);
+    }
+
+    /**
+     * Restar horas a una columna es exacto si la zona de la base tiene un desfase fijo (UTC, -05, -05:00, Bogotá),
+     * porque lo que se resta y lo que se guarda usan la misma zona. Con horario de verano (Madrid, Nueva York, CET)
+     * algunas horas no existen o se repiten y el resultado podría quedar mal.
+     */
+    public static function zonaTieneDesfaseFijo(string $zona): bool
+    {
+        $zona = strtoupper(trim($zona));
+
+        return in_array($zona, ['UTC', 'GMT', 'Z', 'COT', 'AMERICA/BOGOTA'], true)
+            || preg_match('/^[+-]\d{1,2}(:?\d{2})?$/', $zona) === 1;
     }
 
     /** @return array<string, array<int, string>> tabla => columnas datetime o timestamp */
