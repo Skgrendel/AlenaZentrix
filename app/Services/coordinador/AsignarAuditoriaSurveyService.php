@@ -13,6 +13,7 @@ use App\Models\personals;
 use App\Models\Proceso;
 use App\Models\Scopes\CompanyScope;
 use App\Models\SurveyRegistro;
+use App\Services\AvisoDeOrdenAsignada;
 use App\Services\survey123\ConsultaGisContrato;
 use DomainException;
 use Illuminate\Support\Carbon;
@@ -142,6 +143,8 @@ class AsignarAuditoriaSurveyService
 
     private function notificarAuditor(OrdenJob $orden): void
     {
+        AvisoDeOrdenAsignada::enviar($orden);
+
         $email = $orden->personal?->usuario?->email;
 
         if (! $email) {

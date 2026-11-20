@@ -2,13 +2,14 @@
  * Service worker de Alena Zentrix.
  *
  * Es deliberadamente conservador: la aplicación maneja datos privados de clientes, así que NO guarda
- * páginas ni respuestas de la API. Solo hace dos cosas:
+ * páginas ni respuestas de la API. Solo hace tres cosas:
  *   1. Si no hay conexión al abrir una página, muestra una pantalla de "sin conexión" con un botón para reintentar.
  *   2. Guarda en caché los archivos compilados (CSS/JS con huella en el nombre) para que la app cargue más rápido.
+ *   3. Muestra los avisos push (orden de trabajo asignada) y abre la orden al tocarlos. El aviso solo trae el número de la OT.
  *
  * Al cambiar este archivo, sube VERSION para que los dispositivos descarten la caché anterior.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `alena-${VERSION}`;
 const PAGINA_SIN_CONEXION = '/offline.html';
 const PRECARGA = [PAGINA_SIN_CONEXION, '/icons/icon-192.png', '/icons/icon-512.png'];
@@ -72,4 +73,51 @@ self.addEventListener('fetch', (evento) => {
             }),
         );
     }
+});
+
+// Avisos push: el servidor manda {title, body, icon, badge, tag, data: {url}}.
+self.addEventListener('push', (evento) => {
+    let datos = {};
+
+    try {
+        datos = evento.data ? evento.data.json() : {};
+    } catch (error) {
+        datos = { body: evento.data ? evento.data.text() : '' };
+    }
+
+    evento.waitUntil(
+        self.registration.showNotification(datos.title || 'Alena Zentrix', {
+            body: datos.body || '',
+            icon: datos.icon || '/icons/icon-192.png',
+            badge: datos.badge || '/icons/icon-192.png',
+            tag: datos.tag,
+            data: datos.data || {},
+        }),
+    );
+});
+
+// Al tocar el aviso se abre la orden: si la app ya está abierta se usa esa ventana; si no, se abre una nueva.
+self.addEventListener('notificationclick', (evento) => {
+    evento.notification.close();
+
+    // Solo rutas de este mismo sitio.
+    const destino = new URL((evento.notification.data && evento.notification.data.url) || '/tecnico/mis-ordenes', self.location.origin);
+
+    if (destino.origin !== self.location.origin) {
+        return;
+    }
+
+    evento.waitUntil(
+        self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((ventanas) => {
+            for (const ventana of ventanas) {
+                if ('focus' in ventana) {
+                    ventana.navigate(destino.href);
+
+                    return ventana.focus();
+                }
+            }
+
+            return self.clients.openWindow(destino.href);
+        }),
+    );
 });

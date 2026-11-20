@@ -11,6 +11,7 @@ use App\Models\OrigenInformacion;
 use App\Models\personals;
 use App\Models\Proceso;
 use App\Models\TipologiaOrden;
+use App\Services\AvisoDeOrdenAsignada;
 use App\Services\TenantService;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -447,6 +448,8 @@ class OrdenCreate extends Component implements HasActions, HasForms
 
     private function notificarTecnico(OrdenJob $orden): void
     {
+        AvisoDeOrdenAsignada::enviar($orden);
+
         $email = $orden->personal?->usuario?->email;
 
         if (! $email) {

@@ -10,6 +10,7 @@ use App\Mail\OrdenesAsignadasResumen;
 use App\Models\OrdenJob;
 use App\Models\personals;
 use App\Notifications\ZipReportesListoNotification;
+use App\Services\AvisoDeOrdenAsignada;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
@@ -218,6 +219,8 @@ class RevisionMedidoresIndex extends Component implements HasActions, HasForms, 
 
     private function notificarIndividual(OrdenJob $orden): void
     {
+        AvisoDeOrdenAsignada::enviar($orden);
+
         $email = $orden->personal?->usuario?->email;
         if (! $email) {
             return;
@@ -232,6 +235,8 @@ class RevisionMedidoresIndex extends Component implements HasActions, HasForms, 
     private function notificarMasivo(Collection $ordenes, string $personalsId): void
     {
         $personal = personals::find($personalsId);
+        AvisoDeOrdenAsignada::enviarVarias($ordenes, $personal?->usuario);
+
         $email = $personal?->usuario?->email;
         if (! $email || ! $personal) {
             return;

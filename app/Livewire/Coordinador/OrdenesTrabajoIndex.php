@@ -13,6 +13,7 @@ use App\Models\personals;
 use App\Models\Proceso;
 use App\Models\TipoAnomalia;
 use App\Models\TipologiaOrden;
+use App\Services\AvisoDeOrdenAsignada;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -683,6 +684,8 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
     /** Envía el correo de asignación al técnico; falla silenciosamente si no tiene email registrado. */
     protected function notificarTecnico(OrdenJob $orden): void
     {
+        AvisoDeOrdenAsignada::enviar($orden);
+
         $email = $orden->personal?->usuario?->email;
 
         if (! $email) {

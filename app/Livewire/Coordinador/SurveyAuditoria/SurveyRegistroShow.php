@@ -7,7 +7,7 @@ use App\Models\SurveyAdjunto;
 use App\Models\SurveyRegistro;
 use App\Services\survey123\RequisitosDeFotos;
 use App\Services\survey123\RevisorFotosIA;
-use Filament\Notifications\Notification;
+use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
@@ -46,12 +46,12 @@ class SurveyRegistroShow extends Component
         try {
             $revisor->revisarYGuardar($this->registro, auth()->id());
         } catch (Throwable $e) {
-            Notification::make()->danger()->title('No se pudo revisar con IA')->body($e->getMessage())->send();
+            Flux::toast(heading: 'No se pudo revisar con IA', text: $e->getMessage(), variant: 'danger');
 
             return;
         }
 
-        Notification::make()->success()->title('Revisión con IA guardada')->send();
+        Flux::toast(text: 'Revisión con IA guardada.', variant: 'success');
     }
 
     /** Guarda lo que opina una persona de la última revisión de la IA: de acuerdo o en desacuerdo. */
@@ -80,7 +80,7 @@ class SurveyRegistroShow extends Component
 
         $this->comentarioEvaluacion = '';
 
-        Notification::make()->success()->title('Tu opinión quedó guardada')->send();
+        Flux::toast(text: 'Tu opinión quedó guardada.', variant: 'success');
     }
 
     /** Quita la opinión para poder darla de nuevo. */

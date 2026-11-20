@@ -129,6 +129,9 @@
         </flux:sidebar.nav>
 
         <flux:sidebar.nav>
+            @can('mis-ordenes.ver')
+                <x-avisos-de-ordenes />
+            @endcan
             <x-instalar-app />
         </flux:sidebar.nav>
 

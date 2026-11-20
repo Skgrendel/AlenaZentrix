@@ -6,7 +6,7 @@ use App\Models\AjusteRevisionIA;
 use App\Models\SurveyRegistro;
 use App\Services\survey123\RevisorFotosIA;
 use App\Services\TenantService;
-use Filament\Notifications\Notification;
+use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -79,14 +79,14 @@ class ConfiguracionRevisionFotosIA extends Component
         $empresa = $this->empresaId();
 
         if ($empresa === null) {
-            Notification::make()->danger()->title('Tu usuario no tiene una empresa asignada')->send();
+            Flux::toast(text: 'Tu usuario no tiene una empresa asignada.', variant: 'danger');
 
             return;
         }
 
         AjusteRevisionIA::query()->updateOrCreate(['company_id' => $empresa], $datos);
 
-        Notification::make()->success()->title('Configuración guardada')->send();
+        Flux::toast(text: 'Configuración guardada.', variant: 'success');
     }
 
     public function restablecerInstrucciones(): void
