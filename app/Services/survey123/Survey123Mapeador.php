@@ -160,7 +160,9 @@ class Survey123Mapeador
 
     private function fecha(mixed $valor): ?Carbon
     {
-        return is_numeric($valor) ? Carbon::createFromTimestampMs((int) $valor) : null;
+        // ArcGIS entrega milisegundos desde 1970 (un momento exacto). Se pasa a la zona de la aplicación (Colombia)
+        // porque Laravel guarda la fecha con la zona que trae el objeto: en UTC se escribiría 5 horas de más.
+        return is_numeric($valor) ? Carbon::createFromTimestampMs((int) $valor)->setTimezone(config('app.timezone')) : null;
     }
 
     private function booleano(?string $valor): ?bool

@@ -28,9 +28,9 @@
             <h3 class="mb-3 text-base font-semibold text-zinc-900 dark:text-white">Datos reportados por el técnico</h3>
             <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-3">
                 @foreach ([
-                    'Fecha de registro' => $registro->fecha_registro?->copy()->timezone(config('survey_auditoria.zona_horaria_excel'))->format('d/m/Y h:i a'),
-                    'Enviado' => $registro->creado_en_origen?->copy()->timezone(config('survey_auditoria.zona_horaria_excel'))->format('d/m/Y h:i a'),
-                    'Última edición' => $registro->editado_en_origen?->copy()->timezone(config('survey_auditoria.zona_horaria_excel'))->format('d/m/Y h:i a'),
+                    'Fecha de registro' => $registro->fecha_registro?->format('d/m/Y h:i a'),
+                    'Enviado' => $registro->creado_en_origen?->format('d/m/Y h:i a'),
+                    'Última edición' => $registro->editado_en_origen?->format('d/m/Y h:i a'),
                     'Categoría' => $registro->categoria ? ucfirst($registro->categoria) : null,
                     'Actividad' => $registro->actividad ? ucfirst($registro->actividad) : null,
                     '¿Suspensión ejecutada?' => $registro->suspension_ejecutada === null ? null : ($registro->suspension_ejecutada ? 'Sí' : 'No'),

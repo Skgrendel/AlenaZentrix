@@ -225,10 +225,10 @@ test('los totales y el estado del registro se muestran en la tarjeta de hallazgo
 
 test('las fechas de la lista y del detalle se muestran en hora de Colombia, como en el formulario de los técnicos', function () {
     [$user, $survey] = coordinadorConDetalle([
-        // 21:23 UTC es 4:23 p. m. en Colombia (el formulario de ArcGIS muestra 16:23).
-        'fecha_registro' => '2026-11-20 21:23:00',
-        'creado_en_origen' => '2026-11-20 21:30:02',
-        'editado_en_origen' => '2026-11-20 22:05:00',
+        // La app guarda y lee en hora de Colombia: 16:23 es lo que muestra el formulario de ArcGIS.
+        'fecha_registro' => '2026-11-20 16:23:00',
+        'creado_en_origen' => '2026-11-20 16:30:02',
+        'editado_en_origen' => '2026-11-20 17:05:00',
     ]);
 
     $this->actingAs($user)->get(route('operaciones.survey-auditoria.show', $survey))
@@ -242,12 +242,12 @@ test('las fechas de la lista y del detalle se muestran en hora de Colombia, como
         ->assertSee('20/11/2026 04:23 p. m.')
         ->assertDontSee('09:23 p. m.');
 
-    // Lo guardado no cambia: sigue siendo UTC.
+    // 16:23 en Colombia equivale a 21:23 UTC.
     expect($survey->fresh()->fecha_registro->utc()->format('H:i'))->toBe('21:23');
 });
 
-test('un registro de las 7 p. m. en Colombia (00:xx UTC del día siguiente) se muestra en su día', function () {
-    [$user, $survey] = coordinadorConDetalle(['fecha_registro' => '2026-11-21 00:30:00']);
+test('un registro de las 7:30 p. m. en Colombia se muestra en su día y no en el siguiente', function () {
+    [$user, $survey] = coordinadorConDetalle(['fecha_registro' => '2026-11-20 19:30:00']);
 
     $this->actingAs($user)->get(route('operaciones.survey-auditoria.show', $survey))
         ->assertOk()->assertSee('20/11/2026 07:30 pm');

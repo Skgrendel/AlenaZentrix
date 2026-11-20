@@ -98,11 +98,11 @@ test('si la suspensión no se ejecutó no se exigen ni el IVT ni la actividad', 
         ->and(mensajesDeFotos($registro, 'alerta'))->toBe([]);
 });
 
-test('el cambio de formulario se decide por la fecha configurada', function () {
+test('el cambio de formulario se decide por la fecha configurada, que está en UTC (13:21 UTC son las 08:21 en Colombia)', function () {
     $minuto = fn (string $fecha) => registroConFotos($fecha, ['foto_fachada' => 3, 'foto_medidor' => 1]);
 
-    expect(mensajesDeFotos($minuto('2026-11-17 13:20:59')))->toBe(['Hay 0 foto(s) de actividad y se requieren al menos 1.'])
-        ->and(mensajesDeFotos($minuto('2026-11-17 13:21:00')))->toContain('Falta la foto del IVT.');
+    expect(mensajesDeFotos($minuto('2026-11-17 08:20:59')))->toBe(['Hay 0 foto(s) de actividad y se requieren al menos 1.'])
+        ->and(mensajesDeFotos($minuto('2026-11-17 08:21:00')))->toContain('Falta la foto del IVT.');
 });
 
 test('con tener una sola foto nueva el registro se evalúa como formulario nuevo aunque sea anterior a la fecha', function () {
