@@ -35,6 +35,15 @@ return [
         ],
     ],
 
+    // Portal GIS de Surtigas (consulta de datos del contrato).
+    'gis' => [
+        'usuario' => env('KEY_GIS_USER'),
+        'password' => env('KEY_GIS_PASSWORD'),
+        // Debe quedar en true. Solo se apaga (GIS_VERIFICAR_CERTIFICADO=false) como medida temporal
+        // si el certificado del portal falla, y se vuelve a encender cuando se corrija.
+        'verificar_certificado' => filter_var(env('GIS_VERIFICAR_CERTIFICADO', true), FILTER_VALIDATE_BOOLEAN),
+    ],
+
     'survey123' => [
         'usuario' => env('SURVEY123_USUARIO'),
         'password' => env('SURVEY123_PASSWORD'),

@@ -39,7 +39,7 @@ class DataGisServicesToken
     {
         try {
             $Gen_token = 'https://arcgisportal.surtigas.com.co/geaportal/sharing/rest/oauth2/authorize?client_id=arcgisonline&display=default&response_type=token&state=%7B%22returnUrl%22%3A%22https%3A%2F%2Farcgisportal.surtigas.com.co%2Fgeaportal%2Fapps%2Fwebappviewer%2Findex.html%3Fid%3D7f01784d858d43f49acd9fd5bd4b3123%22%2C%22useLandingPage%22%3Afalse%7D&expiration=20160&locale=es-es&redirect_uri=https%3A%2F%2Farcgisportal.surtigas.com.co%2Fgeaportal%2Fhome%2Faccountswitcher-callback.html&force_login=false&hideCancel=true&showSignupOption=true&canHandleCrossOrgSignIn=true&signuptype=esri';
-            $response = Http::withoutVerifying()
+            $response = Http::withOptions(['verify' => config('services.gis.verificar_certificado')])
                 ->withHeaders([
                     'accept' => '*/*',
                     'accept-language' => 'es-419,es;q=0.9,en;q=0.8',
@@ -94,7 +94,7 @@ class DataGisServicesToken
         if ($login) {
             $url = 'https://arcgisportal.surtigas.com.co/geaportal/sharing/oauth2/signin';
             // Use the token in the request
-            $response = Http::withoutVerifying()->withHeaders([
+            $response = Http::withOptions(['verify' => config('services.gis.verificar_certificado')])->withHeaders([
                 'accept' => '*/*',
                 'accept-language' => 'es-419,es;q=0.9,en;q=0.8',
                 'priority' => 'u=1, i',
@@ -113,8 +113,8 @@ class DataGisServicesToken
                 ->post($url, [
                     'oauth_state' => $login,
                     'authorize' => true,
-                    'username' => env('KEY_GIS_USER'),
-                    'password' => env('KEY_GIS_PASSWORD'),
+                    'username' => config('services.gis.usuario'),
+                    'password' => config('services.gis.password'),
                 ]);
 
             // redirect to the URL
@@ -161,7 +161,7 @@ class DataGisServicesToken
             // URL para generar el token con expiración
             $url = "https://arcgisportal.surtigas.com.co/geaportal/sharing/generateToken?request=getToken&serverUrl=https%3A%2F%2Farcgisportal.surtigas.com.co%2Fgeaportal%2Fsharing%2Fservers%2Fa4c5837128a3482f89823d843cc26dde%2Frest%2Fservices%2FIngenieria%2FRedGas%2FFeatureServer%2F34&token=$token&referer=arcgisportal.surtigas.com.co&f=json";
 
-            $response = Http::withoutVerifying()
+            $response = Http::withOptions(['verify' => config('services.gis.verificar_certificado')])
                 ->withHeaders([
                     'accept' => '*/*',
                     'accept-language' => 'es-419,es;q=0.9,en;q=0.8',
