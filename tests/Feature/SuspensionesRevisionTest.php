@@ -294,3 +294,54 @@ it('no muestra la comparación cuando el reporte no tiene referencia', function 
     Livewire::test(ReporteRevisar::class, ['orden' => $orden])
         ->assertDontSee('Reportado por el técnico vs encontrado por el auditor');
 });
+
+it('la pantalla de Auditorías muestra la comparación reportado vs encontrado con el resultado', function () {
+    [$user, $orden, $reporte] = crearReporteSuspensiones([
+        'categoria_campo' => 'residencial',
+        'suspension_ejecutada' => true,
+        'metodo_suspension' => 'taponamiento_acometida',
+        'serie_medidor' => '981797',
+        'lectura_medidor' => '1234',
+        'fotos_fachada' => ['reportes/fachada-1.jpg'],
+    ]);
+
+    $orden->forceFill(['lectura_referencia' => '9999', 'serie_medidor_referencia' => '981797'])->save();
+    app(ComparacionAuditoriaSuspension::class)->compararYGuardar($reporte->fresh());
+
+    $auditoriaRecord = auditoria::create([
+        'reportes_id' => $reporte->id,
+        'estado' => EstadoAuditoria::Confirmado->value,
+        'evidencias' => [],
+        'fecha_auditoria' => now(),
+    ]);
+
+    $this->actingAs($user);
+
+    Livewire::test(AuditoriaRevisar::class, ['auditoria' => $auditoriaRecord])
+        ->assertSee('Reportado por el técnico vs encontrado por el auditor')
+        ->assertSee('Lectura del medidor')
+        ->assertSee('9999')
+        ->assertSee('No coincide')
+        ->assertSee('No conforme');
+});
+
+it('la pantalla de Auditorías no muestra la comparación cuando el reporte no tiene referencia', function () {
+    [$user, , $reporte] = crearReporteSuspensiones([
+        'categoria_campo' => 'residencial',
+        'suspension_ejecutada' => true,
+        'metodo_suspension' => 'taponamiento_acometida',
+        'lectura_medidor' => '1234',
+    ]);
+
+    $auditoriaRecord = auditoria::create([
+        'reportes_id' => $reporte->id,
+        'estado' => EstadoAuditoria::Confirmado->value,
+        'evidencias' => [],
+        'fecha_auditoria' => now(),
+    ]);
+
+    $this->actingAs($user);
+
+    Livewire::test(AuditoriaRevisar::class, ['auditoria' => $auditoriaRecord])
+        ->assertDontSee('Reportado por el técnico vs encontrado por el auditor');
+});

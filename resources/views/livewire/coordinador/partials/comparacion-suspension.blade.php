@@ -27,7 +27,7 @@
             <thead class="text-xs uppercase text-zinc-400">
                 <tr>
                     <th class="py-2 pr-4 font-medium">Campo</th>
-                    <th class="py-2 pr-4 font-medium">Técnico (Survey123)</th>
+                    <th class="py-2 pr-4 font-medium">Técnico (reportado)</th>
                     <th class="py-2 pr-4 font-medium">Auditor</th>
                     <th class="py-2 font-medium">Validar</th>
                 </tr>

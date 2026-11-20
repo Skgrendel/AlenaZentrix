@@ -132,7 +132,7 @@ test('la acción Asignar no aparece para un registro ya asignado', function () {
     Livewire::actingAs($user)
         ->test(SurveyRegistrosIndex::class)
         ->assertTableActionHidden('asignar', $registro->fresh())
-        ->assertTableActionVisible('ver_orden', $registro->fresh());
+        ->assertTableActionVisible('ver_detalle', $registro->fresh());
 });
 
 test('un usuario sin permiso de órdenes no entra a la pantalla', function () {

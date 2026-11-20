@@ -41,6 +41,8 @@ return [
         'portal_url' => env('SURVEY123_PORTAL_URL', 'https://www.arcgis.com'),
         // Disco donde se copian las fotos de los registros ('s3' en producción).
         'disco_fotos' => env('SURVEY123_DISCO_FOTOS', 's3'),
+        // Minutos que deben pasar desde que termina una sincronización para poder lanzar otra desde la pantalla.
+        'espera_sincronizacion_minutos' => (int) env('SURVEY123_ESPERA_MINUTOS', 10),
         'service_url' => env('SURVEY123_SERVICE_URL', 'https://services1.arcgis.com/7TRgQ327rtmQC0Ev/arcgis/rest/services/service_4397fd08af0043c8a7f7aa6eb5947eb8/FeatureServer/0'),
     ],
 

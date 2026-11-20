@@ -784,6 +784,8 @@ class ReportePdfController extends Controller
                 'lectura_medidor' => $ejecutada ? ($datos['lectura_medidor'] ?? null) : null,
                 'lectura_referencia' => $reporte->ordenJob?->lectura_referencia,
                 'lectura_coincide' => $ejecutada ? $reporte->ordenJob?->lecturaCoincide($datos['lectura_medidor'] ?? null) : null,
+                'comparacion' => $reporte->comparacion,
+                'resultado_comparacion' => $reporte->resultado_comparacion,
                 'anomalias_medidor' => $this->resolveNombresAnomalias($datos['anomalias_medidor'] ?? []),
                 'condicion_sellos' => $datos['condicion_sellos'] ?? null,
                 'elementos_rotos' => $datos['elementos_rotos'] ?? null,

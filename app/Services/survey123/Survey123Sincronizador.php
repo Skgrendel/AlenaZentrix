@@ -21,15 +21,24 @@ class Survey123Sincronizador
     /**
      * @return array{nuevos: int, actualizados: int, sin_cambios: int, fotos: int, errores: int}
      */
-    public function sincronizar(string $companyId, ?Carbon $desde = null, bool $conFotos = true): array
+    public function sincronizar(string $companyId, ?Carbon $desde = null, bool $conFotos = true, ?callable $progreso = null): array
     {
+        $resumen = ['nuevos' => 0, 'actualizados' => 0, 'sin_cambios' => 0, 'fotos' => 0, 'errores' => 0];
+
+        $avisar = function (string $etapa) use (&$resumen, $progreso): void {
+            if ($progreso !== null) {
+                $progreso($resumen, $etapa);
+            }
+        };
+
+        $avisar('Consultando los registros');
+
         $mapeador = new Survey123Mapeador($this->cliente->metadatos());
 
         $where = $desde
             ? "{$mapeador->campoEdicion()} >= timestamp '{$desde->copy()->utc()->format('Y-m-d H:i:s')}'"
             : '1=1';
 
-        $resumen = ['nuevos' => 0, 'actualizados' => 0, 'sin_cambios' => 0, 'fotos' => 0, 'errores' => 0];
         $lote = [];
 
         foreach ($this->cliente->registros($where, $mapeador->campoId()) as $feature) {
@@ -37,6 +46,7 @@ class Survey123Sincronizador
 
             if (count($lote) === 50) {
                 $this->procesarLote($lote, $companyId, $conFotos, $resumen);
+                $avisar('Guardando registros y fotos');
                 $lote = [];
             }
         }
@@ -44,6 +54,8 @@ class Survey123Sincronizador
         if ($lote !== []) {
             $this->procesarLote($lote, $companyId, $conFotos, $resumen);
         }
+
+        $avisar('Finalizando');
 
         return $resumen;
     }

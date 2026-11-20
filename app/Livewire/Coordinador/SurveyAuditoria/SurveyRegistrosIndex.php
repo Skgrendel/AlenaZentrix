@@ -4,11 +4,15 @@ namespace App\Livewire\Coordinador\SurveyAuditoria;
 
 use App\Enums\EstadoSurveyRegistro;
 use App\Exports\SurveyAuditoria\SurveyAuditoriaExport;
+use App\Jobs\SincronizarSurvey123Job;
 use App\Models\personals;
 use App\Models\SurveyRegistro;
 use App\Services\coordinador\AsignarAuditoriaSurveyService;
+use App\Services\survey123\EstadoSincronizacion;
+use App\Services\TenantService;
 use DomainException;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\Concerns\InteractsWithActions;
@@ -28,6 +32,7 @@ use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Maatwebsite\Excel\Excel as TipoExcel;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -112,6 +117,13 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ),
             ])
             ->headerActions([
+                Action::make('sincronizar_survey')
+                    ->label(fn (): string => $this->sincronizacionEnCurso() ? 'Sincronizando…' : 'Sincronizar registros')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('primary')
+                    ->visible(fn (): bool => $this->puedeAsignar())
+                    ->disabled(fn (): bool => $this->sincronizacionEnCurso() || $this->segundosDeEsperaParaSincronizar() > 0)
+                    ->action(fn () => $this->iniciarSincronizacion()),
                 Action::make('exportar_excel')
                     ->label('Exportar Excel')
                     ->icon('heroicon-o-arrow-down-tray')
@@ -120,19 +132,26 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ->action(fn (): BinaryFileResponse => $this->exportar($this->getFilteredTableQuery())),
             ])
             ->actions([
-                Action::make('ver_detalle')
-                    ->label('Ver detalle')
-                    ->icon('heroicon-o-photo')
+                ActionGroup::make([
+                    Action::make('ver_detalle')
+                        ->label('Ver detalle')
+                        ->icon('heroicon-o-photo')
+                        ->color('gray')
+                        ->url(fn (SurveyRegistro $record): string => route('operaciones.survey-auditoria.show', $record)),
+                    Action::make('hallazgos')
+                        ->label('Hallazgos')
+                        ->icon('heroicon-o-exclamation-triangle')
+                        ->color('gray')
+                        ->modalHeading(fn (SurveyRegistro $record): string => "Hallazgos de la auditoría: OT {$record->orden_trabajo}")
+                        ->modalContent(fn (SurveyRegistro $record) => view('livewire.coordinador.survey-auditoria.hallazgos', ['registro' => $record]))
+                        ->modalSubmitAction(false)
+                        ->modalCancelActionLabel('Cerrar'),
+                ])
+                    ->label('Detalle')
+                    ->icon('heroicon-m-chevron-down')
+                    ->iconPosition('after')
                     ->color('gray')
-                    ->url(fn (SurveyRegistro $record): string => route('operaciones.survey-auditoria.show', $record)),
-                Action::make('hallazgos')
-                    ->label('Hallazgos')
-                    ->icon('heroicon-o-exclamation-triangle')
-                    ->color('gray')
-                    ->modalHeading(fn (SurveyRegistro $record): string => "Hallazgos de la auditoría: OT {$record->orden_trabajo}")
-                    ->modalContent(fn (SurveyRegistro $record) => view('livewire.coordinador.survey-auditoria.hallazgos', ['registro' => $record]))
-                    ->modalSubmitAction(false)
-                    ->modalCancelActionLabel('Cerrar'),
+                    ->button(),
                 Action::make('asignar')
                     ->label('Asignar')
                     ->icon('heroicon-o-user-plus')
@@ -145,12 +164,6 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ->action(function (SurveyRegistro $record, array $data): void {
                         $this->asignarRegistros(collect([$record]), $data);
                     }),
-                Action::make('ver_orden')
-                    ->label('Ver orden')
-                    ->icon('heroicon-o-eye')
-                    ->color('gray')
-                    ->visible(fn (SurveyRegistro $record): bool => $record->ordenes->isNotEmpty())
-                    ->url(fn (SurveyRegistro $record): string => route('operaciones.ordenes-trabajo.show', $record->ordenes->sortByDesc('created_at')->first())),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -175,7 +188,7 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                 ]),
             ])
             ->emptyStateHeading('Sin registros de suspensiones')
-            ->emptyStateDescription('Aún no hay registros de Survey123 para auditar.')
+            ->emptyStateDescription('Aún no hay registros para auditar.')
             ->emptyStateIcon('heroicon-o-clipboard-document-check')
             ->defaultSort('fecha_registro', 'desc');
     }
@@ -212,7 +225,14 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
 
         $registros = $registros->withoutGlobalScopes()->where('survey_registros.company_id', $companyId);
 
-        return Excel::download(new SurveyAuditoriaExport($registros), SurveyAuditoriaExport::nombreDeArchivo());
+        SurveyAuditoriaExport::ampliarRecursos();
+
+        return Excel::download(
+            new SurveyAuditoriaExport($registros),
+            SurveyAuditoriaExport::nombreDeArchivo(),
+            TipoExcel::XLSX,
+            ['Content-Type' => SurveyAuditoriaExport::TIPO_MIME],
+        );
     }
 
     /** @return array<int, mixed> */
@@ -275,8 +295,88 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
         }
     }
 
+    /** Inicio de la última sincronización de la que ya se avisó, para no repetir la notificación. */
+    public ?string $sincronizacionAvisada = null;
+
+    private function empresaId(): ?string
+    {
+        return app(TenantService::class)->id() ?? auth()->user()?->company_id;
+    }
+
+    private function sincronizacionEnCurso(): bool
+    {
+        $empresa = $this->empresaId();
+
+        return $empresa !== null && app(EstadoSincronizacion::class)->enCurso($empresa);
+    }
+
+    private function segundosDeEsperaParaSincronizar(): int
+    {
+        $empresa = $this->empresaId();
+
+        return $empresa === null ? 0 : app(EstadoSincronizacion::class)->segundosDeEspera($empresa);
+    }
+
+    private function iniciarSincronizacion(): void
+    {
+        abort_unless($this->puedeAsignar(), 403);
+
+        $empresa = $this->empresaId();
+        abort_if($empresa === null, 403);
+
+        $motivo = app(EstadoSincronizacion::class)->iniciar($empresa, auth()->user()?->name);
+
+        if ($motivo !== null) {
+            Notification::make()->title('No se inició la sincronización')->body($motivo)->warning()->send();
+
+            return;
+        }
+
+        SincronizarSurvey123Job::dispatch($empresa);
+
+        Notification::make()
+            ->title('Sincronización iniciada')
+            ->body('Puedes seguir trabajando: te avisaremos cuando termine.')
+            ->info()
+            ->send();
+    }
+
+    /** Se ejecuta cada pocos segundos mientras hay una sincronización en curso. */
+    public function verificarSincronizacion(): void
+    {
+        $empresa = $this->empresaId();
+        $estado = $empresa === null ? null : app(EstadoSincronizacion::class)->estado($empresa);
+
+        if ($estado === null
+            || ! in_array($estado['estado'], [EstadoSincronizacion::TERMINADO, EstadoSincronizacion::ERROR], true)
+            || $estado['inicio'] === $this->sincronizacionAvisada) {
+            return;
+        }
+
+        $this->sincronizacionAvisada = $estado['inicio'];
+
+        if ($estado['estado'] === EstadoSincronizacion::ERROR) {
+            Notification::make()->title('La sincronización falló')->body($estado['mensaje'])->danger()->persistent()->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->title('Sincronización terminada')
+            ->body("{$estado['nuevos']} nuevos, {$estado['actualizados']} actualizados, {$estado['fotos']} fotos copiadas.")
+            ->success()
+            ->send();
+    }
+
     public function render(): View
     {
-        return view('livewire.coordinador.survey-auditoria.survey-registros-index');
+        $empresa = $this->empresaId();
+        $estado = $empresa === null ? null : app(EstadoSincronizacion::class)->estado($empresa);
+
+        return view('livewire.coordinador.survey-auditoria.survey-registros-index', [
+            'sincronizacion' => $estado,
+            'sincronizando' => $this->sincronizacionEnCurso(),
+            'esperaSegundos' => $this->segundosDeEsperaParaSincronizar(),
+        ]);
     }
 }

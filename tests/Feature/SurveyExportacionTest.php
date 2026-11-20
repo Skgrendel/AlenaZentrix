@@ -3,6 +3,7 @@
 use App\Enums\EstadoSurveyRegistro;
 use App\Enums\TipoServicio;
 use App\Exports\SurveyAuditoria\FiltrosSurveyExportacion;
+use App\Exports\SurveyAuditoria\HojaAuditoriaExport;
 use App\Exports\SurveyAuditoria\SurveyAuditoriaExport;
 use App\Livewire\Coordinador\SurveyAuditoria\SurveyRegistrosIndex;
 use App\Models\Company;
@@ -14,6 +15,7 @@ use App\Models\SurveyRegistro;
 use App\Models\ubicacion;
 use App\Models\User;
 use App\Services\coordinador\DataGisServices;
+use App\Services\survey123\AuditoriaSurveyRegistro;
 use Database\Seeders\PermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -564,11 +566,11 @@ test('el comando usa la carpeta exportaciones por defecto', function () {
     $empresa = Company::factory()->create();
     registroExportable($empresa);
 
-    $antes = glob(storage_path('app/exportaciones/survey123-*.xlsx')) ?: [];
+    $antes = glob(storage_path('app/exportaciones/auditoria-suspensiones-*.xlsx')) ?: [];
 
     $this->artisan('survey123:exportar')->assertSuccessful();
 
-    $nuevos = array_diff(glob(storage_path('app/exportaciones/survey123-*.xlsx')) ?: [], $antes);
+    $nuevos = array_diff(glob(storage_path('app/exportaciones/auditoria-suspensiones-*.xlsx')) ?: [], $antes);
     expect($nuevos)->toHaveCount(1);
 
     array_map('unlink', $nuevos);
@@ -609,10 +611,6 @@ test('exporta 5.000 registros por bloques sin agotar la memoria', function () {
 
     expect(SurveyRegistro::query()->withoutGlobalScopes()->count())->toBe(5000);
 
-    if (getenv('EXP_CACHE')) {
-        config(['excel.cache.driver' => 'illuminate', 'excel.cache.illuminate.store' => 'file']);
-        app(\Maatwebsite\Excel\SettingsProvider::class)->provide();
-    }
     Storage::fake('local');
     unset($filas, $adjuntos);
     gc_collect_cycles();
@@ -630,6 +628,445 @@ test('exporta 5.000 registros por bloques sin agotar la memoria', function () {
     $ruta = Storage::disk('local')->path('volumen.xlsx');
     $info = collect(IOFactory::createReader('Xlsx')->listWorksheetInfo($ruta))->pluck('totalRows', 'worksheetName');
 
-    expect((int) $info['Auditoría'])->toBe(5001)
+    $filasAuditoria = (int) $info['Auditoría'];
+    Storage::disk('local')->delete('volumen.xlsx');
+    unset($info);
+    gc_collect_cycles();
+
+    expect($filasAuditoria)->toBe(5001)
         ->and($picoMb)->toBeLessThan(512);
+});
+
+/**
+ * Valores de las columnas «Validar ▸ …» de una fila de la hoja Auditoría.
+ *
+ * @param  array<string, mixed>  $fila
+ * @return array<string, string>
+ */
+function validacionesDe(array $fila): array
+{
+    return collect($fila)
+        ->filter(fn ($valor, $encabezado) => str_starts_with((string) $encabezado, 'Validar ▸ ') && $valor !== null)
+        ->mapWithKeys(fn ($valor, $encabezado) => [substr((string) $encabezado, strlen('Validar ▸ ')) => $valor])
+        ->all();
+}
+
+/** @return array<string, array<int, string>> campo del hallazgo => columnas donde debe aparecer */
+function columnasPorCampo(): array
+{
+    $actividad = 'Fotografías de la suspensión, reconexión ejecutada o novedad encontrada';
+
+    return [
+        'tecnico' => ['Nombre del Técnico'],
+        'contrato' => ['Contrato'],
+        'orden_trabajo' => ['Orden de Trabajo'],
+        'categoria' => ['Categoría en campo'],
+        'serie_medidor' => ['Serie de medidor instalado'],
+        'lectura_medidor' => ['Lectura del medidor instalado'],
+        'fecha_registro' => ['Fecha de registro'],
+        'actividad' => ['¿Qué actividad va a ejecutar?'],
+        'suspension_ejecutada' => ['¿Se pudo ejecutar la suspensión?'],
+        'metodo_suspension' => ['¿Método de suspensión instalado?'],
+        'serie_sonda' => ['Serie de la sonda utilizada'],
+        'serie_caps' => ['Serie del Caps'],
+        'motivo_no_ejecucion' => ['Motivo por el cual no se pudo ejecutar la suspensión'],
+        'justificacion' => ['JUSTIFICACIÓN'],
+        'foto_fachada' => ['Fotografías de la fachada (3 fotos)'],
+        'fotos' => ['Fotografías de la fachada (3 fotos)'],
+        'foto_medidor' => ['Fotografías del medidor'],
+        'foto_actividad' => [$actividad],
+        'ubicacion' => ['x', 'y'],
+    ];
+}
+
+/** @return array<int, array{0: string, 1: string}> celdas [hoja, coordenada] que son fórmula o texto peligroso sin protección */
+function celdasDeTextoSinProteger(Spreadsheet $libro): array
+{
+    $sinProteger = [];
+
+    foreach ($libro->getAllSheets() as $hoja) {
+        foreach ($hoja->getCellCollection()->getCoordinates() as $coordenada) {
+            $celda = $hoja->getCell($coordenada);
+            $valor = $celda->getValue();
+
+            if ($celda->getDataType() === DataType::TYPE_FORMULA) {
+                $sinProteger[] = [$hoja->getTitle(), $coordenada];
+            } elseif (is_string($valor) && preg_match('/^[=+\-@\t\r]/', $valor) === 1 && ! $celda->getStyle()->getQuotePrefix()) {
+                $sinProteger[] = [$hoja->getTitle(), $coordenada];
+            }
+        }
+    }
+
+    return $sinProteger;
+}
+
+function libroDeDescarga($componente): Spreadsheet
+{
+    $ruta = tempnam(sys_get_temp_dir(), 'sx').'.xlsx';
+    file_put_contents($ruta, base64_decode($componente->effects['download']['content']));
+
+    try {
+        return IOFactory::load($ruta);
+    } finally {
+        @unlink($ruta);
+    }
+}
+
+test('todo campo de hallazgo que produce la auditoría tiene una columna Validar', function () {
+    $fuente = file_get_contents(app_path('Services/survey123/AuditoriaSurveyRegistro.php'));
+    preg_match_all("/->hallazgo\('[a-z_]+', self::(?:ERROR|ALERTA), '([a-z_]+)'/", $fuente, $coincidencias);
+
+    $campos = array_unique(array_merge(
+        $coincidencias[1],
+        ['serie_sonda', 'serie_caps'],
+        array_keys(config('survey_auditoria.parametros.fotos_minimas')),
+    ));
+
+    $cubiertos = (new HojaAuditoriaExport(SurveyRegistro::query()))->camposValidados();
+
+    expect($coincidencias[1])->not->toBeEmpty()
+        ->and(array_diff($campos, $cubiertos))->toBe([])
+        ->and(array_diff(array_keys(columnasPorCampo()), $campos))->toBe([]);
+});
+
+test('cada hallazgo aterriza solo en la columna Validar de su campo', function () {
+    $empresa = Company::factory()->create();
+    $porOt = [];
+
+    foreach (array_keys(columnasPorCampo()) as $i => $campo) {
+        $ot = 300000100 + $i;
+        $porOt[$ot] = $campo;
+        auditadoCon(registroExportable($empresa, ['orden_trabajo' => (string) $ot]), [
+            ['regla_'.$campo, 'error', $campo, "mensaje-{$campo}"],
+            ['regla_'.$campo, 'alerta', $campo, "aviso-{$campo}"],
+        ]);
+    }
+
+    $filas = collect(filasDeHoja(libroDe(exportacionDe($empresa))->getSheetByName('Auditoría')))->keyBy('Orden de Trabajo');
+
+    foreach (columnasPorCampo() as $campo => $columnas) {
+        $ot = array_search($campo, $porOt, true);
+        $validaciones = validacionesDe($filas[$ot]);
+        $conMensaje = array_keys(array_filter($validaciones, fn ($v) => str_contains($v, "mensaje-{$campo}") && str_contains($v, "aviso-{$campo}")));
+
+        expect($conMensaje)->toBe($columnas, "El campo {$campo} debe verse solo en: ".implode(', ', $columnas));
+
+        foreach ($columnas as $columna) {
+            expect($validaciones[$columna])->toBe("✖ mensaje-{$campo} | ⚠ aviso-{$campo}");
+        }
+
+        expect($filas[$ot]['Errores ✖'])->toBe(1)->and($filas[$ot]['Alertas ⚠'])->toBe(1);
+    }
+});
+
+test('con la auditoría real, ningún hallazgo se pierde en el libro', function () {
+    $empresa = Company::factory()->create();
+
+    $registro = registroExportable($empresa, [
+        'tecnico' => 'Luis',
+        'contrato' => 'abc',
+        'orden_trabajo' => '12',
+        'categoria' => 'otra',
+        'actividad' => 'reconexion',
+        'suspension_ejecutada' => true,
+        'metodo_suspension' => 'sonda_ips',
+        'serie_medidor' => null,
+        'lectura_medidor' => '-4',
+        'serie_sonda' => null,
+        'serie_caps' => '0',
+        'justificacion' => 'corta',
+        'latitud' => null,
+        'longitud' => null,
+        'fecha_registro' => now()->addDay(),
+    ]);
+
+    foreach (['a.jpg', 'b.jpg'] as $n => $nombre) {
+        SurveyAdjunto::create(['survey_registro_id' => $registro->id, 'attachment_id' => $n + 1, 'campo' => 'foto_fachada', 'nombre' => $nombre, 'hash' => 'h1']);
+    }
+
+    app(AuditoriaSurveyRegistro::class)->auditarYGuardar($registro);
+    $hallazgos = $registro->fresh()->hallazgos;
+
+    $fila = filasDeHoja(libroDe(exportacionDe($empresa))->getSheetByName('Auditoría'))[0];
+    $textoValidaciones = implode(' || ', validacionesDe($fila));
+
+    expect(count($hallazgos))->toBeGreaterThan(10)
+        ->and(collect($hallazgos)->pluck('campo')->unique()->count())->toBeGreaterThan(8);
+
+    foreach ($hallazgos as $hallazgo) {
+        expect($textoValidaciones)->toContain($hallazgo['mensaje']);
+    }
+
+    expect($fila['Errores ✖'])->toBe($registro->fresh()->total_errores)
+        ->and($fila['Alertas ⚠'])->toBe($registro->fresh()->total_alertas);
+});
+
+test('los colores de fila con errores y con alertas están en el archivo', function () {
+    $empresa = Company::factory()->create();
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-01 10:00:00']), [['lectura', 'error', 'lectura_medidor', 'b']]);
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000002', 'fecha_registro' => '2026-11-02 10:00:00']), [['fecha', 'alerta', 'fecha_registro', 'a']]);
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000003', 'fecha_registro' => '2026-11-03 10:00:00']));
+
+    $hoja = libroDe(exportacionDe($empresa))->getSheetByName('Auditoría');
+
+    expect($hoja->getHighestColumn())->toBe('AX');
+
+    $condicionales = $hoja->getConditionalStyles('A2');
+    expect($condicionales)->toHaveCount(2)
+        ->and($condicionales[0]->getConditions()[0])->toContain('$AX2')->toContain('Con errores')
+        ->and($condicionales[0]->getStyle()->getFill()->getEndColor()->getRGB())->toBe('FDE2E2')
+        ->and($condicionales[1]->getConditions()[0])->toContain('Con alertas')
+        ->and($condicionales[1]->getStyle()->getFill()->getEndColor()->getRGB())->toBe('FFF1CC')
+        ->and($hoja->getConditionalStyles('AW4'))->not->toBeEmpty();
+
+    $relleno = fn (string $celda) => $hoja->getStyle($celda)->getFill()->getFillType() === 'solid'
+        ? $hoja->getStyle($celda)->getFill()->getStartColor()->getRGB()
+        : null;
+
+    expect([$relleno('AV2'), $relleno('AW2'), $relleno('AX2')])->toBe(['FDE2E2', 'FDE2E2', 'FDE2E2'])
+        ->and([$relleno('AV3'), $relleno('AX3')])->toBe(['FFF1CC', 'FFF1CC'])
+        ->and([$relleno('AV4'), $relleno('AX4')])->toBe([null, null])
+        ->and($relleno('A1'))->toBe('1F3864')
+        ->and($relleno('B1'))->toBe('2E7D32')
+        ->and($relleno('AX1'))->toBe('7F1D1D');
+});
+
+test('la hoja de visitas replica conforme, no conforme y no verificable fila a fila', function () {
+    $empresa = Company::factory()->create();
+    Carbon::setTestNow('2026-11-10 10:00:00');
+    $conforme = visitaDeAuditoria(registroExportable($empresa, ['orden_trabajo' => '300000001', 'contrato' => '111111', 'serie_medidor' => '555555', 'lectura_medidor' => '100', 'categoria' => 'comercial']), [], 'Ana');
+
+    Carbon::setTestNow('2026-11-10 11:00:00');
+    $noConforme = visitaDeAuditoria(registroExportable($empresa, ['orden_trabajo' => '300000002', 'contrato' => '222222', 'serie_medidor' => '666666', 'lectura_medidor' => '200']), ['serie_medidor' => '123456', 'lectura_medidor' => null], 'Beto');
+
+    Carbon::setTestNow('2026-11-10 12:00:00');
+    $noVerificable = visitaDeAuditoria(registroExportable($empresa, ['orden_trabajo' => '300000003', 'contrato' => '333333']), ['suspension_ejecutada' => false, 'metodo_suspension' => null, 'motivo_no_ejecucion' => 'predio_cerrado'], 'Carla');
+    Carbon::setTestNow();
+
+    expect([$conforme->resultado_comparacion, $noConforme->resultado_comparacion, $noVerificable->resultado_comparacion])
+        ->toBe(['conforme', 'no_conforme', 'no_verificable']);
+
+    $hoja = libroDe(exportacionDe($empresa))->getSheetByName('Visitas de auditoría');
+    [$a, $b, $c] = filasDeHoja($hoja);
+
+    expect($hoja->getCell('E2')->getFormattedValue())->toBe('2026-11-10 10:00:00')
+        ->and($hoja->getCell('E4')->getFormattedValue())->toBe('2026-11-10 12:00:00');
+
+    expect($a['OT original'])->toBe(300000001)
+        ->and($a['Contrato'])->toBe(111111)
+        ->and($a['Auditor'])->toBe('Ana Pérez')
+        ->and($a['Resultado final'])->toBe('Conforme')
+        ->and($a['¿Suspensión ejecutada? (reportado)'])->toBe('Sí')
+        ->and($a['¿Suspensión ejecutada? (encontrado)'])->toBe('Sí')
+        ->and($a['Validar ▸ ¿Suspensión ejecutada?'])->toBe('Coincide')
+        ->and($a['Método de suspensión (reportado)'])->toBe('Taponamiento de acometida')
+        ->and($a['Validar ▸ Método de suspensión'])->toBe('Coincide')
+        ->and($a['Serie del medidor (reportado)'])->toEqual('555555')
+        ->and($a['Validar ▸ Serie del medidor'])->toBe('Coincide')
+        ->and($a['Validar ▸ Lectura del medidor'])->toBe('Coincide')
+        ->and($a['Validar ▸ Ubicación de la visita'])->toBe('Coincide')
+        ->and($a['Categoría (reportado)'])->toBe('Comercial')
+        ->and($a['Validar ▸ Categoría'])->toBe('Coincide')
+        ->and($a['Alertas (campos no críticos)'])->toBe(0);
+
+    expect($b['Auditor'])->toBe('Beto Pérez')
+        ->and($b['Resultado final'])->toBe('No conforme')
+        ->and($b['Serie del medidor (reportado)'])->toEqual('666666')
+        ->and($b['Serie del medidor (encontrado)'])->toEqual('123456')
+        ->and($b['Validar ▸ Serie del medidor'])->toBe('✖ No coincide')
+        ->and($b['Lectura del medidor (reportado)'])->toEqual('200')
+        ->and($b['Lectura del medidor (encontrado)'])->toBeNull()
+        ->and($b['Validar ▸ Lectura del medidor'])->toBe('⚠ Sin dato');
+
+    expect($c['Auditor'])->toBe('Carla Pérez')
+        ->and($c['Resultado final'])->toBe('No verificable')
+        ->and($c['¿Suspensión ejecutada? (reportado)'])->toBe('Sí')
+        ->and($c['¿Suspensión ejecutada? (encontrado)'])->toBe('No')
+        ->and($c['Validar ▸ ¿Suspensión ejecutada?'])->toBe('✖ No coincide')
+        ->and($c['Validar ▸ Método de suspensión'])->toBeNull();
+
+    $condicionales = $hoja->getConditionalStyles('A2');
+    expect($condicionales[0]->getConditions()[0])->toContain('No conforme')
+        ->and($condicionales[1]->getConditions()[0])->toContain('No verificable');
+});
+
+test('el resumen ordena las reglas por frecuencia y cuenta registros afectados', function () {
+    $empresa = Company::factory()->create();
+    auditadoCon(registroExportable($empresa), [['fecha', 'alerta', 'fecha_registro', 'a'], ['lectura', 'error', 'lectura_medidor', 'b'], ['lectura', 'error', 'lectura_medidor', 'c']]);
+    auditadoCon(registroExportable($empresa), [['lectura', 'error', 'lectura_medidor', 'b']]);
+    auditadoCon(registroExportable($empresa), [['fotos_minimas', 'error', 'foto_fachada', 'x']]);
+
+    $filas = libroDe(exportacionDe($empresa))->getSheetByName('Resumen')->toArray(null, false, false, false);
+    $inicio = collect($filas)->search(fn ($f) => $f[0] === 'Regla');
+    $reglas = collect(array_slice($filas, $inicio + 1, 3))->map(fn ($f) => array_slice($f, 0, 4))->all();
+
+    expect($reglas)->toBe([['lectura', 'Error', 3, 2], ['fecha', 'Alerta', 1, 1], ['fotos_minimas', 'Error', 1, 1]]);
+});
+
+test('ninguna celda de texto de Survey123 se interpreta como fórmula, en ninguna hoja', function () {
+    $empresa = Company::factory()->create();
+    $malo = "=cmd|' /C calc'!A0";
+
+    $registro = auditadoCon(registroExportable($empresa, [
+        'tecnico' => '=1+1',
+        'contrato' => '@contrato',
+        'orden_trabajo' => '+orden',
+        'categoria' => '-categoria',
+        'actividad' => "\t=actividad",
+        'metodo_suspension' => '=metodo',
+        'serie_medidor' => '=serie',
+        'lectura_medidor' => '@lectura',
+        'serie_sonda' => '+sonda',
+        'serie_caps' => '-caps',
+        'motivo_no_ejecucion' => '=motivo',
+        'justificacion' => $malo,
+        'global_id' => '=global',
+    ]), [['lectura', 'error', 'lectura_medidor', $malo]]);
+
+    visitaDeAuditoria($registro, ['serie_medidor' => $malo, 'lectura_medidor' => '@x', 'categoria_campo' => '=cat'], '=evil');
+
+    $libro = libroDe(exportacionDe($empresa));
+    $protegidas = 0;
+
+    foreach ($libro->getAllSheets() as $h) {
+        foreach ($h->getCellCollection()->getCoordinates() as $coordenada) {
+            $valor = $h->getCell($coordenada)->getValue();
+            $protegidas += is_string($valor) && preg_match('/^[=+\-@\t\r]/', $valor) === 1 ? 1 : 0;
+        }
+    }
+
+    expect(celdasDeTextoSinProteger($libro))->toBe([])
+        ->and($protegidas)->toBeGreaterThanOrEqual(12)
+        ->and($libro->getSheetByName('Auditoría')->getCell('G2')->getValue())->toBe('=1+1')
+        ->and($libro->getSheetByName('Visitas de auditoría')->getCell('D2')->getValue())->toBe('=evil Pérez')
+        ->and(collect($libro->getSheetByName('Resumen')->toArray(null, false, false, false))->pluck(0))->toContain('=1+1');
+});
+
+test('Exportar Excel respeta el filtro de estado y entrega un xlsx con nombre y tipo correctos', function () {
+    $user = usuarioConRol('Coordinador');
+    registroExportable($user->company, ['orden_trabajo' => '300000001']);
+    registroExportable($user->company, ['orden_trabajo' => '300000002', 'estado' => EstadoSurveyRegistro::Asignado]);
+
+    $componente = Livewire::actingAs($user)
+        ->test(SurveyRegistrosIndex::class)
+        ->filterTable('estado', 'asignado')
+        ->callTableAction('exportar_excel');
+
+    $componente->assertFileDownloaded();
+
+    expect($componente->effects['download']['name'])->toMatch('/^auditoria-suspensiones-\d{8}-\d{6}\.xlsx$/')
+        ->and($componente->effects['download']['contentType'])->toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+    $ots = collect(filasDeHoja(libroDeDescarga($componente)->getSheetByName('Auditoría')))->pluck('Orden de Trabajo')->all();
+    expect($ots)->toBe([300000002]);
+});
+
+test('un usuario de otra empresa solo exporta lo suyo, aunque seleccione registros ajenos', function () {
+    $usuarioA = usuarioConRol('Coordinador');
+    $usuarioB = usuarioConRol('Coordinador');
+
+    $deA = registroExportable($usuarioA->company, ['orden_trabajo' => '300000001']);
+    registroExportable($usuarioB->company, ['orden_trabajo' => '300000002']);
+
+    $todo = Livewire::actingAs($usuarioB)->test(SurveyRegistrosIndex::class)->callTableAction('exportar_excel');
+    expect(collect(filasDeHoja(libroDeDescarga($todo)->getSheetByName('Auditoría')))->pluck('Orden de Trabajo')->all())->toBe([300000002]);
+
+    $ajeno = Livewire::actingAs($usuarioB)->test(SurveyRegistrosIndex::class)->callTableBulkAction('exportar_seleccionados', [$deA]);
+    expect(filasDeHoja(libroDeDescarga($ajeno)->getSheetByName('Auditoría')))->toBeEmpty();
+});
+
+test('el comando acepta cada opción por separado', function () {
+    $empresa = Company::factory()->create();
+    registroExportable($empresa, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-01 10:00:00']);
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000002', 'fecha_registro' => '2026-11-05 10:00:00', 'estado' => EstadoSurveyRegistro::Asignado]), [['fecha', 'alerta', 'fecha_registro', 'a']]);
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000003', 'fecha_registro' => '2026-11-09 10:00:00']), [['lectura', 'error', 'lectura_medidor', 'b']]);
+
+    $raiz = sys_get_temp_dir().'/exp-'.Str::random(8);
+    $directorio = "{$raiz}/no/existe/aun";
+
+    $casos = [
+        [['--desde' => '2026-11-05'], 2],
+        [['--hasta' => '2026-11-05'], 2],
+        [['--estado' => 'pendiente'], 2],
+        [['--estado' => 'asignado'], 1],
+        [['--con-errores' => true], 1],
+        [['--con-alertas' => true], 1],
+        [['--company' => $empresa->id], 3],
+    ];
+
+    foreach ($casos as $n => [$opciones, $esperados]) {
+        $this->artisan('survey123:exportar', $opciones + ['--salida' => "{$directorio}/caso{$n}.xlsx"])
+            ->expectsOutputToContain("{$esperados} registros exportados")
+            ->assertSuccessful();
+
+        expect(filasDeHoja(IOFactory::load("{$directorio}/caso{$n}.xlsx")->getSheetByName('Auditoría')))->toHaveCount($esperados);
+    }
+
+    File::deleteDirectory($raiz);
+});
+
+test('el comando falla con fechas inválidas sin crear el archivo', function () {
+    Company::factory()->create();
+    $ruta = sys_get_temp_dir().'/exp-'.Str::random(8).'.xlsx';
+
+    $this->artisan('survey123:exportar', ['--desde' => 'no-es-fecha', '--salida' => $ruta])->assertFailed();
+    $this->artisan('survey123:exportar', ['--hasta' => '31/31/2026', '--salida' => $ruta])->assertFailed();
+
+    expect(file_exists($ruta))->toBeFalse();
+});
+
+test('la cantidad de consultas no crece con el número de registros', function () {
+    config(['excel.exports.chunk_size' => 50]);
+
+    $consultas = function (int $cantidad): int {
+        $empresa = Company::factory()->create();
+
+        foreach (range(1, $cantidad) as $i) {
+            $registro = auditadoCon(registroExportable($empresa, ['orden_trabajo' => (string) (310000000 + $i)]), [['lectura', 'error', 'lectura_medidor', 'b']]);
+            SurveyAdjunto::create(['survey_registro_id' => $registro->id, 'attachment_id' => $i, 'campo' => 'foto_medidor', 'nombre' => "{$i}.jpg"]);
+
+            if ($i % 20 === 0) {
+                visitaDeAuditoria($registro);
+            }
+        }
+
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        Excel::raw(exportacionDe($empresa), TipoExcel::XLSX);
+        $total = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        return $total;
+    };
+
+    $pequeno = $consultas(40);
+    $grande = $consultas(200);
+
+    expect($grande)->toBeLessThanOrEqual($pequeno + 6);
+});
+
+test('las fechas salen con la hora de la zona de la aplicación, sin desfase', function () {
+    $zonaOriginal = date_default_timezone_get();
+
+    try {
+        foreach (['UTC', 'America/Bogota'] as $zona) {
+            date_default_timezone_set($zona);
+            config(['app.timezone' => $zona]);
+            Carbon::setTestNow(Carbon::parse('2026-11-10 10:00:00', $zona));
+
+            $empresa = Company::factory()->create();
+            $registro = registroExportable($empresa, ['fecha_registro' => '2026-11-10 07:45:00', 'creado_en_origen' => '2026-11-10 08:00:00', 'editado_en_origen' => '2026-11-10 09:30:00']);
+            visitaDeAuditoria($registro);
+
+            $libro = libroDe(exportacionDe($empresa));
+
+            expect($libro->getSheetByName('Auditoría')->getCell('E2')->getFormattedValue())->toBe('2026-11-10 07:45:00', $zona)
+                ->and($libro->getSheetByName('Auditoría')->getCell('AM2')->getFormattedValue())->toBe('2026-11-10 08:00:00')
+                ->and($libro->getSheetByName('Auditoría')->getCell('AO2')->getFormattedValue())->toBe('2026-11-10 09:30:00')
+                ->and($libro->getSheetByName('Visitas de auditoría')->getCell('E2')->getFormattedValue())->toBe('2026-11-10 10:00:00');
+        }
+    } finally {
+        date_default_timezone_set($zonaOriginal);
+        Carbon::setTestNow();
+    }
 });

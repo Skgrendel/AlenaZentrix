@@ -19,16 +19,13 @@
         </div>
         <div class="flex flex-wrap items-center gap-2">
             <flux:button :href="route('operaciones.survey-auditoria.index')" icon="arrow-left" size="sm" wire:navigate>Volver a la lista</flux:button>
-            @if ($orden)
-                <flux:button :href="route('operaciones.ordenes-trabajo.show', $orden)" icon="clipboard-document-list" variant="primary" size="sm">Ver orden de auditoría</flux:button>
-            @endif
         </div>
     </div>
 
     <div class="grid items-stretch gap-5 lg:grid-cols-3">
         {{-- Datos reportados por el técnico --}}
         <div class="{{ $tarjeta }} lg:col-span-2">
-            <h3 class="mb-3 text-base font-semibold text-zinc-900 dark:text-white">Datos reportados por el técnico (Survey123)</h3>
+            <h3 class="mb-3 text-base font-semibold text-zinc-900 dark:text-white">Datos reportados por el técnico</h3>
             <dl class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-3">
                 @foreach ([
                     'Fecha de registro' => $registro->fecha_registro?->format('d/m/Y h:i a'),

@@ -650,6 +650,55 @@
                 </table>
             </div>
         </div>
+        @if (! empty($datosReporte['comparacion']['filas'] ?? []))
+            @php
+                $resultadoComparacion = ($datosReporte['resultado_comparacion'] ?? null)
+                    ? \App\Enums\ResultadoComparacion::tryFrom($datosReporte['resultado_comparacion'])
+                    : null;
+                $estilosValidar = [
+                    'coincide' => ['Coincide', '#166534'],
+                    'no_coincide' => ['No coincide', '#991b1b'],
+                    'sin_dato' => ['Sin dato', '#92400e'],
+                ];
+            @endphp
+            <div class="section">
+                <div class="section-title">REPORTADO POR EL TÉCNICO VS ENCONTRADO POR EL AUDITOR</div>
+                <div class="info-box">
+                    @if ($resultadoComparacion)
+                        <p style="margin: 0 0 6px 0;">
+                            <strong>Resultado de la auditoría:</strong>
+                            <span class="badge {{ $resultadoComparacion->value === 'conforme' ? 'badge-green' : ($resultadoComparacion->value === 'no_conforme' ? 'badge-red' : 'badge-blue') }}">{{ mb_strtoupper($resultadoComparacion->label()) }}</span>
+                        </p>
+                    @endif
+                    <table style="width: 100%; border-collapse: collapse; font-size: 8pt;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; padding: 3px 4px; border-bottom: 1px solid #9ca3af;">Campo</th>
+                                <th style="text-align: left; padding: 3px 4px; border-bottom: 1px solid #9ca3af;">Técnico (reportado)</th>
+                                <th style="text-align: left; padding: 3px 4px; border-bottom: 1px solid #9ca3af;">Auditor</th>
+                                <th style="text-align: left; padding: 3px 4px; border-bottom: 1px solid #9ca3af;">Validar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($datosReporte['comparacion']['filas'] as $fila)
+                                @php [$textoValidar, $colorValidar] = $estilosValidar[$fila['resultado']] ?? ['—', '#374151']; @endphp
+                                <tr>
+                                    <td style="padding: 3px 4px; border-bottom: 1px solid #e5e7eb;">{{ $fila['etiqueta'] }}@if ($fila['critico']) <span style="color: #6b7280;">(clave)</span>@endif</td>
+                                    <td style="padding: 3px 4px; border-bottom: 1px solid #e5e7eb;">{{ $fila['reportado'] ?? '—' }}</td>
+                                    <td style="padding: 3px 4px; border-bottom: 1px solid #e5e7eb;">{{ $fila['encontrado'] ?? '—' }}</td>
+                                    <td style="padding: 3px 4px; border-bottom: 1px solid #e5e7eb; color: {{ $colorValidar }}; font-weight: bold;">
+                                        {{ $textoValidar }}
+                                        @if ($fila['detalle'] ?? null)
+                                            <span style="font-weight: normal; color: #6b7280;">{{ $fila['detalle'] }}</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
         @php
             $tieneObsMedidor = filled($datosReporte['anomalias_medidor'] ?? null)
                 || filled($datosReporte['condicion_sellos'] ?? null)

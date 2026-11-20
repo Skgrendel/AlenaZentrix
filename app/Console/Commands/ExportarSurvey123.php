@@ -22,7 +22,7 @@ class ExportarSurvey123 extends Command
         {--con-errores : Solo registros con errores}
         {--con-alertas : Solo registros con alertas}
         {--company= : ID de la empresa dueña de los registros (si hay una sola, se usa esa)}
-        {--salida= : Ruta del archivo .xlsx (por defecto storage/app/exportaciones/survey123-AAAAmmdd-HHmmss.xlsx)}';
+        {--salida= : Ruta del archivo .xlsx (por defecto storage/app/exportaciones/auditoria-suspensiones-AAAAmmdd-HHmmss.xlsx)}';
 
     protected $description = 'Exporta a Excel la auditoría de suspensiones de Survey123 (registros, visitas de auditoría y resumen).';
 
@@ -43,6 +43,7 @@ class ExportarSurvey123 extends Command
         $ruta = $this->option('salida') ?: storage_path('app/exportaciones/'.SurveyAuditoriaExport::nombreDeArchivo());
         $total = $filtros->query()->count();
 
+        SurveyAuditoriaExport::ampliarRecursos();
         File::ensureDirectoryExists(dirname($ruta));
 
         Config::set('filesystems.disks.survey_exportacion', ['driver' => 'local', 'root' => dirname($ruta), 'throw' => true]);

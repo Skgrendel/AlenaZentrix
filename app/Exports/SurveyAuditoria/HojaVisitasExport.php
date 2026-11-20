@@ -155,6 +155,7 @@ class HojaVisitasExport implements FromQuery, WithColumnFormatting, WithColumnWi
                 $hoja = $evento->sheet->getDelegate();
                 $total = count(self::FIJAS) + count(self::CAMPOS) * 3 + 1;
                 $ultima = Coordinate::stringFromColumnIndex($total);
+                $hayDatos = $hoja->getHighestRow() >= 2;
                 $ultimaFila = max($hoja->getHighestRow(), 2);
 
                 for ($c = 1; $c <= $total; $c++) {
@@ -174,7 +175,9 @@ class HojaVisitasExport implements FromQuery, WithColumnFormatting, WithColumnWi
                 $noConforme = $this->condicion('F', ResultadoComparacion::NoConforme->label(), 'FDE2E2');
                 $noVerificable = $this->condicion('F', ResultadoComparacion::NoVerificable->label(), 'FFF1CC');
 
-                $hoja->getStyle("A2:{$ultima}{$ultimaFila}")->setConditionalStyles([$noConforme, $noVerificable]);
+                if ($hayDatos) {
+                    $hoja->getStyle("A2:{$ultima}{$ultimaFila}")->setConditionalStyles([$noConforme, $noVerificable]);
+                }
             },
         ];
     }

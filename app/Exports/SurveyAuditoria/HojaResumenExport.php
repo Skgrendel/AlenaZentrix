@@ -56,7 +56,7 @@ class HojaResumenExport implements FromArray, WithColumnWidths, WithCustomValueB
             sum(case when auditado_en is not null and total_errores = 0 and total_alertas = 0 then 1 else 0 end) as ok'
         )->first();
 
-        $filas[] = ['Resumen de la auditoría de suspensiones (Survey123)'];
+        $filas[] = ['Resumen de la auditoría de suspensiones'];
         $this->titulos[] = count($filas);
         $filas[] = ['Generado el', now()->format('Y-m-d H:i:s')];
         $filas[] = [];

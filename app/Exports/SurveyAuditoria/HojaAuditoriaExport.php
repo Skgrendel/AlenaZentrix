@@ -148,6 +148,7 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
                 $hoja = $evento->sheet->getDelegate();
                 $totalColumnas = count($this->variables()) * 2 + 4;
                 $ultima = Coordinate::stringFromColumnIndex($totalColumnas);
+                $hayDatos = $hoja->getHighestRow() >= 2;
                 $ultimaFila = max($hoja->getHighestRow(), 2);
 
                 foreach ($this->variables() as $i => $variable) {
@@ -155,8 +156,10 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
                     $this->estiloEncabezado($hoja, $i * 2 + 2, '2E7D32');
 
                     $validar = Coordinate::stringFromColumnIndex($i * 2 + 2);
-                    $hoja->getStyle("{$validar}2:{$validar}{$ultimaFila}")->getFill()
-                        ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F2F2F2');
+                    if ($hayDatos) {
+                        $hoja->getStyle("{$validar}2:{$validar}{$ultimaFila}")->getFill()
+                            ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F2F2F2');
+                    }
                 }
 
                 for ($c = $totalColumnas - 3; $c <= $totalColumnas; $c++) {
@@ -167,12 +170,29 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
                 $hoja->freezePane('A2');
                 $hoja->setAutoFilter("A1:{$ultima}{$ultimaFila}");
 
-                $this->resaltarFilas($hoja, $ultima, $ultimaFila, $totalColumnas);
+                if ($hayDatos) {
+                    $this->resaltarFilas($hoja, $ultima, $ultimaFila, $totalColumnas);
+                    $this->pintarCierreDeFila($hoja, $ultimaFila, $totalColumnas);
+                }
             },
         ];
     }
 
     /**
+     * Valores de `campo` de los hallazgos que alguna columna «Validar ▸» muestra.
+     *
+     * @return array<int, string>
+     */
+    public function camposValidados(): array
+    {
+        return array_values(array_unique(array_merge(...array_column($this->variables(), 'campos'))));
+    }
+
+    /**
+     * Resultado de «Validar ▸ <variable>»: «OK» si ningún hallazgo guardado apunta a los `campos` de la columna;
+     * si hay, «✖ mensaje» por cada error y «⚠ mensaje» por cada alerta, unidos con « | ».
+     * Fotos repetidas (`fotos`) se muestran en la columna de fachada; `ubicacion` en x y en y.
+     *
      * @param  array<int, array<string, string>>  $hallazgos
      * @param  array<int, string>  $campos
      */
@@ -188,6 +208,29 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         }
 
         return $mensajes === [] ? 'OK' : implode(' | ', $mensajes);
+    }
+
+    /**
+     * Además del formato condicional de toda la fila, pinta con color fijo «Errores», «Alertas» y «Estado de la fila»
+     * para que el color se vea también en visores que ignoran el formato condicional.
+     */
+    private function pintarCierreDeFila(mixed $hoja, int $ultimaFila, int $totalColumnas): void
+    {
+        $estado = Coordinate::stringFromColumnIndex($totalColumnas);
+        $desde = Coordinate::stringFromColumnIndex($totalColumnas - 2);
+
+        for ($fila = 2; $fila <= $ultimaFila; $fila++) {
+            $color = match ($hoja->getCell("{$estado}{$fila}")->getValue()) {
+                self::ESTADO_ERRORES => 'FDE2E2',
+                self::ESTADO_ALERTAS => 'FFF1CC',
+                default => null,
+            };
+
+            if ($color !== null) {
+                $hoja->getStyle("{$desde}{$fila}:{$estado}{$fila}")->getFill()
+                    ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($color);
+            }
+        }
     }
 
     private function estadoDeLaFila(SurveyRegistro $registro): string

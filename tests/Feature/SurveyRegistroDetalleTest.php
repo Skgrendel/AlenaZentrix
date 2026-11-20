@@ -201,25 +201,15 @@ test('las fotos se ven en un visor emergente y no abren otra pestaña', function
         ->assertDontSee('target="_blank" rel="noopener">'."\n", false);
 });
 
-test('el detalle ofrece botones para volver a la lista y para ver la orden de auditoría', function () {
+test('el detalle ofrece volver a la lista y no muestra botón para ver la orden', function () {
     [$user, $registro] = coordinadorConDetalle();
-    $orden = OrdenJob::factory()->create(['company_id' => $user->company_id, 'survey_registro_id' => $registro->id]);
+    OrdenJob::factory()->create(['company_id' => $user->company_id, 'survey_registro_id' => $registro->id]);
 
     $this->actingAs($user)
         ->get(route('operaciones.survey-auditoria.show', $registro))
         ->assertOk()
         ->assertSee('Volver a la lista')
-        ->assertSee('Ver orden de auditoría')
-        ->assertSee(route('operaciones.ordenes-trabajo.show', $orden), false);
-});
-
-test('el botón de ver la orden no aparece si el registro no tiene orden', function () {
-    [$user, $registro] = coordinadorConDetalle();
-
-    $this->actingAs($user)
-        ->get(route('operaciones.survey-auditoria.show', $registro))
-        ->assertOk()
-        ->assertDontSee('Ver orden de auditoría');
+        ->assertDontSee('Ver orden');
 });
 
 test('los totales y el estado del registro se muestran en la tarjeta de hallazgos', function () {

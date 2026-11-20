@@ -7,6 +7,7 @@ use App\Models\OrdenJob;
 use App\Models\reportes;
 use App\Models\TipoAnomalia;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Database\Seeders\PermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -422,4 +423,115 @@ test('API suspensiones no exige la serie del medidor si la orden no tiene serie 
     $this->withToken($token)
         ->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", payloadSuspensiones($user))
         ->assertCreated();
+});
+
+/** Orden con referencia y un reporte del auditor cuya lectura no coincide, para probar la comparación. */
+function reporteConComparacion(): array
+{
+    Storage::fake('s3');
+    test()->seed(PermissionsSeeder::class);
+
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'tipo_auditoria_campo' => 'visita_calidad_suspensiones',
+        'estado' => EstadoOrden::EnRevision->value,
+        'creado_por_id' => $user->id,
+        'company_id' => $user->company_id,
+        'lectura_referencia' => '9999',
+        'serie_medidor_referencia' => '981797',
+    ]);
+
+    $reporte = reportes::create([
+        'orden_job_id' => $orden->id,
+        'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
+        'imagenes' => [],
+        'datos_servicio' => [
+            'categoria_campo' => 'residencial',
+            'suspension_ejecutada' => true,
+            'metodo_suspension' => 'taponamiento_acometida',
+            'serie_medidor' => '981797',
+            'lectura_medidor' => '1234',
+        ],
+    ]);
+
+    return [$user, $orden, $reporte];
+}
+
+test('los datos del pdf de suspensiones incluyen la comparación y su resultado', function () {
+    [, , $reporte] = reporteConComparacion();
+
+    $metodo = new ReflectionMethod(ReportePdfController::class, 'buildDatosReporteAuditoriaCampo');
+    $datos = $metodo->invoke(app(ReportePdfController::class), $reporte->fresh()->load('ordenJob'));
+
+    expect($datos['resultado_comparacion'])->toBe('no_conforme')
+        ->and(collect($datos['comparacion']['filas'])->firstWhere('campo', 'lectura')['resultado'])->toBe('no_coincide');
+});
+
+test('el pdf de suspensiones muestra la tabla de comparación con el resultado', function () {
+    [$user, $orden] = reporteConComparacion();
+
+    $capturado = null;
+    $pdf = Mockery::mock(Barryvdh\DomPDF\PDF::class);
+    $pdf->shouldReceive('setPaper')->andReturnSelf();
+    $pdf->shouldReceive('download')->andReturn(response('pdf'));
+    Pdf::shouldReceive('loadView')
+        ->once()
+        ->withArgs(function (string $vista, array $datos) use (&$capturado): bool {
+            $capturado = [$vista, $datos];
+
+            return true;
+        })
+        ->andReturn($pdf);
+
+    $this->actingAs($user)
+        ->get(route('operaciones.ordenes-trabajo.reporte-auditoria-campo', $orden))
+        ->assertOk();
+
+    $html = view($capturado[0], $capturado[1])->render();
+
+    expect($html)->toContain('REPORTADO POR EL TÉCNICO VS ENCONTRADO POR EL AUDITOR')
+        ->toContain('NO CONFORME')
+        ->toContain('Lectura del medidor')
+        ->toContain('9999')
+        ->toContain('No coincide');
+});
+
+test('el pdf de suspensiones sin comparación no muestra esa sección', function () {
+    Storage::fake('s3');
+    $this->seed(PermissionsSeeder::class);
+    $user = User::factory()->create();
+    $user->assignRole('Coordinador');
+
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+        'tipo_auditoria_campo' => 'visita_calidad_suspensiones',
+        'estado' => EstadoOrden::EnRevision->value,
+        'creado_por_id' => $user->id,
+        'company_id' => $user->company_id,
+    ]);
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'numero_orden' => $orden->numero_orden,
+        'company_id' => $user->company_id,
+        'imagenes' => [],
+        'datos_servicio' => ['categoria_campo' => 'comercial', 'suspension_ejecutada' => false, 'motivo_no_ejecucion' => 'predio_cerrado'],
+    ]);
+
+    $capturado = null;
+    $pdf = Mockery::mock(Barryvdh\DomPDF\PDF::class);
+    $pdf->shouldReceive('setPaper')->andReturnSelf();
+    $pdf->shouldReceive('download')->andReturn(response('pdf'));
+    Pdf::shouldReceive('loadView')->once()->withArgs(function (string $vista, array $datos) use (&$capturado): bool {
+        $capturado = [$vista, $datos];
+
+        return true;
+    })->andReturn($pdf);
+
+    $this->actingAs($user)->get(route('operaciones.ordenes-trabajo.reporte-auditoria-campo', $orden))->assertOk();
+
+    expect(view($capturado[0], $capturado[1])->render())->not->toContain('REPORTADO POR EL TÉCNICO VS ENCONTRADO');
 });
