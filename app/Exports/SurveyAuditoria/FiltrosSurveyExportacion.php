@@ -49,7 +49,11 @@ final class FiltrosSurveyExportacion
         }
 
         if ($this->desde !== null || $this->hasta !== null) {
-            $lineas[] = 'Fecha de registro: '.($this->desde?->format('d/m/Y') ?? 'sin inicio').' a '.($this->hasta?->format('d/m/Y') ?? 'hoy');
+            $lineas[] = 'Fecha de registro: '.match (true) {
+                $this->desde !== null && $this->hasta !== null => 'del '.$this->desde->format('d/m/Y').' al '.$this->hasta->format('d/m/Y'),
+                $this->desde !== null => 'desde el '.$this->desde->format('d/m/Y'),
+                default => 'hasta el '.$this->hasta->format('d/m/Y'),
+            };
         }
 
         if (filled($this->tecnico)) {

@@ -1230,3 +1230,108 @@ test('lo que pone el sistema en la conclusión es siempre una de las tres opcion
 
     expect($valores->every(fn ($v) => in_array($v, HojaAuditoriaExport::CONCLUSIONES, true)))->toBeTrue();
 });
+
+// ── Filtro de fecha de registro (Desde / Hasta) ──────────────────────────────
+
+function registrosParaRangoDeFechas(Company $empresa): void
+{
+    foreach ([
+        '300000001' => '2026-11-04 23:59:59', // un segundo antes del inicio
+        '300000002' => '2026-11-05 00:00:00', // primer segundo del día «desde»
+        '300000003' => '2026-11-07 12:00:00',
+        '300000004' => '2026-11-10 23:59:59', // último segundo del día «hasta»
+        '300000005' => '2026-11-11 00:00:00', // primer segundo después del fin
+    ] as $ot => $fecha) {
+        registroExportable($empresa, ['orden_trabajo' => $ot, 'fecha_registro' => $fecha]);
+    }
+}
+
+test('el filtro de fecha de la lista incluye el día «desde» y el día «hasta» completos, hasta las 23:59:59', function () {
+    $user = usuarioConRol('Coordinador');
+    registrosParaRangoDeFechas($user->company);
+    $en = fn (array $rango) => Livewire::actingAs($user)->test(SurveyRegistrosIndex::class)
+        ->filterTable('fecha_registro', $rango)->instance()->getTableRecords()->pluck('orden_trabajo')->sort()->values()->all();
+
+    expect($en(['desde' => '2026-11-05', 'hasta' => '2026-11-10']))->toBe(['300000002', '300000003', '300000004'])
+        ->and($en(['desde' => '2026-11-07', 'hasta' => '2026-11-07']))->toBe(['300000003'])
+        ->and($en(['desde' => '2026-11-10', 'hasta' => null]))->toBe(['300000004', '300000005'])
+        ->and($en(['desde' => null, 'hasta' => '2026-11-04']))->toBe(['300000001'])
+        ->and($en(['desde' => null, 'hasta' => null]))->toHaveCount(5);
+});
+
+test('el Excel de la lista exporta solo los registros del rango y la portada dice qué rango se usó', function () {
+    $user = usuarioConRol('Coordinador');
+    registrosParaRangoDeFechas($user->company);
+
+    $componente = Livewire::actingAs($user)->test(SurveyRegistrosIndex::class)
+        ->filterTable('fecha_registro', ['desde' => '2026-11-05', 'hasta' => '2026-11-10'])
+        ->callTableAction('exportar_excel');
+
+    $libro = libroDeDescarga($componente);
+    $ots = collect(filasDeHoja($libro->getSheetByName('Auditoría')))->pluck('Orden de Trabajo')->sort()->values()->all();
+    $portada = collect($libro->getSheetByName('Informe')->toArray(null, false, false, false))->flatten()->filter()->values();
+
+    expect($ots)->toBe([300000002, 300000003, 300000004])
+        ->and($portada)->toContain('Fecha de registro: del 05/11/2026 al 10/11/2026')
+        ->and($portada)->not->toContain('Sin filtros: todos los registros de la empresa.');
+});
+
+test('el Excel respeta un rango abierto (solo desde o solo hasta) y lo describe', function () {
+    $user = usuarioConRol('Coordinador');
+    registrosParaRangoDeFechas($user->company);
+
+    $exportar = function (array $rango) use ($user) {
+        $libro = libroDeDescarga(Livewire::actingAs($user)->test(SurveyRegistrosIndex::class)->filterTable('fecha_registro', $rango)->callTableAction('exportar_excel'));
+
+        return [
+            collect(filasDeHoja($libro->getSheetByName('Auditoría')))->pluck('Orden de Trabajo')->sort()->values()->all(),
+            collect($libro->getSheetByName('Informe')->toArray(null, false, false, false))->flatten()->filter()->values(),
+        ];
+    };
+
+    [$ots, $portada] = $exportar(['desde' => '2026-11-10', 'hasta' => null]);
+    expect($ots)->toBe([300000004, 300000005])->and($portada)->toContain('Fecha de registro: desde el 10/11/2026');
+
+    [$ots, $portada] = $exportar(['desde' => null, 'hasta' => '2026-11-05']);
+    expect($ots)->toBe([300000001, 300000002])->and($portada)->toContain('Fecha de registro: hasta el 05/11/2026');
+});
+
+test('el rango de fechas se combina con los demás filtros al exportar', function () {
+    $user = usuarioConRol('Coordinador');
+    registroExportable($user->company, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-06 10:00:00', 'estado' => EstadoSurveyRegistro::Asignado]);
+    registroExportable($user->company, ['orden_trabajo' => '300000002', 'fecha_registro' => '2026-11-06 11:00:00']);
+    registroExportable($user->company, ['orden_trabajo' => '300000003', 'fecha_registro' => '2026-11-20 11:00:00', 'estado' => EstadoSurveyRegistro::Asignado]);
+
+    $libro = libroDeDescarga(
+        Livewire::actingAs($user)->test(SurveyRegistrosIndex::class)
+            ->filterTable('estado', 'asignado')
+            ->filterTable('fecha_registro', ['desde' => '2026-11-01', 'hasta' => '2026-11-10'])
+            ->callTableAction('exportar_excel')
+    );
+
+    $portada = collect($libro->getSheetByName('Informe')->toArray(null, false, false, false))->flatten()->filter()->values();
+
+    expect(collect(filasDeHoja($libro->getSheetByName('Auditoría')))->pluck('Orden de Trabajo')->all())->toBe([300000001])
+        ->and($portada)->toContain('Estado: Asignado a campo')
+        ->and($portada)->toContain('Fecha de registro: del 01/11/2026 al 10/11/2026');
+});
+
+test('un usuario solo exporta su empresa aunque use el filtro de fechas', function () {
+    $usuarioA = usuarioConRol('Coordinador');
+    $usuarioB = usuarioConRol('Coordinador');
+    registroExportable($usuarioA->company, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-06 10:00:00']);
+    registroExportable($usuarioB->company, ['orden_trabajo' => '399999999', 'fecha_registro' => '2026-11-06 10:00:00']);
+
+    $libro = libroDeDescarga(Livewire::actingAs($usuarioB)->test(SurveyRegistrosIndex::class)
+        ->filterTable('fecha_registro', ['desde' => '2026-11-01', 'hasta' => '2026-11-30'])->callTableAction('exportar_excel'));
+
+    expect(collect(filasDeHoja($libro->getSheetByName('Auditoría')))->pluck('Orden de Trabajo')->all())->toBe([399999999]);
+});
+
+test('el comando y la pantalla describen el rango con las mismas palabras', function () {
+    $filtros = fn (array $r) => (new FiltrosSurveyExportacion('x', ...$r))->descripcion();
+
+    expect($filtros(['desde' => Carbon::parse('2026-11-05'), 'hasta' => Carbon::parse('2026-11-10')]))->toBe(['Fecha de registro: del 05/11/2026 al 10/11/2026'])
+        ->and($filtros(['desde' => Carbon::parse('2026-11-05')]))->toBe(['Fecha de registro: desde el 05/11/2026'])
+        ->and($filtros(['hasta' => Carbon::parse('2026-11-10')]))->toBe(['Fecha de registro: hasta el 10/11/2026']);
+});
