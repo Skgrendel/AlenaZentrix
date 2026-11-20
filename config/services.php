@@ -52,6 +52,14 @@ return [
         'disco_fotos' => env('SURVEY123_DISCO_FOTOS', 's3'),
         // Minutos que deben pasar desde que termina una sincronización para poder lanzar otra desde la pantalla.
         'espera_sincronizacion_minutos' => (int) env('SURVEY123_ESPERA_MINUTOS', 10),
+
+        // Sincronización automática: se salta sola si no hay usuario y contraseña configurados.
+        'sincronizacion_automatica' => filter_var(env('SURVEY123_SYNC_AUTOMATICA', true), FILTER_VALIDATE_BOOLEAN),
+        'sincronizacion_cada_minutos' => (int) env('SURVEY123_SYNC_CADA_MINUTOS', 60),
+
+        // Empresa dueña de los registros. Si hay una sola empresa en el sistema no hace falta indicarla.
+        'empresa_id' => env('SURVEY123_EMPRESA_ID'),
+
         'service_url' => env('SURVEY123_SERVICE_URL', 'https://services1.arcgis.com/7TRgQ327rtmQC0Ev/arcgis/rest/services/service_4397fd08af0043c8a7f7aa6eb5947eb8/FeatureServer/0'),
     ],
 
