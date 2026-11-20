@@ -21,6 +21,7 @@ use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
+use Filament\Support\Enums\Alignment;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -159,8 +160,9 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
                     ->visible(fn (): bool => $this->puedeExportar())
-                    ->action(fn (): BinaryFileResponse => $this->exportar($this->getFilteredTableQuery())),
+                    ->action(fn (): BinaryFileResponse => $this->exportar($this->getFilteredTableQuery(), $this->descripcionDeFiltros())),
             ])
+            ->recordActionsAlignment(Alignment::Start->value)
             ->actions([
                 ActionGroup::make([
                     Action::make('ver_detalle')
@@ -203,7 +205,8 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                         ->icon('heroicon-o-arrow-down-tray')
                         ->visible(fn (): bool => $this->puedeExportar())
                         ->action(fn (Collection $records): BinaryFileResponse => $this->exportar(
-                            SurveyRegistro::query()->whereIn('survey_registros.id', $records->modelKeys())
+                            SurveyRegistro::query()->whereIn('survey_registros.id', $records->modelKeys()),
+                            ['Solo '.$records->count().' registro(s) seleccionados en la lista'],
                         )),
                     BulkAction::make('asignar_seleccionados')
                         ->label('Asignar seleccionados')
@@ -246,8 +249,9 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
      * Descarga el libro con los registros de la consulta, siempre acotados a la empresa del usuario.
      *
      * @param  Builder<SurveyRegistro>  $registros
+     * @param  array<int, string>  $filtros  frases que describen lo que se filtró, para la portada del informe
      */
-    private function exportar($registros): BinaryFileResponse
+    private function exportar($registros, array $filtros = []): BinaryFileResponse
     {
         abort_unless($this->puedeExportar(), 403);
 
@@ -259,11 +263,45 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
         SurveyAuditoriaExport::ampliarRecursos();
 
         return Excel::download(
-            new SurveyAuditoriaExport($registros),
+            new SurveyAuditoriaExport($registros, [
+                'empresa' => auth()->user()->company?->nombre,
+                'generado_por' => auth()->user()->fullName(),
+                'filtros' => $filtros,
+            ]),
             SurveyAuditoriaExport::nombreDeArchivo(),
             TipoExcel::XLSX,
             ['Content-Type' => SurveyAuditoriaExport::TIPO_MIME],
         );
+    }
+
+    /**
+     * Los filtros y la búsqueda que tiene la lista en este momento, en frases cortas para la portada del informe.
+     *
+     * @return array<int, string>
+     */
+    private function descripcionDeFiltros(): array
+    {
+        $lineas = [];
+
+        if (filled($estado = $this->tableFilters['estado']['value'] ?? null)) {
+            $lineas[] = 'Estado: '.(EstadoSurveyRegistro::tryFrom((string) $estado)?->label() ?? $estado);
+        }
+
+        $conErrores = $this->tableFilters['con_errores']['value'] ?? null;
+
+        if (filled($conErrores)) {
+            $lineas[] = filter_var($conErrores, FILTER_VALIDATE_BOOLEAN) ? 'Solo registros con errores' : 'Solo registros sin errores';
+        }
+
+        if (filled($ia = $this->tableFilters['revision_ia']['value'] ?? null)) {
+            $lineas[] = 'Revisión con IA: '.['sin_revisar' => 'sin revisar', 'con_observaciones' => 'con observaciones', 'sin_observaciones' => 'sin observaciones'][$ia] ?? $ia;
+        }
+
+        if (filled($this->tableSearch)) {
+            $lineas[] = "Búsqueda: {$this->tableSearch}";
+        }
+
+        return $lineas;
     }
 
     /** @return array<int, mixed> */

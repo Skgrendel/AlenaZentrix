@@ -144,7 +144,7 @@ test('la hoja Auditoría replica el formato del libro: variables con su Validar 
 
     $libro = libroDe(exportacionDe($empresa));
 
-    expect($libro->getSheetNames())->toBe(['Auditoría', 'Visitas de auditoría', 'Resumen']);
+    expect($libro->getSheetNames())->toBe(['Informe', 'Auditoría', 'Visitas de auditoría', 'Resumen']);
 
     $variables = [
         'ObjectID', 'GlobalID', 'Fecha de registro', 'Nombre del Técnico', 'Contrato', 'Orden de Trabajo',
@@ -158,7 +158,7 @@ test('la hoja Auditoría replica el formato del libro: variables con su Validar 
     foreach ($variables as $variable) {
         array_push($esperados, $variable, "Validar ▸ {$variable}");
     }
-    array_push($esperados, 'Estado de asignación', 'Errores ✖', 'Alertas ⚠', 'Estado de la fila');
+    array_push($esperados, 'Estado de asignación', 'Errores ✖', 'Alertas ⚠', 'Estado de la fila', 'Revisión IA', 'Resumen IA');
 
     $hoja = $libro->getSheetByName('Auditoría');
     $encabezados = $hoja->toArray(null, false, false, false)[0];
@@ -171,7 +171,7 @@ test('la hoja Auditoría replica el formato del libro: variables con su Validar 
         ->and($hoja->getFreezePane())->toBe('A2')
         ->and($hoja->getAutoFilter()->getRange())->toStartWith('A1:')
         ->and($hoja->getStyle('A1')->getFont()->getBold())->toBeTrue()
-        ->and($hoja->getStyle('B1')->getFill()->getStartColor()->getRGB())->toBe('2E7D32');
+        ->and($hoja->getStyle('B1')->getFill()->getStartColor()->getRGB())->toBe('4D7C0F');
 });
 
 test('cada columna Validar muestra OK, el error o la alerta; varios hallazgos se unen con una barra', function () {
@@ -523,7 +523,7 @@ test('el comando exporta el libro a la ruta indicada', function () {
     expect(file_exists($ruta))->toBeTrue();
 
     $libro = IOFactory::load($ruta);
-    expect($libro->getSheetNames())->toBe(['Auditoría', 'Visitas de auditoría', 'Resumen'])
+    expect($libro->getSheetNames())->toBe(['Informe', 'Auditoría', 'Visitas de auditoría', 'Resumen'])
         ->and(filasDeHoja($libro->getSheetByName('Auditoría')))->toHaveCount(2);
 
     File::deleteDirectory($directorio);
@@ -696,7 +696,7 @@ function celdasDeTextoSinProteger(Spreadsheet $libro): array
 
             if ($celda->getDataType() === DataType::TYPE_FORMULA) {
                 $sinProteger[] = [$hoja->getTitle(), $coordenada];
-            } elseif (is_string($valor) && preg_match('/^[=+\-@\t\r]/', $valor) === 1 && ! $celda->getStyle()->getQuotePrefix()) {
+            } elseif (is_string($valor) && ! is_numeric($valor) && preg_match('/^[=+\-@\t\r]/', $valor) === 1 && ! $celda->getStyle()->getQuotePrefix()) {
                 $sinProteger[] = [$hoja->getTitle(), $coordenada];
             }
         }
@@ -816,7 +816,7 @@ test('los colores de fila con errores y con alertas están en el archivo', funct
 
     $hoja = libroDe(exportacionDe($empresa))->getSheetByName('Auditoría');
 
-    expect($hoja->getHighestColumn())->toBe('AZ');
+    expect($hoja->getHighestColumn())->toBe('BB');
 
     $condicionales = $hoja->getConditionalStyles('A2');
     expect($condicionales)->toHaveCount(2)
@@ -833,8 +833,8 @@ test('los colores de fila con errores y con alertas están en el archivo', funct
     expect([$relleno('AX2'), $relleno('AY2'), $relleno('AZ2')])->toBe(['FDE2E2', 'FDE2E2', 'FDE2E2'])
         ->and([$relleno('AX3'), $relleno('AZ3')])->toBe(['FFF1CC', 'FFF1CC'])
         ->and([$relleno('AX4'), $relleno('AZ4')])->toBe([null, null])
-        ->and($relleno('A1'))->toBe('1F3864')
-        ->and($relleno('B1'))->toBe('2E7D32')
+        ->and($relleno('A1'))->toBe('17222E')
+        ->and($relleno('B1'))->toBe('4D7C0F')
         ->and($relleno('AZ1'))->toBe('7F1D1D');
 });
 
@@ -1049,7 +1049,9 @@ test('la cantidad de consultas no crece con el número de registros', function (
     $pequeno = $consultas(40);
     $grande = $consultas(200);
 
-    expect($grande)->toBeLessThanOrEqual($pequeno + 6);
+    // Cada lote de 50 registros suma una consulta (la de la revisión con IA): con 200 registros hay 3 lotes más.
+    // Una consulta por registro sumaría 160.
+    expect($grande)->toBeLessThanOrEqual($pequeno + 9);
 });
 
 test('las fechas del Excel salen siempre en hora de Colombia, sin importar la zona de la aplicación', function () {
@@ -1117,4 +1119,34 @@ test('el filtro de fechas cuenta el día en hora de Colombia', function () {
 
     expect($ids(Carbon::parse('2026-11-05'), Carbon::parse('2026-11-05')))->toBe([$noche->id])
         ->and($ids(Carbon::parse('2026-11-06'), Carbon::parse('2026-11-06')))->toHaveCount(1);
+});
+
+test('la hoja Informe es la portada: título, empresa, filtros, cifras, logo, gráfica e impresión', function () {
+    $empresa = Company::factory()->create(['nombre' => 'Surtigas S.A. E.S.P.']);
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000001']), [['lectura', 'error', 'lectura_medidor', 'b']]);
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000002']));
+
+    $export = SurveyAuditoriaExport::conFiltros(new FiltrosSurveyExportacion($empresa->id, soloConErrores: true), ['empresa' => $empresa->nombre, 'generado_por' => 'Ana Pérez']);
+    $ruta = tempnam(sys_get_temp_dir(), 'sx').'.xlsx';
+    file_put_contents($ruta, Excel::raw($export, TipoExcel::XLSX));
+
+    $zip = new ZipArchive;
+    $zip->open($ruta);
+    $partes = collect(range(0, $zip->numFiles - 1))->map(fn ($i) => $zip->getNameIndex($i));
+    $zip->close();
+
+    $hoja = IOFactory::load($ruta)->getSheetByName('Informe');
+    @unlink($ruta);
+    $textos = collect($hoja->toArray(null, false, false, false))->flatten()->filter()->values();
+
+    expect($hoja->getCell('C1')->getValue())->toBe('Informe de Auditoría de Suspensiones')
+        ->and($hoja->getCell('C2')->getValue())->toBe('Surtigas S.A. E.S.P.')
+        ->and($hoja->getCell('C3')->getValue())->toContain('hora de Colombia')->toContain('Ana Pérez')
+        ->and($textos)->toContain('Solo registros con errores')
+        ->and($textos)->toContain('Resultado de las reglas de auditoría')
+        ->and($textos)->toContain('Asignación a campo y revisión con IA')
+        ->and($hoja->getPageSetup()->getOrientation())->toBe('landscape')
+        ->and($hoja->getPageSetup()->getFitToWidth())->toBe(1)
+        ->and($partes->contains(fn ($p) => str_starts_with($p, 'xl/charts/')))->toBeTrue()
+        ->and($partes->contains(fn ($p) => str_starts_with($p, 'xl/media/')))->toBeTrue();
 });

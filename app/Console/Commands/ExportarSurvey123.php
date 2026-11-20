@@ -49,7 +49,11 @@ class ExportarSurvey123 extends Command
         Config::set('filesystems.disks.survey_exportacion', ['driver' => 'local', 'root' => dirname($ruta), 'throw' => true]);
 
         try {
-            Excel::store(SurveyAuditoriaExport::conFiltros($filtros), basename($ruta), 'survey_exportacion');
+            Excel::store(
+                SurveyAuditoriaExport::conFiltros($filtros, ['empresa' => Company::query()->find($filtros->companyId)?->nombre, 'generado_por' => 'Consola']),
+                basename($ruta),
+                'survey_exportacion',
+            );
         } catch (Throwable $e) {
             $this->error('No se pudo generar el archivo: '.$e->getMessage());
 

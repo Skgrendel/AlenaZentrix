@@ -42,6 +42,12 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
 
     public const ESTADO_SIN_AUDITAR = 'Sin auditar';
 
+    public const IA_SIN_REVISAR = 'Sin revisar';
+
+    public const IA_SIN_OBSERVACIONES = 'Sin observaciones';
+
+    public const IA_CON_OBSERVACIONES = 'Con observaciones';
+
     /** @var array<int, array{titulo: string, valor: Closure, campos: array<int, string>, ancho: int, fecha?: bool}>|null */
     private ?array $variables = null;
 
@@ -61,6 +67,7 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         return $this->registros->clone()
             ->reorder()
             ->setEagerLoads([])
+            ->with('ultimaRevisionIA')
             ->select([
                 'survey_registros.id', 'object_id', 'global_id', 'fecha_registro', 'tecnico', 'contrato', 'orden_trabajo',
                 'categoria', 'serie_medidor', 'lectura_medidor', 'actividad', 'suspension_ejecutada', 'metodo_suspension',
@@ -87,7 +94,7 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
             $encabezados[] = 'Validar ▸ '.$variable['titulo'];
         }
 
-        return array_merge($encabezados, ['Estado de asignación', 'Errores ✖', 'Alertas ⚠', 'Estado de la fila']);
+        return array_merge($encabezados, ['Estado de asignación', 'Errores ✖', 'Alertas ⚠', 'Estado de la fila', 'Revisión IA', 'Resumen IA']);
     }
 
     /** @return array<int, mixed> */
@@ -106,6 +113,14 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         $fila[] = $auditado ? (int) $registro->total_errores : null;
         $fila[] = $auditado ? (int) $registro->total_alertas : null;
         $fila[] = $this->estadoDeLaFila($registro);
+
+        $revision = $registro->ultimaRevisionIA;
+        $fila[] = match (true) {
+            $revision === null => self::IA_SIN_REVISAR,
+            $revision->con_observaciones => self::IA_CON_OBSERVACIONES,
+            default => self::IA_SIN_OBSERVACIONES,
+        };
+        $fila[] = $revision?->veredicto['resumen'] ?? null;
 
         return $fila;
     }
@@ -139,6 +154,8 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         $anchos[Coordinate::stringFromColumnIndex($primera + 1)] = 11;
         $anchos[Coordinate::stringFromColumnIndex($primera + 2)] = 11;
         $anchos[Coordinate::stringFromColumnIndex($primera + 3)] = 16;
+        $anchos[Coordinate::stringFromColumnIndex($primera + 4)] = 20;
+        $anchos[Coordinate::stringFromColumnIndex($primera + 5)] = 70;
 
         return $anchos;
     }
@@ -149,34 +166,47 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         return [
             AfterSheet::class => function (AfterSheet $evento): void {
                 $hoja = $evento->sheet->getDelegate();
-                $totalColumnas = count($this->variables()) * 2 + 4;
+                $estadoDeLaFila = count($this->variables()) * 2 + 4;
+                $totalColumnas = $estadoDeLaFila + 2;
                 $ultima = Coordinate::stringFromColumnIndex($totalColumnas);
                 $hayDatos = $hoja->getHighestRow() >= 2;
                 $ultimaFila = max($hoja->getHighestRow(), 2);
 
                 foreach ($this->variables() as $i => $variable) {
-                    $this->estiloEncabezado($hoja, $i * 2 + 1, '1F3864');
-                    $this->estiloEncabezado($hoja, $i * 2 + 2, '2E7D32');
+                    $this->estiloEncabezado($hoja, $i * 2 + 1, EstiloDeInforme::OSCURO);
+                    $this->estiloEncabezado($hoja, $i * 2 + 2, '4D7C0F');
 
                     $validar = Coordinate::stringFromColumnIndex($i * 2 + 2);
                     if ($hayDatos) {
                         $hoja->getStyle("{$validar}2:{$validar}{$ultimaFila}")->getFill()
-                            ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F2F2F2');
+                            ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB(EstiloDeInforme::GRIS_CLARO);
                     }
                 }
 
-                for ($c = $totalColumnas - 3; $c <= $totalColumnas; $c++) {
+                for ($c = $estadoDeLaFila - 3; $c <= $estadoDeLaFila; $c++) {
                     $this->estiloEncabezado($hoja, $c, '7F1D1D');
+                }
+
+                for ($c = $estadoDeLaFila + 1; $c <= $totalColumnas; $c++) {
+                    $this->estiloEncabezado($hoja, $c, '0F766E');
                 }
 
                 $hoja->getRowDimension(1)->setRowHeight(48);
                 $hoja->freezePane('A2');
                 $hoja->setAutoFilter("A1:{$ultima}{$ultimaFila}");
+                $hoja->getTabColor()->setRGB(EstiloDeInforme::OSCURO);
+                EstiloDeInforme::bordes($hoja, "A1:{$ultima}".$hoja->getHighestRow());
+                if ($hayDatos) {
+                    $hoja->getStyle("A2:{$ultima}{$ultimaFila}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                }
+                EstiloDeInforme::prepararImpresion($hoja, ajustarAlAncho: false, filaDeEncabezado: 1);
 
                 if ($hayDatos) {
-                    $this->resaltarFilas($hoja, $ultima, $ultimaFila, $totalColumnas);
-                    $this->pintarCierreDeFila($hoja, $ultimaFila, $totalColumnas);
+                    $this->resaltarFilas($hoja, $ultima, $ultimaFila, $estadoDeLaFila);
+                    $this->pintarCierreDeFila($hoja, $ultimaFila, $estadoDeLaFila);
                 }
+
+                EstiloDeInforme::reforzarTextoSeguro($hoja);
             },
         ];
     }
@@ -217,10 +247,10 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
      * Además del formato condicional de toda la fila, pinta con color fijo «Errores», «Alertas» y «Estado de la fila»
      * para que el color se vea también en visores que ignoran el formato condicional.
      */
-    private function pintarCierreDeFila(mixed $hoja, int $ultimaFila, int $totalColumnas): void
+    private function pintarCierreDeFila(mixed $hoja, int $ultimaFila, int $columnaDeEstado): void
     {
-        $estado = Coordinate::stringFromColumnIndex($totalColumnas);
-        $desde = Coordinate::stringFromColumnIndex($totalColumnas - 2);
+        $estado = Coordinate::stringFromColumnIndex($columnaDeEstado);
+        $desde = Coordinate::stringFromColumnIndex($columnaDeEstado - 2);
 
         for ($fila = 2; $fila <= $ultimaFila; $fila++) {
             $color = match ($hoja->getCell("{$estado}{$fila}")->getValue()) {
@@ -256,9 +286,9 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         $estilo->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_CENTER);
     }
 
-    private function resaltarFilas(mixed $hoja, string $ultima, int $ultimaFila, int $totalColumnas): void
+    private function resaltarFilas(mixed $hoja, string $ultima, int $ultimaFila, int $columnaDeEstado): void
     {
-        $estado = Coordinate::stringFromColumnIndex($totalColumnas);
+        $estado = Coordinate::stringFromColumnIndex($columnaDeEstado);
 
         $errores = new Conditional;
         $errores->setConditionType(Conditional::CONDITION_EXPRESSION)

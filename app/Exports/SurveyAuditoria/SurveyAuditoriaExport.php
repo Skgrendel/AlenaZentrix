@@ -8,9 +8,10 @@ use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 
 /**
- * Libro de la auditoría de suspensiones de Survey123: Auditoría, Visitas de auditoría y Resumen.
+ * Libro de la auditoría de suspensiones de Survey123: Informe (portada), Auditoría, Visitas de auditoría y Resumen.
  *
- * Recibe la consulta de registros ya acotada por empresa y filtros; las tres hojas se derivan de ella.
+ * Recibe la consulta de registros ya acotada por empresa y filtros; las hojas se derivan de ella.
+ * El contexto (empresa, quién lo genera y los filtros usados) solo se usa para la portada.
  */
 class SurveyAuditoriaExport implements WithMultipleSheets
 {
@@ -18,12 +19,16 @@ class SurveyAuditoriaExport implements WithMultipleSheets
 
     public const TIPO_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-    /** @param Builder<SurveyRegistro> $registros */
-    public function __construct(private readonly Builder $registros) {}
+    /**
+     * @param  Builder<SurveyRegistro>  $registros
+     * @param  array{empresa?: ?string, generado_por?: ?string, filtros?: array<int, string>}  $contexto
+     */
+    public function __construct(private readonly Builder $registros, private readonly array $contexto = []) {}
 
-    public static function conFiltros(FiltrosSurveyExportacion $filtros): self
+    /** @param  array{empresa?: ?string, generado_por?: ?string, filtros?: array<int, string>}  $contexto */
+    public static function conFiltros(FiltrosSurveyExportacion $filtros, array $contexto = []): self
     {
-        return new self($filtros->query());
+        return new self($filtros->query(), $contexto + ['filtros' => $filtros->descripcion()]);
     }
 
     /**
@@ -50,11 +55,13 @@ class SurveyAuditoriaExport implements WithMultipleSheets
     public function sheets(): array
     {
         $visitas = new HojaVisitasExport($this->registros);
+        $resumen = new HojaResumenExport($this->registros, $visitas);
 
         return [
+            new HojaInformeExport($this->registros, $visitas, $resumen, $this->contexto),
             new HojaAuditoriaExport($this->registros),
             $visitas,
-            new HojaResumenExport($this->registros, $visitas),
+            $resumen,
         ];
     }
 }

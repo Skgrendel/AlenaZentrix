@@ -13,6 +13,8 @@ use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 /**
@@ -141,10 +143,41 @@ class HojaResumenExport implements FromArray, WithColumnWidths, WithCustomValueB
                 foreach ($this->encabezados as $fila) {
                     $estilo = $hoja->getStyle("A{$fila}:E{$fila}");
                     $estilo->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
-                    $estilo->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('1F3864');
+                    $estilo->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB(EstiloDeInforme::OSCURO);
+                    $estilo->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+
+                    $ultima = $fila;
+                    while ($hoja->getCell('A'.($ultima + 1))->getValue() !== null && $hoja->getCell('A'.($ultima + 1))->getValue() !== '') {
+                        $ultima++;
+                    }
+
+                    EstiloDeInforme::bordes($hoja, "A{$fila}:E{$ultima}");
+                    $hoja->getStyle('B'.($fila + 1).":E{$ultima}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 }
+
+                foreach ($this->titulos as $fila) {
+                    $hoja->getStyle("A{$fila}:E{$fila}")->getBorders()->getBottom()
+                        ->setBorderStyle(Border::BORDER_MEDIUM)->getColor()->setRGB(EstiloDeInforme::VERDE);
+                }
+
+                $hoja->setShowGridlines(false);
+                $hoja->getTabColor()->setRGB(EstiloDeInforme::OSCURO);
+                EstiloDeInforme::prepararImpresion($hoja, ajustarAlAncho: true);
+                EstiloDeInforme::reforzarTextoSeguro($hoja);
             },
         ];
+    }
+
+    /**
+     * Las reglas con más hallazgos, de mayor a menor.
+     *
+     * @return array<int, array{0: string, 1: string, 2: int, 3: int}>
+     */
+    public function reglasConMasHallazgos(int $limite): array
+    {
+        $base = fn () => $this->registros->clone()->reorder()->setEagerLoads([])->toBase();
+
+        return array_slice($this->frecuenciaPorRegla($base), 0, $limite);
     }
 
     /**

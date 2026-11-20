@@ -27,6 +27,42 @@ final class FiltrosSurveyExportacion
         public readonly ?array $ids = null,
     ) {}
 
+    /**
+     * Los filtros aplicados, en frases cortas para la portada del informe.
+     *
+     * @return array<int, string>
+     */
+    public function descripcion(): array
+    {
+        $lineas = [];
+
+        if ($this->estado !== null) {
+            $lineas[] = "Estado: {$this->estado->label()}";
+        }
+
+        if ($this->soloConErrores) {
+            $lineas[] = 'Solo registros con errores';
+        }
+
+        if ($this->soloConAlertas) {
+            $lineas[] = 'Solo registros con alertas';
+        }
+
+        if ($this->desde !== null || $this->hasta !== null) {
+            $lineas[] = 'Fecha de registro: '.($this->desde?->format('d/m/Y') ?? 'sin inicio').' a '.($this->hasta?->format('d/m/Y') ?? 'hoy');
+        }
+
+        if (filled($this->tecnico)) {
+            $lineas[] = "Técnico: {$this->tecnico}";
+        }
+
+        if ($this->ids !== null) {
+            $lineas[] = 'Solo '.count($this->ids).' registro(s) elegidos';
+        }
+
+        return $lineas;
+    }
+
     /** @return Builder<SurveyRegistro> */
     public function query(): Builder
     {

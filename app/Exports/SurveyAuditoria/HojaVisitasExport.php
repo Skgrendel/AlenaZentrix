@@ -162,7 +162,7 @@ class HojaVisitasExport implements FromQuery, WithColumnFormatting, WithColumnWi
 
                 for ($c = 1; $c <= $total; $c++) {
                     $esValidar = $c > count(self::FIJAS) && $c < $total && ($c - count(self::FIJAS)) % 3 === 0;
-                    $color = $c <= count(self::FIJAS) ? '1F3864' : ($c === $total ? '7F1D1D' : ($esValidar ? '2E7D32' : '1F3864'));
+                    $color = $c <= count(self::FIJAS) ? EstiloDeInforme::OSCURO : ($c === $total ? '7F1D1D' : ($esValidar ? '4D7C0F' : EstiloDeInforme::OSCURO));
 
                     $estilo = $hoja->getStyle(Coordinate::stringFromColumnIndex($c).'1');
                     $estilo->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
@@ -173,6 +173,12 @@ class HojaVisitasExport implements FromQuery, WithColumnFormatting, WithColumnWi
                 $hoja->getRowDimension(1)->setRowHeight(48);
                 $hoja->freezePane('A2');
                 $hoja->setAutoFilter("A1:{$ultima}{$ultimaFila}");
+                $hoja->getTabColor()->setRGB(EstiloDeInforme::AMARILLO);
+                EstiloDeInforme::bordes($hoja, "A1:{$ultima}".$hoja->getHighestRow());
+                if ($hayDatos) {
+                    $hoja->getStyle("A2:{$ultima}{$ultimaFila}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+                }
+                EstiloDeInforme::prepararImpresion($hoja, ajustarAlAncho: false, filaDeEncabezado: 1);
 
                 $noConforme = $this->condicion('F', ResultadoComparacion::NoConforme->label(), 'FDE2E2');
                 $noVerificable = $this->condicion('F', ResultadoComparacion::NoVerificable->label(), 'FFF1CC');
@@ -180,6 +186,8 @@ class HojaVisitasExport implements FromQuery, WithColumnFormatting, WithColumnWi
                 if ($hayDatos) {
                     $hoja->getStyle("A2:{$ultima}{$ultimaFila}")->setConditionalStyles([$noConforme, $noVerificable]);
                 }
+
+                EstiloDeInforme::reforzarTextoSeguro($hoja);
             },
         ];
     }
