@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OrdenReferenciaController;
 use App\Livewire\Auditor\AuditoriaRevisar;
 use App\Livewire\Tecnico\MisOrdenesIndex;
 use App\Livewire\Tecnico\OrdenShow;
@@ -14,6 +15,8 @@ Route::middleware(['auth', 'verified', 'permission:mis-ordenes.ver'])
         Route::get('mis-ordenes', MisOrdenesIndex::class)->name('mis-ordenes');
         Route::get('mis-ordenes/{auditoria}/auditar', AuditoriaRevisar::class)->name('mis-ordenes.auditar');
         Route::get('ordenes/{orden}', OrdenShow::class)->name('ordenes.show');
+        Route::get('ordenes/{orden}/referencia/fachada', [OrdenReferenciaController::class, 'fachada'])->name('ordenes.referencia.fachada');
+        Route::get('ordenes/{orden}/referencia/mapa', [OrdenReferenciaController::class, 'mapa'])->name('ordenes.referencia.mapa');
         Route::get('ordenes/{orden}/reportar', ReporteCreate::class)->name('ordenes.reportar');
         Route::get('ordenes/{orden}/reporte/editar', ReporteEdit::class)->name('ordenes.reporte.editar');
     });

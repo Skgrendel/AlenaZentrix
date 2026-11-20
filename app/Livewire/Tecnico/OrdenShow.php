@@ -3,6 +3,7 @@
 namespace App\Livewire\Tecnico;
 
 use App\Models\OrdenJob;
+use App\Services\survey123\FachadaVerificada;
 use App\Support\ArchivoUrl;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Layout;
@@ -21,7 +22,7 @@ class OrdenShow extends Component
 
     public function mount(OrdenJob $orden): void
     {
-        $this->orden = $orden->load('personal');
+        $this->orden = $orden->load(['personal', 'surveyRegistro']);
     }
 
     /**
@@ -40,6 +41,8 @@ class OrdenShow extends Component
     {
         return view('livewire.tecnico.orden-show', [
             'documentoUrls' => $this->documentoUrls(),
+            'conFachada' => $this->orden->surveyRegistro !== null && app(FachadaVerificada::class)->para($this->orden->surveyRegistro) !== null,
+            'conMapa' => $this->orden->surveyRegistro?->latitud !== null && $this->orden->surveyRegistro?->longitud !== null,
         ]);
     }
 }

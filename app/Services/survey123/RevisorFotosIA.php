@@ -62,6 +62,9 @@ TXT;
             throw new RuntimeException('El registro no tiene fotos para revisar.');
         }
 
+        $mapaDeFotos = [];
+        $contenido = $this->contenido($registro, $adjuntos, $ajuste->detalle_imagen, $mapaDeFotos);
+
         $respuesta = Http::withToken($clave)
             ->timeout(120)
             ->acceptJson()
@@ -69,7 +72,7 @@ TXT;
                 'model' => $ajuste->modelo,
                 'messages' => [
                     ['role' => 'system', 'content' => $ajuste->instrucciones],
-                    ['role' => 'user', 'content' => $this->contenido($registro, $adjuntos, $ajuste->detalle_imagen)],
+                    ['role' => 'user', 'content' => $contenido],
                 ],
                 'response_format' => ['type' => 'json_schema', 'json_schema' => $this->esquema()],
                 'max_completion_tokens' => 2000,
@@ -84,6 +87,9 @@ TXT;
         if (! is_array($veredicto)) {
             throw new RuntimeException('La respuesta de la IA no tiene el formato esperado.');
         }
+
+        // Vincula cada número de foto del veredicto con la foto real, para poder usar el veredicto después.
+        $veredicto['mapa_de_fotos'] = $mapaDeFotos;
 
         $entrada = (int) $respuesta->json('usage.prompt_tokens');
         $salida = (int) $respuesta->json('usage.completion_tokens');
@@ -131,9 +137,10 @@ TXT;
 
     /**
      * @param  iterable<int, SurveyAdjunto>  $adjuntos
+     * @param  array<int, string>  $mapaDeFotos  se llena con número de foto => id del adjunto
      * @return array<int, array<string, mixed>>
      */
-    private function contenido(SurveyRegistro $registro, iterable $adjuntos, string $detalle): array
+    private function contenido(SurveyRegistro $registro, iterable $adjuntos, string $detalle, array &$mapaDeFotos): array
     {
         $partes = [[
             'type' => 'text',
@@ -160,6 +167,7 @@ TXT;
             }
 
             $numero++;
+            $mapaDeFotos[$numero] = $adjunto->id;
             $partes[] = ['type' => 'text', 'text' => "Foto {$numero} — campo declarado: {$adjunto->campo} — archivo: {$adjunto->nombre}"];
             $partes[] = ['type' => 'image_url', 'image_url' => [
                 'url' => 'data:image/jpeg;base64,'.base64_encode($this->reducir($contenido)),

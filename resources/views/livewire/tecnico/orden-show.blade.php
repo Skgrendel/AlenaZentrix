@@ -16,6 +16,33 @@
         {{-- Columna principal --}}
         <div class="space-y-6 lg:col-span-2">
 
+            {{-- Para ubicar el predio: foto de fachada y mapa, solo en órdenes de auditoría de suspensiones --}}
+            @if ($conFachada || $conMapa)
+                <div class="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-700 dark:bg-zinc-900" data-test="referencia-del-predio">
+                    <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Ubicación del predio</h3>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        @if ($conFachada)
+                            <figure>
+                                <img src="{{ route('tecnico.ordenes.referencia.fachada', $orden) }}" alt="Fachada del predio" loading="lazy"
+                                    class="aspect-4/3 w-full rounded-lg border border-zinc-200 bg-zinc-100 object-cover dark:border-zinc-700 dark:bg-zinc-800">
+                                <figcaption class="mt-1 text-xs text-zinc-500">Fachada, foto del técnico</figcaption>
+                            </figure>
+                        @elseif ($orden->surveyRegistro?->adjuntos()->where('campo', 'foto_fachada')->exists())
+                            <div class="flex aspect-4/3 w-full items-center justify-center rounded-lg border border-dashed border-zinc-300 p-4 text-center text-xs text-zinc-500 dark:border-zinc-600" data-test="fachada-sin-verificar">
+                                La foto de fachada aún no está verificada.
+                            </div>
+                        @endif
+                        @if ($conMapa)
+                            <figure>
+                                <img src="{{ route('tecnico.ordenes.referencia.mapa', $orden) }}" alt="Mapa del lugar" loading="lazy"
+                                    class="aspect-4/3 w-full rounded-lg border border-zinc-200 bg-zinc-100 object-cover dark:border-zinc-700 dark:bg-zinc-800">
+                                <figcaption class="mt-1 text-xs text-zinc-500">Mapa: el punto rojo marca el lugar de la visita</figcaption>
+                            </figure>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
             {{-- Datos del punto de servicio --}}
             @if (
                 $orden->contrato ||
