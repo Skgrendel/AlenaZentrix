@@ -160,6 +160,7 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ->label('Asignar')
                     ->icon('heroicon-o-user-plus')
                     ->color('primary')
+                    ->button()
                     ->modalHeading(fn (SurveyRegistro $record): string => "Asignar auditoría de campo: OT {$record->orden_trabajo}")
                     ->modalSubmitActionLabel('Asignar')
                     ->visible(fn (SurveyRegistro $record): bool => $this->puedeAsignar()

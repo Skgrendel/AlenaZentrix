@@ -192,6 +192,39 @@
         </div>
     </div>
 
+    {{-- Sugerencia de la IA sobre las fotos --}}
+    <div class="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900">
+        <div class="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <div>
+                <h3 class="text-base font-semibold text-zinc-900 dark:text-white">Revisión de fotos con IA</h3>
+                <flux:text class="text-xs">Es solo una sugerencia: no cambia el resultado de la auditoría y la decisión es de una persona.</flux:text>
+            </div>
+            @if ($puedeRevisarConIA && $registro->adjuntos->isNotEmpty())
+                <flux:button size="sm" icon="sparkles" wire:click="revisarConIA" wire:loading.attr="disabled" wire:target="revisarConIA">
+                    <span wire:loading.remove wire:target="revisarConIA">{{ $revisionIA ? 'Volver a revisar' : 'Revisar con IA' }}</span>
+                    <span wire:loading wire:target="revisarConIA">Revisando…</span>
+                </flux:button>
+            @endif
+        </div>
+
+        @if ($revisionIA)
+            <flux:text class="mb-3 text-xs">
+                Revisado el {{ $revisionIA->created_at->timezone(config('survey_auditoria.zona_horaria_excel'))->format('d/m/Y h:i a') }}
+                @if ($revisionIA->usuario) por {{ $revisionIA->usuario->fullName() }} @endif
+            </flux:text>
+            @include('livewire.partials.veredicto-fotos-ia', ['revision' => [
+                'veredicto' => $revisionIA->veredicto,
+                'modelo' => $revisionIA->modelo,
+                'fotos' => $revisionIA->fotos,
+                'tokens_entrada' => $revisionIA->tokens_entrada,
+                'tokens_salida' => $revisionIA->tokens_salida,
+                'costo_usd' => $revisionIA->costo_usd,
+            ]])
+        @else
+            <flux:text class="text-sm">Todavía no se ha revisado con IA.</flux:text>
+        @endif
+    </div>
+
     {{-- Resultado de la visita del auditor --}}
     @php($reporte = $orden?->reportes->sortByDesc('created_at')->first())
     @if ($reporte && ! empty($reporte->comparacion['filas'] ?? []))

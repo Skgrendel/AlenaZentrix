@@ -78,6 +78,15 @@ test('un administrador guarda el modelo, el detalle y las instrucciones de su em
         ->and($guardado->instrucciones)->toContain('primer plano del medidor');
 });
 
+test('el desplegable ofrece los modelos y la tarifa cambia al elegir otro', function () {
+    Livewire::actingAs(usuarioConRol('Administrador'))->test(ConfiguracionRevisionFotosIA::class)
+        ->assertSeeHtml('>gpt-4o</option>')
+        ->assertSeeHtml('>gpt-4.1-mini</option>')
+        ->assertSee('US$ 2.50')
+        ->set('modelo', 'gpt-4o-mini')
+        ->assertSee('US$ 0.15');
+});
+
 test('guardar dos veces actualiza los ajustes en lugar de duplicarlos', function () {
     $admin = usuarioConRol('Administrador');
     $componente = Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIA::class);

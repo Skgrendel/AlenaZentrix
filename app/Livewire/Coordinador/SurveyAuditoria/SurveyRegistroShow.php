@@ -5,11 +5,14 @@ namespace App\Livewire\Coordinador\SurveyAuditoria;
 use App\Models\SurveyAdjunto;
 use App\Models\SurveyRegistro;
 use App\Services\survey123\RequisitosDeFotos;
+use App\Services\survey123\RevisorFotosIA;
+use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Throwable;
 
 #[Layout('layouts.app')]
 #[Title('Detalle del registro')]
@@ -32,6 +35,22 @@ class SurveyRegistroShow extends Component
         $this->registro = $registro;
     }
 
+    /** Pide a la IA una revisión de las fotos y la guarda como sugerencia; no cambia la auditoría. */
+    public function revisarConIA(RevisorFotosIA $revisor): void
+    {
+        abort_unless(auth()->user()?->can('ordenes.revisar'), 403);
+
+        try {
+            $revisor->revisarYGuardar($this->registro, auth()->id());
+        } catch (Throwable $e) {
+            Notification::make()->danger()->title('No se pudo revisar con IA')->body($e->getMessage())->send();
+
+            return;
+        }
+
+        Notification::make()->success()->title('Revisión con IA guardada')->send();
+    }
+
     public function render(): View
     {
         $registro = $this->registro->load(['adjuntos', 'ordenes.reportes']);
@@ -43,6 +62,8 @@ class SurveyRegistroShow extends Component
             'hallazgos' => collect($registro->hallazgos ?? [])->sortBy(fn (array $h): int => $h['severidad'] === 'error' ? 0 : 1),
             'listaFotos' => $this->listaDeVerificacion($registro),
             'grupos' => $this->gruposDeFotos($registro),
+            'revisionIA' => $registro->revisionesIA()->with('usuario.personal')->latest()->first(),
+            'puedeRevisarConIA' => auth()->user()?->can('ordenes.revisar') ?? false,
             'orden' => $registro->ordenes->sortByDesc('created_at')->first(),
         ]);
     }

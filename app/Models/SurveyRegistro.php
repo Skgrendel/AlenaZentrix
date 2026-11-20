@@ -92,6 +92,12 @@ class SurveyRegistro extends Model
         return $this->hasMany(SurveyAdjunto::class, 'survey_registro_id');
     }
 
+    /** @return HasMany<RevisionFotosIA, $this> */
+    public function revisionesIA(): HasMany
+    {
+        return $this->hasMany(RevisionFotosIA::class, 'survey_registro_id');
+    }
+
     /** @return HasMany<OrdenJob, $this> */
     public function ordenes(): HasMany
     {

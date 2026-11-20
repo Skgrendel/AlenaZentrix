@@ -3,6 +3,7 @@
 namespace App\Services\survey123;
 
 use App\Models\AjusteRevisionIA;
+use App\Models\RevisionFotosIA;
 use App\Models\SurveyAdjunto;
 use App\Models\SurveyRegistro;
 use Illuminate\Support\Facades\Http;
@@ -95,6 +96,25 @@ TXT;
             'fotos' => $adjuntos->count(),
             'modelo' => $ajuste->modelo,
         ];
+    }
+
+    /** Revisa el registro y guarda el veredicto como una nueva revisión (el historial se conserva). */
+    public function revisarYGuardar(SurveyRegistro $registro, ?string $usuarioId = null): RevisionFotosIA
+    {
+        $ajuste = AjusteRevisionIA::de($registro->company_id);
+        $r = $this->revisar($registro, $ajuste);
+
+        return $registro->revisionesIA()->create([
+            'modelo' => $r['modelo'],
+            'detalle_imagen' => $ajuste->detalle_imagen,
+            'instrucciones_hash' => sha1($ajuste->instrucciones),
+            'veredicto' => $r['veredicto'],
+            'fotos' => $r['fotos'],
+            'tokens_entrada' => $r['tokens_entrada'],
+            'tokens_salida' => $r['tokens_salida'],
+            'costo_usd' => $r['costo_usd'],
+            'user_id' => $usuarioId,
+        ]);
     }
 
     /** Costo estimado en USD, o null si el modelo no tiene tarifa configurada. */

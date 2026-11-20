@@ -72,10 +72,10 @@ return [
         // Modelos con visión que se ofrecen en la configuración, con su tarifa en USD por millón de tokens.
         // Las tarifas son de referencia para estimar costos: confirmarlas en la tarifa vigente del proveedor.
         'modelos' => [
-            'gpt-4o-mini' => ['entrada' => 0.15, 'salida' => 0.60],
             'gpt-4o' => ['entrada' => 2.50, 'salida' => 10.00],
-            'gpt-4.1-mini' => ['entrada' => 0.40, 'salida' => 1.60],
+            'gpt-4o-mini' => ['entrada' => 0.15, 'salida' => 0.60],
             'gpt-4.1' => ['entrada' => 2.00, 'salida' => 8.00],
+            'gpt-4.1-mini' => ['entrada' => 0.40, 'salida' => 1.60],
         ],
     ],
 
