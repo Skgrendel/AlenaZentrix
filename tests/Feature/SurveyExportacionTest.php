@@ -274,8 +274,8 @@ test('incluye identificadores, coordenadas, fechas y estado de asignación', fun
         ->and($fila['y'])->toEqual(10.407333)
         ->and($fila['¿Se pudo ejecutar la suspensión?'])->toBe('si')
         ->and($fila['Estado de asignación'])->toBe('Asignado a campo')
-        ->and($hoja->getCell('E2')->getFormattedValue())->toBe('2026-11-10 02:45:00')
-        ->and($hoja->getCell('AO2')->getFormattedValue())->toBe('2026-11-10 03:00:00');
+        ->and($hoja->getCell('E2')->getFormattedValue())->toBe('2026-11-10 07:45:00')
+        ->and($hoja->getCell('AO2')->getFormattedValue())->toBe('2026-11-10 08:00:00');
 });
 
 test('la hoja de visitas muestra lo reportado, lo encontrado y la validación por campo', function () {
@@ -387,10 +387,10 @@ test('los filtros de solo errores y solo alertas', function () {
 
 test('el filtro por rango de fechas incluye los días de los extremos', function () {
     $empresa = Company::factory()->create();
-    registroExportable($empresa, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-02 04:59:00']);
-    registroExportable($empresa, ['orden_trabajo' => '300000002', 'fecha_registro' => '2026-11-02 05:00:00']);
-    registroExportable($empresa, ['orden_trabajo' => '300000003', 'fecha_registro' => '2026-11-11 04:59:00']);
-    registroExportable($empresa, ['orden_trabajo' => '300000004', 'fecha_registro' => '2026-11-11 05:00:00']);
+    registroExportable($empresa, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-01 23:59:00']);
+    registroExportable($empresa, ['orden_trabajo' => '300000002', 'fecha_registro' => '2026-11-05 00:00:00']);
+    registroExportable($empresa, ['orden_trabajo' => '300000003', 'fecha_registro' => '2026-11-10 23:30:00']);
+    registroExportable($empresa, ['orden_trabajo' => '300000004', 'fecha_registro' => '2026-11-11 00:00:00']);
 
     $filtros = new FiltrosSurveyExportacion($empresa->id, desde: Carbon::parse('2026-11-02'), hasta: Carbon::parse('2026-11-10'));
 
@@ -857,8 +857,8 @@ test('la hoja de visitas replica conforme, no conforme y no verificable fila a f
     $hoja = libroDe(exportacionDe($empresa))->getSheetByName('Visitas de auditoría');
     [$a, $b, $c] = filasDeHoja($hoja);
 
-    expect($hoja->getCell('E2')->getFormattedValue())->toBe('2026-11-10 05:00:00')
-        ->and($hoja->getCell('E4')->getFormattedValue())->toBe('2026-11-10 07:00:00');
+    expect($hoja->getCell('E2')->getFormattedValue())->toBe('2026-11-10 10:00:00')
+        ->and($hoja->getCell('E4')->getFormattedValue())->toBe('2026-11-10 12:00:00');
 
     expect($a['OT original'])->toBe(300000001)
         ->and($a['Contrato'])->toBe(111111)
@@ -1110,11 +1110,11 @@ test('el Excel cuenta la foto del IVT y suma las fotos de actividad de ambas ver
         ->and($filas[300000002][$actividad])->toBe(2);
 });
 
-test('el filtro de fechas cuenta el día en hora de Colombia', function () {
+test('el filtro de fechas cuenta el día completo en hora de Colombia, de 00:00 a 23:59:59', function () {
     $empresa = Company::factory()->create();
-    // 9:00 pm del 5/11 en Colombia = 02:00 UTC del 6/11.
-    $noche = registroExportable($empresa, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-06 02:00:00']);
-    registroExportable($empresa, ['orden_trabajo' => '300000002', 'fecha_registro' => '2026-11-06 06:00:00']);
+    // 9:00 pm del 5/11 en Colombia (la app guarda y lee en hora de Colombia) debe caer en el día 5.
+    $noche = registroExportable($empresa, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-05 21:00:00']);
+    registroExportable($empresa, ['orden_trabajo' => '300000002', 'fecha_registro' => '2026-11-06 01:00:00']);
 
     $ids = fn (Carbon $desde, Carbon $hasta) => (new FiltrosSurveyExportacion($empresa->id, desde: $desde, hasta: $hasta))->query()->pluck('id')->all();
 

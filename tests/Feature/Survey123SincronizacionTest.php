@@ -10,6 +10,8 @@ use App\Services\survey123\Survey123Mapeador;
 use App\Services\survey123\Survey123Sincronizador;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -307,4 +309,19 @@ test('sincronizar con la revisión automática apagada no encola nada', function
     (new Survey123Sincronizador(clienteSurvey()))->sincronizar($empresa->id);
 
     Queue::assertNothingPushed();
+});
+
+test('la fecha que llega de ArcGIS se guarda en hora de Colombia y se muestra igual que en el formulario', function () {
+    // 16:23 en Colombia es 21:23 UTC: ArcGIS entrega el momento exacto en milisegundos.
+    $feature = featureSurvey();
+    $feature['attributes']['fecha'] = Carbon::parse('2026-11-20 21:23:00', 'UTC')->getTimestampMs();
+
+    $datos = (new Survey123Mapeador(metadatosSurvey()))->mapear($feature);
+
+    expect($datos['fecha_registro']->format('Y-m-d H:i'))->toBe('2026-11-20 16:23')
+        ->and($datos['fecha_registro']->copy()->utc()->format('Y-m-d H:i'))->toBe('2026-11-20 21:23');
+
+    $registro = SurveyRegistro::query()->withoutGlobalScopes()->create($datos + ['company_id' => Company::factory()->create()->id]);
+
+    expect(DB::table('survey_registros')->where('id', $registro->id)->value('fecha_registro'))->toBe('2026-11-20 16:23:00');
 });
