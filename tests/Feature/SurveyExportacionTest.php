@@ -27,6 +27,7 @@ use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Maatwebsite\Excel\Excel as TipoExcel;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -158,7 +159,7 @@ test('la hoja Auditoría replica el formato del libro: variables con su Validar 
     foreach ($variables as $variable) {
         array_push($esperados, $variable, "Validar ▸ {$variable}");
     }
-    array_push($esperados, 'Estado de asignación', 'Errores ✖', 'Alertas ⚠', 'Estado de la fila', 'Revisión IA', 'Resumen IA');
+    array_push($esperados, 'Estado de asignación', 'Errores ✖', 'Alertas ⚠', 'Estado de la fila', 'Revisión IA', 'Resumen IA', 'Conclusión');
 
     $hoja = $libro->getSheetByName('Auditoría');
     $encabezados = $hoja->toArray(null, false, false, false)[0];
@@ -816,7 +817,7 @@ test('los colores de fila con errores y con alertas están en el archivo', funct
 
     $hoja = libroDe(exportacionDe($empresa))->getSheetByName('Auditoría');
 
-    expect($hoja->getHighestColumn())->toBe('BF');
+    expect($hoja->getHighestColumn())->toBe('BG');
 
     $condicionales = $hoja->getConditionalStyles('A2');
     expect($condicionales)->toHaveCount(2)
@@ -1165,4 +1166,37 @@ test('el Excel trae Creator y Editor del origen, vacíos si no llegaron, y sigue
         ->and($filas[300000002]['Editor'])->toBe('=1+1')
         ->and($filas[300000003]['Creator'])->toBeNull()
         ->and($filas[300000003]['Editor'])->toBeNull();
+});
+
+test('la última columna es «Conclusión»: vacía al exportar y con una lista desplegable de tres opciones en cada fila', function () {
+    $empresa = Company::factory()->create();
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000001']), [['lectura', 'error', 'lectura_medidor', 'b']]);
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000002']));
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000003']));
+
+    $hoja = libroDe(exportacionDe($empresa))->getSheetByName('Auditoría');
+    $ultima = $hoja->getHighestColumn();
+
+    expect($hoja->getCell("{$ultima}1")->getValue())->toBe('Conclusión')
+        ->and($hoja->getCell(Coordinate::stringFromColumnIndex(Coordinate::columnIndexFromString($ultima) - 1).'1')->getValue())->toBe('Resumen IA');
+
+    foreach ([2, 3, 4] as $fila) {
+        $validacion = $hoja->getCell("{$ultima}{$fila}")->getDataValidation();
+
+        expect($hoja->getCell("{$ultima}{$fila}")->getValue())->toBeNull()
+            ->and($validacion->getType())->toBe('list')
+            ->and($validacion->getFormula1())->toBe('"Se aprueba,Se aprueba solicitando correcciones,No se aprueba"')
+            ->and($validacion->getShowErrorMessage())->toBeTrue()
+            ->and($validacion->getErrorStyle())->toBe('stop')
+            ->and($validacion->getAllowBlank())->toBeTrue();
+    }
+
+    expect($hoja->getCell("{$ultima}5")->getDataValidation()->getType())->not->toBe('list');
+});
+
+test('las opciones de la conclusión caben en el límite de Excel para listas escritas en la celda', function () {
+    $texto = implode(',', HojaAuditoriaExport::CONCLUSIONES);
+
+    expect(strlen($texto))->toBeLessThan(255)
+        ->and(HojaAuditoriaExport::CONCLUSIONES)->each->not->toContain(',');
 });
