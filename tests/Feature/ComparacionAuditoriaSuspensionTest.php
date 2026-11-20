@@ -105,14 +105,25 @@ test('un método distinto es no conforme', function () {
         ->and(resultadosPorCampo($reporte)['metodo'])->toBe('no_coincide');
 });
 
-test('una ubicación a más de 50 metros es no conforme y se informa la distancia', function () {
-    $reporte = reporteDelAuditor(ordenConReferencia(), latitud: 10.408333);
+test('una ubicación a más de 200 metros es no conforme y se informa la distancia', function () {
+    // 0,002 grados de latitud son unos 222 m.
+    $reporte = reporteDelAuditor(ordenConReferencia(), latitud: 10.409333);
 
     $fila = collect($reporte->comparacion['filas'])->firstWhere('campo', 'ubicacion');
 
     expect($reporte->resultado_comparacion)->toBe('no_conforme')
         ->and($fila['resultado'])->toBe('no_coincide')
-        ->and($fila['detalle'])->toContain('máximo 50 m');
+        ->and($fila['detalle'])->toContain('máximo 200 m');
+});
+
+test('una ubicación a menos de 200 metros se considera el mismo sitio', function () {
+    // 0,001 grados de latitud son unos 111 m: antes (límite de 50 m) era no conforme.
+    $reporte = reporteDelAuditor(ordenConReferencia(), latitud: 10.408333);
+
+    $fila = collect($reporte->comparacion['filas'])->firstWhere('campo', 'ubicacion');
+
+    expect($fila['resultado'])->toBe('coincide')
+        ->and($fila['detalle'])->toContain('máximo 200 m');
 });
 
 test('una categoría distinta solo genera alerta', function () {
