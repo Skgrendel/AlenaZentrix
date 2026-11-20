@@ -64,7 +64,7 @@ return [
         'distancia_punto_repetido_m' => 30,
 
         // Distancia máxima (m) entre el punto del técnico y el del auditor para considerarlos el mismo sitio.
-        'distancia_auditor_max_m' => 50,
+        'distancia_auditor_max_m' => 200,
 
         // Motivos por los que el auditor no pudo verificar la suspensión en sitio.
         'motivos_no_verificables' => ['no_ubico_direccion', 'predio_cerrado', 'usuario_impide', 'riesgo_sitio', 'redes_terraza'],
