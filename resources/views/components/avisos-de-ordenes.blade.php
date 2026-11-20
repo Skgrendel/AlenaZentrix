@@ -32,7 +32,32 @@
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': this.token },
                     body: JSON.stringify(cuerpo),
                 });
-                if (! respuesta.ok) throw new Error('El servidor no guardó el aviso.');
+                if (! respuesta.ok) {
+                    const fallo = new Error('El servidor respondió ' + respuesta.status);
+                    fallo.name = 'Http' + respuesta.status;
+                    throw fallo;
+                }
+            },
+            // Explica con palabras sencillas por qué falló y deja el código técnico entre paréntesis para soporte.
+            motivo(error) {
+                const nombre = (error && error.name) || 'Error';
+                const explicaciones = {
+                    Http419: 'Tu sesión venció. Cierra la app, ábrela de nuevo e inicia sesión.',
+                    Http401: 'Tu sesión venció. Cierra la app, ábrela de nuevo e inicia sesión.',
+                    Http403: 'Tu usuario no tiene permiso para activar los avisos.',
+                    Http422: 'El servidor no aceptó los datos que envió el teléfono.',
+                    Http429: 'Demasiados intentos. Espera un momento y vuelve a probar.',
+                    NotAllowedError: 'El teléfono no dio permiso para mostrar avisos.',
+                    AbortError: 'El teléfono no pudo registrarse con su servicio de avisos. Revisa la conexión y los servicios de Google del teléfono.',
+                    InvalidAccessError: 'La clave de avisos del servidor no es válida. Avisa a soporte.',
+                    InvalidCharacterError: 'La clave de avisos del servidor no es válida. Avisa a soporte.',
+                    SecurityError: 'El navegador exige una conexión segura (HTTPS) para activar los avisos.',
+                    NotSupportedError: 'Este teléfono o navegador no admite avisos.',
+                    TypeError: 'No se pudo comunicar con el servidor. Revisa la conexión.',
+                };
+                const texto = explicaciones[nombre]
+                    ?? (nombre.startsWith('Http5') ? 'El servidor tuvo un error al guardar el aviso. Inténtalo más tarde.' : 'No se pudieron activar los avisos.');
+                return texto + ' (' + nombre + ')';
             },
             async alternar() {
                 if (this.ocupado) return;
@@ -58,7 +83,8 @@
                     await this.enviar('POST', { endpoint: datos.endpoint, keys: datos.keys, contentEncoding: (PushManager.supportedContentEncodings || ['aes128gcm'])[0] });
                     this.activo = true;
                 } catch (error) {
-                    this.mensaje = 'No se pudieron activar los avisos. Inténtalo de nuevo.';
+                    console.error('Avisos de órdenes:', error);
+                    this.mensaje = this.motivo(error);
                 } finally {
                     this.ocupado = false;
                 }
