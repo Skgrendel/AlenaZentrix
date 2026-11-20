@@ -3,6 +3,7 @@
 namespace App\Livewire\Coordinador\SurveyAuditoria;
 
 use App\Enums\EstadoSurveyRegistro;
+use App\Exports\SurveyAuditoria\SurveyAuditoriaExport;
 use App\Models\personals;
 use App\Models\SurveyRegistro;
 use App\Services\coordinador\AsignarAuditoriaSurveyService;
@@ -21,11 +22,14 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 #[Layout('layouts.app')]
 #[Title('Auditoría de Suspensiones')]
@@ -49,7 +53,8 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ->searchable()
                     ->sortable()
                     ->badge()
-                    ->color('primary'),
+                    ->color('primary')
+                    ->url(fn (SurveyRegistro $record): string => route('operaciones.survey-auditoria.show', $record)),
                 Tables\Columns\TextColumn::make('contrato')
                     ->label('Contrato')
                     ->searchable(),
@@ -106,7 +111,20 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                             ->mapWithKeys(fn (EstadoSurveyRegistro $case) => [$case->value => $case->label()])
                     ),
             ])
+            ->headerActions([
+                Action::make('exportar_excel')
+                    ->label('Exportar Excel')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->visible(fn (): bool => $this->puedeExportar())
+                    ->action(fn (): BinaryFileResponse => $this->exportar($this->getFilteredTableQuery())),
+            ])
             ->actions([
+                Action::make('ver_detalle')
+                    ->label('Ver detalle')
+                    ->icon('heroicon-o-photo')
+                    ->color('gray')
+                    ->url(fn (SurveyRegistro $record): string => route('operaciones.survey-auditoria.show', $record)),
                 Action::make('hallazgos')
                     ->label('Hallazgos')
                     ->icon('heroicon-o-exclamation-triangle')
@@ -136,6 +154,13 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
             ])
             ->bulkActions([
                 BulkActionGroup::make([
+                    BulkAction::make('exportar_seleccionados')
+                        ->label('Exportar seleccionados')
+                        ->icon('heroicon-o-arrow-down-tray')
+                        ->visible(fn (): bool => $this->puedeExportar())
+                        ->action(fn (Collection $records): BinaryFileResponse => $this->exportar(
+                            SurveyRegistro::query()->whereIn('survey_registros.id', $records->modelKeys())
+                        )),
                     BulkAction::make('asignar_seleccionados')
                         ->label('Asignar seleccionados')
                         ->icon('heroicon-o-user-plus')
@@ -166,6 +191,28 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
     private function puedeAsignar(): bool
     {
         return auth()->user()?->can('ordenes.crear') ?? false;
+    }
+
+    private function puedeExportar(): bool
+    {
+        return auth()->user()?->can('ordenes.ver') ?? false;
+    }
+
+    /**
+     * Descarga el libro con los registros de la consulta, siempre acotados a la empresa del usuario.
+     *
+     * @param  Builder<SurveyRegistro>  $registros
+     */
+    private function exportar($registros): BinaryFileResponse
+    {
+        abort_unless($this->puedeExportar(), 403);
+
+        $companyId = auth()->user()->company_id;
+        abort_if($companyId === null, 403);
+
+        $registros = $registros->withoutGlobalScopes()->where('survey_registros.company_id', $companyId);
+
+        return Excel::download(new SurveyAuditoriaExport($registros), SurveyAuditoriaExport::nombreDeArchivo());
     }
 
     /** @return array<int, mixed> */

@@ -228,3 +228,44 @@ test('si tampoco funciona el OAuth, se informa el error de generateToken', funct
     expect(fn () => clienteSurvey()->metadatos())
         ->toThrow(RuntimeException::class, 'Invalid username or password');
 });
+
+test('una foto que no se pudo guardar no se registra y se cuenta como error', function () {
+    $empresa = Company::factory()->create();
+    simularArcGis([featureSurvey()], [
+        ['parentObjectId' => 2, 'attachmentInfos' => [['id' => 10, 'name' => 'foto_fachada-1.jpg', 'keywords' => 'foto_fachada']]],
+    ]);
+
+    $discoCaido = Mockery::mock();
+    $discoCaido->shouldReceive('put')->andReturn(false);
+    Storage::shouldReceive('disk')->with('s3')->andReturn($discoCaido);
+
+    $resumen = (new Survey123Sincronizador(clienteSurvey()))->sincronizar($empresa->id);
+
+    expect($resumen)->toMatchArray(['nuevos' => 1, 'fotos' => 0, 'errores' => 1])
+        ->and(SurveyAdjunto::query()->count())->toBe(0);
+});
+
+test('las fotos se guardan en el disco configurado', function () {
+    config(['services.survey123.disco_fotos' => 'local']);
+    Storage::fake('local');
+    $empresa = Company::factory()->create();
+    simularArcGis([featureSurvey()], [
+        ['parentObjectId' => 2, 'attachmentInfos' => [['id' => 10, 'name' => 'foto_fachada-1.jpg', 'keywords' => 'foto_fachada']]],
+    ]);
+
+    (new Survey123Sincronizador(clienteSurvey()))->sincronizar($empresa->id);
+
+    Storage::disk('local')->assertExists(SurveyAdjunto::query()->firstOrFail()->ruta);
+});
+
+test('una fecha de edición con milisegundos no hace que el registro se vea cambiado en cada sincronización', function () {
+    Storage::fake('s3');
+    $empresa = Company::factory()->create();
+    simularArcGis([featureSurvey(2, 1_763_600_000_123)]);
+
+    $sincronizador = new Survey123Sincronizador(clienteSurvey());
+    $sincronizador->sincronizar($empresa->id, conFotos: false);
+    $segunda = $sincronizador->sincronizar($empresa->id, conFotos: false);
+
+    expect($segunda)->toMatchArray(['actualizados' => 0, 'sin_cambios' => 1]);
+});

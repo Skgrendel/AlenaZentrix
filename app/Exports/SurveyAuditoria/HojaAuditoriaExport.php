@@ -1,0 +1,266 @@
+<?php
+
+namespace App\Exports\SurveyAuditoria;
+
+use App\Models\SurveyRegistro;
+use App\Services\survey123\AuditoriaSurveyRegistro;
+use Closure;
+use Illuminate\Database\Eloquent\Builder;
+use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
+use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Color;
+use PhpOffice\PhpSpreadsheet\Style\Conditional;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+
+/**
+ * Hoja «Auditoría»: una fila por registro; cada variable de la encuesta va seguida de su «Validar ▸ …».
+ */
+class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumnWidths, WithCustomValueBinder, WithEvents, WithHeadings, WithMapping, WithStrictNullComparison, WithTitle
+{
+    use ValoresSeguros;
+
+    public const FORMATO_FECHA = 'yyyy\-mm\-dd\ hh:mm:ss';
+
+    public const ESTADO_OK = 'OK';
+
+    public const ESTADO_ALERTAS = 'Con alertas';
+
+    public const ESTADO_ERRORES = 'Con errores';
+
+    public const ESTADO_SIN_AUDITAR = 'Sin auditar';
+
+    /** @var array<int, array{titulo: string, valor: Closure, campos: array<int, string>, ancho: int, fecha?: bool}>|null */
+    private ?array $variables = null;
+
+    /** @param Builder<SurveyRegistro> $registros */
+    public function __construct(private readonly Builder $registros) {}
+
+    public function title(): string
+    {
+        return 'Auditoría';
+    }
+
+    /** @return Builder<SurveyRegistro> */
+    public function query(): Builder
+    {
+        $foto = fn (string $campo): Closure => fn ($q) => $q->where('campo', $campo);
+
+        return $this->registros->clone()
+            ->reorder()
+            ->setEagerLoads([])
+            ->select([
+                'survey_registros.id', 'object_id', 'global_id', 'fecha_registro', 'tecnico', 'contrato', 'orden_trabajo',
+                'categoria', 'serie_medidor', 'lectura_medidor', 'actividad', 'suspension_ejecutada', 'metodo_suspension',
+                'serie_sonda', 'serie_caps', 'motivo_no_ejecucion', 'justificacion', 'latitud', 'longitud',
+                'creado_en_origen', 'editado_en_origen', 'estado', 'hallazgos', 'total_errores', 'total_alertas', 'auditado_en',
+            ])
+            ->withCount([
+                'adjuntos as fotos_fachada' => $foto('foto_fachada'),
+                'adjuntos as fotos_medidor' => $foto('foto_medidor'),
+                'adjuntos as fotos_actividad' => $foto('foto_actividad'),
+            ])
+            ->orderBy('survey_registros.fecha_registro')
+            ->orderBy('survey_registros.id');
+    }
+
+    /** @return array<int, string> */
+    public function headings(): array
+    {
+        $encabezados = [];
+
+        foreach ($this->variables() as $variable) {
+            $encabezados[] = $variable['titulo'];
+            $encabezados[] = 'Validar ▸ '.$variable['titulo'];
+        }
+
+        return array_merge($encabezados, ['Estado de asignación', 'Errores ✖', 'Alertas ⚠', 'Estado de la fila']);
+    }
+
+    /** @return array<int, mixed> */
+    public function map($registro): array
+    {
+        $auditado = $registro->auditado_en !== null;
+        $hallazgos = $auditado ? ($registro->hallazgos ?? []) : [];
+        $fila = [];
+
+        foreach ($this->variables() as $variable) {
+            $fila[] = ($variable['valor'])($registro);
+            $fila[] = $auditado ? $this->validar($hallazgos, $variable['campos']) : null;
+        }
+
+        $fila[] = $registro->estado->label();
+        $fila[] = $auditado ? (int) $registro->total_errores : null;
+        $fila[] = $auditado ? (int) $registro->total_alertas : null;
+        $fila[] = $this->estadoDeLaFila($registro);
+
+        return $fila;
+    }
+
+    /** @return array<string, string> */
+    public function columnFormats(): array
+    {
+        $formatos = [];
+
+        foreach ($this->variables() as $i => $variable) {
+            if ($variable['fecha'] ?? false) {
+                $formatos[Coordinate::stringFromColumnIndex($i * 2 + 1)] = self::FORMATO_FECHA;
+            }
+        }
+
+        return $formatos;
+    }
+
+    /** @return array<string, int> */
+    public function columnWidths(): array
+    {
+        $anchos = [];
+
+        foreach ($this->variables() as $i => $variable) {
+            $anchos[Coordinate::stringFromColumnIndex($i * 2 + 1)] = $variable['ancho'];
+            $anchos[Coordinate::stringFromColumnIndex($i * 2 + 2)] = 34;
+        }
+
+        $primera = count($this->variables()) * 2 + 1;
+        $anchos[Coordinate::stringFromColumnIndex($primera)] = 22;
+        $anchos[Coordinate::stringFromColumnIndex($primera + 1)] = 11;
+        $anchos[Coordinate::stringFromColumnIndex($primera + 2)] = 11;
+        $anchos[Coordinate::stringFromColumnIndex($primera + 3)] = 16;
+
+        return $anchos;
+    }
+
+    /** @return array<string, Closure> */
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $evento): void {
+                $hoja = $evento->sheet->getDelegate();
+                $totalColumnas = count($this->variables()) * 2 + 4;
+                $ultima = Coordinate::stringFromColumnIndex($totalColumnas);
+                $ultimaFila = max($hoja->getHighestRow(), 2);
+
+                foreach ($this->variables() as $i => $variable) {
+                    $this->estiloEncabezado($hoja, $i * 2 + 1, '1F3864');
+                    $this->estiloEncabezado($hoja, $i * 2 + 2, '2E7D32');
+
+                    $validar = Coordinate::stringFromColumnIndex($i * 2 + 2);
+                    $hoja->getStyle("{$validar}2:{$validar}{$ultimaFila}")->getFill()
+                        ->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F2F2F2');
+                }
+
+                for ($c = $totalColumnas - 3; $c <= $totalColumnas; $c++) {
+                    $this->estiloEncabezado($hoja, $c, '7F1D1D');
+                }
+
+                $hoja->getRowDimension(1)->setRowHeight(48);
+                $hoja->freezePane('A2');
+                $hoja->setAutoFilter("A1:{$ultima}{$ultimaFila}");
+
+                $this->resaltarFilas($hoja, $ultima, $ultimaFila, $totalColumnas);
+            },
+        ];
+    }
+
+    /**
+     * @param  array<int, array<string, string>>  $hallazgos
+     * @param  array<int, string>  $campos
+     */
+    private function validar(array $hallazgos, array $campos): string
+    {
+        $mensajes = [];
+
+        foreach ($hallazgos as $hallazgo) {
+            if (in_array($hallazgo['campo'] ?? null, $campos, true)) {
+                $marca = ($hallazgo['severidad'] ?? null) === AuditoriaSurveyRegistro::ERROR ? '✖' : '⚠';
+                $mensajes[] = "{$marca} {$hallazgo['mensaje']}";
+            }
+        }
+
+        return $mensajes === [] ? 'OK' : implode(' | ', $mensajes);
+    }
+
+    private function estadoDeLaFila(SurveyRegistro $registro): string
+    {
+        return match (true) {
+            $registro->auditado_en === null => self::ESTADO_SIN_AUDITAR,
+            $registro->total_errores > 0 => self::ESTADO_ERRORES,
+            $registro->total_alertas > 0 => self::ESTADO_ALERTAS,
+            default => self::ESTADO_OK,
+        };
+    }
+
+    private function estiloEncabezado(mixed $hoja, int $columna, string $color): void
+    {
+        $celda = Coordinate::stringFromColumnIndex($columna).'1';
+
+        $estilo = $hoja->getStyle($celda);
+        $estilo->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $estilo->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB($color);
+        $estilo->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_CENTER);
+    }
+
+    private function resaltarFilas(mixed $hoja, string $ultima, int $ultimaFila, int $totalColumnas): void
+    {
+        $estado = Coordinate::stringFromColumnIndex($totalColumnas);
+
+        $errores = new Conditional;
+        $errores->setConditionType(Conditional::CONDITION_EXPRESSION)
+            ->addCondition("\${$estado}2=\"".self::ESTADO_ERRORES.'"');
+        $errores->getStyle()->getFill()->setFillType(Fill::FILL_SOLID)->setStartColor(new Color('FFFDE2E2'))->setEndColor(new Color('FFFDE2E2'));
+
+        $alertas = new Conditional;
+        $alertas->setConditionType(Conditional::CONDITION_EXPRESSION)
+            ->addCondition("\${$estado}2=\"".self::ESTADO_ALERTAS.'"');
+        $alertas->getStyle()->getFill()->setFillType(Fill::FILL_SOLID)->setStartColor(new Color('FFFFF1CC'))->setEndColor(new Color('FFFFF1CC'));
+
+        $hoja->getStyle("A2:{$ultima}{$ultimaFila}")->setConditionalStyles([$errores, $alertas]);
+    }
+
+    /** @return array<int, array{titulo: string, valor: Closure, campos: array<int, string>, ancho: int, fecha?: bool}> */
+    private function variables(): array
+    {
+        return $this->variables ??= [
+            ['titulo' => 'ObjectID', 'valor' => fn ($r) => $r->object_id, 'campos' => [], 'ancho' => 11],
+            ['titulo' => 'GlobalID', 'valor' => fn ($r) => $r->global_id, 'campos' => [], 'ancho' => 38],
+            ['titulo' => 'Fecha de registro', 'valor' => fn ($r) => $this->fecha($r->fecha_registro), 'campos' => ['fecha_registro'], 'ancho' => 20, 'fecha' => true],
+            ['titulo' => 'Nombre del Técnico', 'valor' => fn ($r) => $r->tecnico, 'campos' => ['tecnico'], 'ancho' => 28],
+            ['titulo' => 'Contrato', 'valor' => fn ($r) => $this->numeroOTexto($r->contrato), 'campos' => ['contrato'], 'ancho' => 12],
+            ['titulo' => 'Orden de Trabajo', 'valor' => fn ($r) => $this->numeroOTexto($r->orden_trabajo), 'campos' => ['orden_trabajo'], 'ancho' => 14],
+            ['titulo' => 'Categoría en campo', 'valor' => fn ($r) => $r->categoria, 'campos' => ['categoria'], 'ancho' => 16],
+            ['titulo' => 'Serie de medidor instalado', 'valor' => fn ($r) => $this->numeroOTexto($r->serie_medidor), 'campos' => ['serie_medidor'], 'ancho' => 16],
+            ['titulo' => 'Lectura del medidor instalado', 'valor' => fn ($r) => $this->numeroOTexto($r->lectura_medidor), 'campos' => ['lectura_medidor'], 'ancho' => 14],
+            ['titulo' => '¿Qué actividad va a ejecutar?', 'valor' => fn ($r) => $r->actividad, 'campos' => ['actividad'], 'ancho' => 16],
+            ['titulo' => '¿Se pudo ejecutar la suspensión?', 'valor' => fn ($r) => match ($r->suspension_ejecutada) {
+                true => 'si', false => 'no', default => null,
+            }, 'campos' => ['suspension_ejecutada'], 'ancho' => 14],
+            ['titulo' => '¿Método de suspensión instalado?', 'valor' => fn ($r) => $r->metodo_suspension, 'campos' => ['metodo_suspension'], 'ancho' => 24],
+            ['titulo' => 'Serie de la sonda utilizada', 'valor' => fn ($r) => $this->numeroOTexto($r->serie_sonda), 'campos' => ['serie_sonda'], 'ancho' => 16],
+            ['titulo' => 'Serie del Caps', 'valor' => fn ($r) => $this->numeroOTexto($r->serie_caps), 'campos' => ['serie_caps'], 'ancho' => 16],
+            ['titulo' => 'Motivo por el cual no se pudo ejecutar la suspensión', 'valor' => fn ($r) => $r->motivo_no_ejecucion, 'campos' => ['motivo_no_ejecucion'], 'ancho' => 26],
+            ['titulo' => 'Fotografías de la fachada (3 fotos)', 'valor' => fn ($r) => (int) $r->fotos_fachada, 'campos' => ['foto_fachada', 'fotos'], 'ancho' => 14],
+            ['titulo' => 'Fotografías del medidor', 'valor' => fn ($r) => (int) $r->fotos_medidor, 'campos' => ['foto_medidor'], 'ancho' => 14],
+            ['titulo' => 'Fotografías de la suspensión, reconexión ejecutada o novedad encontrada', 'valor' => fn ($r) => (int) $r->fotos_actividad, 'campos' => ['foto_actividad'], 'ancho' => 18],
+            ['titulo' => 'JUSTIFICACIÓN', 'valor' => fn ($r) => $r->justificacion, 'campos' => ['justificacion'], 'ancho' => 44],
+            ['titulo' => 'CreationDate', 'valor' => fn ($r) => $this->fecha($r->creado_en_origen), 'campos' => [], 'ancho' => 20, 'fecha' => true],
+            ['titulo' => 'EditDate', 'valor' => fn ($r) => $this->fecha($r->editado_en_origen), 'campos' => [], 'ancho' => 20, 'fecha' => true],
+            ['titulo' => 'x', 'valor' => fn ($r) => $r->longitud === null ? null : (float) $r->longitud, 'campos' => ['ubicacion'], 'ancho' => 14],
+            ['titulo' => 'y', 'valor' => fn ($r) => $r->latitud === null ? null : (float) $r->latitud, 'campos' => ['ubicacion'], 'ancho' => 14],
+        ];
+    }
+
+    private function fecha(mixed $fecha): ?float
+    {
+        return $fecha === null ? null : Date::dateTimeToExcel($fecha);
+    }
+}

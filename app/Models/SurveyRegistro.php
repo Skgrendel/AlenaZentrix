@@ -20,6 +20,24 @@ class SurveyRegistro extends Model
 
     protected $table = 'survey_registros';
 
+    /** @var array<string, string> */
+    public const METODOS = [
+        'sonda_ips' => 'Sonda (Dispositivo IPS)',
+        'sonda_cts' => 'Sonda (Dispositivo CTS)',
+        'taponamiento_acometida' => 'Taponamiento de acometida',
+        'taponamiento_multifamiliar' => 'Taponamiento Multifamiliar',
+    ];
+
+    /** @var array<string, string> */
+    public const MOTIVOS = [
+        'no_ubico_direccion' => 'No se ubicó la dirección',
+        'predio_cerrado' => 'Predio cerrado o desocupado',
+        'usuario_impide' => 'El usuario impide el procedimiento',
+        'riesgo_sitio' => 'Riesgo en sitio (perro, altura, etc.)',
+        'redes_terraza' => 'Redes por terraza',
+        'usuario_taponado' => 'Se encontró el usuario taponado en campo',
+    ];
+
     protected $fillable = [
         'company_id',
         'object_id',

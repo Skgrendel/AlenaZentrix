@@ -152,3 +152,12 @@ test('un coordinador entra a la pantalla de auditoría de suspensiones', functio
         ->assertOk()
         ->assertSee('Auditoría de Suspensiones');
 });
+
+test('la lista enlaza al detalle de cada registro', function () {
+    [$user, $registro] = coordinadorConRegistro();
+
+    Livewire::actingAs($user)
+        ->test(SurveyRegistrosIndex::class)
+        ->assertTableActionVisible('ver_detalle', $registro)
+        ->assertTableActionHasUrl('ver_detalle', route('operaciones.survey-auditoria.show', $registro), $registro);
+});
