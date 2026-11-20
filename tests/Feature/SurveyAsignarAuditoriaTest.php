@@ -6,7 +6,9 @@ use App\Enums\TipoServicio;
 use App\Livewire\Coordinador\SurveyAuditoria\SurveyRegistrosIndex;
 use App\Models\Company;
 use App\Models\OrdenJob;
+use App\Models\OrigenInformacion;
 use App\Models\personals;
+use App\Models\Proceso;
 use App\Models\SurveyRegistro;
 use App\Models\User;
 use App\Services\coordinador\AsignarAuditoriaSurveyService;
@@ -160,4 +162,62 @@ test('la lista enlaza al detalle de cada registro', function () {
         ->test(SurveyRegistrosIndex::class)
         ->assertTableActionVisible('ver_detalle', $registro)
         ->assertTableActionHasUrl('ver_detalle', route('operaciones.survey-auditoria.show', $registro), $registro);
+});
+
+test('al asignar crea el origen y el proceso "Auditoría de Suspensiones" si no existen', function () {
+    [, $registro, $auditor] = coordinadorConRegistro();
+
+    $orden = app(AsignarAuditoriaSurveyService::class)->asignar($registro, $auditor->id);
+
+    $origen = OrigenInformacion::query()->withoutGlobalScopes()->where('company_id', $registro->company_id)->get();
+    $proceso = Proceso::query()->withoutGlobalScopes()->where('company_id', $registro->company_id)->get();
+
+    expect($origen)->toHaveCount(1)
+        ->and($origen->first()->nombre)->toBe('Auditoría de Suspensiones')
+        ->and($origen->first()->activo)->toBeTrue()
+        ->and($proceso)->toHaveCount(1)
+        ->and($proceso->first()->nombre)->toBe('Auditoría de Suspensiones')
+        ->and($orden->origen_informacion_id)->toBe($origen->first()->id)
+        ->and($orden->proceso_id)->toBe($proceso->first()->id);
+});
+
+test('si el origen y el proceso ya existen los usa y no los duplica, aunque se asigne varias veces', function () {
+    [, $registro, $auditor] = coordinadorConRegistro();
+    $origen = OrigenInformacion::query()->withoutGlobalScopes()->create(['company_id' => $registro->company_id, 'nombre' => 'Auditoría de Suspensiones', 'activo' => true]);
+    $proceso = Proceso::query()->withoutGlobalScopes()->create(['company_id' => $registro->company_id, 'nombre' => 'Auditoría de Suspensiones', 'activo' => true]);
+    $otro = SurveyRegistro::factory()->create(['company_id' => $registro->company_id, 'orden_trabajo' => '319900000', 'contrato' => '111111']);
+
+    $servicio = app(AsignarAuditoriaSurveyService::class);
+    $primera = $servicio->asignar($registro, $auditor->id);
+    $segunda = $servicio->asignar($otro, $auditor->id);
+
+    expect($primera->origen_informacion_id)->toBe($origen->id)
+        ->and($segunda->origen_informacion_id)->toBe($origen->id)
+        ->and($primera->proceso_id)->toBe($proceso->id)
+        ->and($segunda->proceso_id)->toBe($proceso->id)
+        ->and(OrigenInformacion::query()->withoutGlobalScopes()->count())->toBe(1)
+        ->and(Proceso::query()->withoutGlobalScopes()->count())->toBe(1);
+});
+
+test('el origen y el proceso se buscan en la empresa del registro y no se mezclan con otras', function () {
+    [, $registro, $auditor] = coordinadorConRegistro();
+    $otraEmpresa = Company::factory()->create();
+    $ajeno = OrigenInformacion::query()->withoutGlobalScopes()->create(['company_id' => $otraEmpresa->id, 'nombre' => 'Auditoría de Suspensiones', 'activo' => true]);
+
+    $orden = app(AsignarAuditoriaSurveyService::class)->asignar($registro, $auditor->id);
+
+    expect($orden->origen_informacion_id)->not->toBe($ajeno->id)
+        ->and(OrigenInformacion::query()->withoutGlobalScopes()->where('company_id', $registro->company_id)->count())->toBe(1)
+        ->and(OrigenInformacion::query()->withoutGlobalScopes()->where('company_id', $otraEmpresa->id)->count())->toBe(1);
+});
+
+test('si el origen fue eliminado se crea de nuevo en la siguiente asignación', function () {
+    [, $registro, $auditor] = coordinadorConRegistro();
+    $borrado = OrigenInformacion::query()->withoutGlobalScopes()->create(['company_id' => $registro->company_id, 'nombre' => 'Auditoría de Suspensiones', 'activo' => true]);
+    $borrado->delete();
+
+    $orden = app(AsignarAuditoriaSurveyService::class)->asignar($registro, $auditor->id);
+
+    expect($orden->origen_informacion_id)->not->toBe($borrado->id)
+        ->and(OrigenInformacion::query()->withoutGlobalScopes()->where('company_id', $registro->company_id)->whereNull('deleted_at')->count())->toBe(1);
 });

@@ -8,7 +8,10 @@ use App\Enums\PrioridadOrden;
 use App\Enums\TipoServicio;
 use App\Mail\OrdenAsignada;
 use App\Models\OrdenJob;
+use App\Models\OrigenInformacion;
 use App\Models\personals;
+use App\Models\Proceso;
+use App\Models\Scopes\CompanyScope;
 use App\Models\SurveyRegistro;
 use App\Services\survey123\ConsultaGisContrato;
 use DomainException;
@@ -26,6 +29,9 @@ class AsignarAuditoriaSurveyService
 {
     /** Horas máximas, desde la asignación, para realizar la visita de auditoría. */
     public const PLAZO_HORAS = 48;
+
+    /** Nombre del origen de información y del proceso que se asignan a estas órdenes. */
+    public const NOMBRE_EN_CATALOGOS = 'Auditoría de Suspensiones';
 
     public function __construct(private readonly ConsultaGisContrato $gis) {}
 
@@ -61,6 +67,8 @@ class AsignarAuditoriaSurveyService
                 'prioridad' => PrioridadOrden::Media,
                 'estado_servicio' => true,
                 'survey_registro_id' => $registro->id,
+                'proceso_id' => $this->catalogo(Proceso::class, $registro->company_id),
+                'origen_informacion_id' => $this->catalogo(OrigenInformacion::class, $registro->company_id),
                 'contrato' => $registro->contrato,
                 'tecnico' => $registro->tecnico,
                 'cliente' => $usuario['nombre'] ?? null,
@@ -81,6 +89,27 @@ class AsignarAuditoriaSurveyService
         $this->notificarAuditor($orden);
 
         return $orden;
+    }
+
+    /**
+     * Id de la entrada "Auditoría de Suspensiones" del catálogo en la empresa: la usa si existe y la crea si no.
+     * Se verifica en cada asignación para que borrar o renombrar la entrada no deje órdenes sin origen o proceso.
+     *
+     * @param  class-string<Proceso|OrigenInformacion>  $modelo
+     */
+    private function catalogo(string $modelo, string $companyId): string
+    {
+        $existente = $modelo::query()
+            ->withoutGlobalScope(CompanyScope::class)
+            ->where('company_id', $companyId)
+            ->where('nombre', self::NOMBRE_EN_CATALOGOS)
+            ->first();
+
+        return ($existente ?? $modelo::query()->create([
+            'company_id' => $companyId,
+            'nombre' => self::NOMBRE_EN_CATALOGOS,
+            'activo' => true,
+        ]))->id;
     }
 
     /**
