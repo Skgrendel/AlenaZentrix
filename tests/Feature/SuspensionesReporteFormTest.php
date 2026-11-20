@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\OrdenJob;
 use App\Models\personals;
 use App\Models\reportes;
+use App\Models\SurveyRegistro;
 use App\Models\TipoAnomalia;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -293,7 +294,7 @@ it('edita un reporte cargando el estado guardado, cambia de Si a No y limpia la 
         ->and($orden->fresh()->estado)->toBe(EstadoOrden::EnRevision);
 });
 
-it('muestra la lectura de referencia y guarda aunque la lectura registrada no coincida', function () {
+it('no muestra la lectura de referencia al auditor y guarda aunque la lectura registrada no coincida', function () {
     Mail::fake();
     [$user, $orden] = suspensionesContexto();
     $orden->forceFill(['lectura_referencia' => '987.65'])->save();
@@ -301,9 +302,8 @@ it('muestra la lectura de referencia y guarda aunque la lectura registrada no co
     Livewire::actingAs($user)
         ->test(ReporteCreate::class, ['orden' => $orden->fresh()])
         ->fillForm(camposEjecutada(['metodo_suspension' => 'taponamiento_acometida']))
-        ->assertSee('Lectura de referencia (proporcionada)')
-        ->assertSee('987.65')
-        ->assertSee('Debe coincidir con la lectura de referencia')
+        ->assertDontSee('Lectura de referencia')
+        ->assertDontSee('987.65')
         ->call('submit')
         ->assertHasNoFormErrors();
 
@@ -313,13 +313,15 @@ it('muestra la lectura de referencia y guarda aunque la lectura registrada no co
         ->and($datos)->not->toHaveKey('lectura_referencia_display');
 });
 
-it('muestra un guion cuando la orden no tiene lectura de referencia', function () {
+it('no muestra ni la serie de referencia del medidor al auditor', function () {
     [$user, $orden] = suspensionesContexto();
+    $orden->forceFill(['serie_medidor_referencia' => '981797'])->save();
 
     Livewire::actingAs($user)
-        ->test(ReporteCreate::class, ['orden' => $orden])
+        ->test(ReporteCreate::class, ['orden' => $orden->fresh()])
         ->fillForm(['suspension_ejecutada' => 1])
-        ->assertSee('Lectura de referencia (proporcionada)');
+        ->assertSee('Serie del medidor encontrado')
+        ->assertDontSee('981797');
 });
 
 it('muestra los datos y comentarios de la orden en crear y editar', function () {
@@ -428,4 +430,36 @@ it('edita guardando y cargando el array de anomalias', function () {
         ->assertHasNoFormErrors();
 
     expect($reporte->fresh()->datos_servicio['anomalias_medidor'])->toBe([$a, $b]);
+});
+
+it('en una orden de Survey123 muestra la OT original y oculta los datos que no vienen', function () {
+    [$user, $orden] = suspensionesContexto();
+    $registro = SurveyRegistro::factory()->create([
+        'company_id' => $orden->company_id,
+        'orden_trabajo' => '319898201',
+    ]);
+    $orden->forceFill([
+        'survey_registro_id' => $registro->id,
+        'cliente' => null, 'barrio' => null, 'direccion' => null,
+        'comentario_usuario' => null, 'comentario_tecnico' => null,
+    ])->save();
+
+    Livewire::actingAs($user)
+        ->test(ReporteCreate::class, ['orden' => $orden->fresh()])
+        ->assertSee('OT original (técnico de la visita)')
+        ->assertSee('319898201')
+        ->assertDontSee('Nombre del Usuario')
+        ->assertDontSee('Barrio / Municipio')
+        ->assertDontSee('Comentario Usuario / Solicitud')
+        ->assertSee('Contrato');
+});
+
+it('en una orden normal sigue mostrando un guion cuando no hay dato', function () {
+    [$user, $orden] = suspensionesContexto();
+    $orden->forceFill(['cliente' => null, 'barrio' => null])->save();
+
+    Livewire::actingAs($user)
+        ->test(ReporteCreate::class, ['orden' => $orden->fresh()])
+        ->assertSee('Nombre del Usuario')
+        ->assertDontSee('OT original (técnico de la visita)');
 });

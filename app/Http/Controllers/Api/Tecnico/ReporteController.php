@@ -478,7 +478,7 @@ class ReporteController extends Controller
     private function reglasAuditoriaCampo(Request $request, OrdenJob $orden, ?reportes $reporte): array
     {
         if ($orden->tipo_auditoria_campo === 'visita_calidad_suspensiones') {
-            return $this->reglasSuspensiones($request, $reporte);
+            return $this->reglasSuspensiones($request, $orden, $reporte);
         }
 
         $firma = ['nullable', 'string', 'max:700000', 'regex:/^data:image\/(png|jpeg);base64,[A-Za-z0-9+\/=\r\n]+$/'];
@@ -534,8 +534,10 @@ class ReporteController extends Controller
     }
 
     /** @return array<string, mixed> */
-    private function reglasSuspensiones(Request $request, ?reportes $reporte): array
+    private function reglasSuspensiones(Request $request, OrdenJob $orden, ?reportes $reporte): array
     {
+        $exigeSerieMedidor = $request->boolean('suspension_ejecutada') && filled($orden->serie_medidor_referencia);
+
         $fotoPath = $this->reglaPathDeLaEmpresa($request, $this->rutasGuardadas($reporte));
         $anomaliasGuardadas = (array) (($reporte?->datos_servicio ?? [])['anomalias_medidor'] ?? []);
 
@@ -551,6 +553,7 @@ class ReporteController extends Controller
             'motivo_no_ejecucion' => ['required_if:suspension_ejecutada,false,0', 'nullable', 'in:no_ubico_direccion,predio_cerrado,usuario_impide,riesgo_sitio,redes_terraza,usuario_taponado'],
             'fotos_fachada' => ['required', 'array', 'min:3', 'max:20'],
             'fotos_fachada.*' => ['string', $fotoPath],
+            'serie_medidor' => [$exigeSerieMedidor ? 'required' : 'nullable', 'string', 'regex:/^\d+$/', 'max:50'],
             'lectura_medidor' => ['required_if:suspension_ejecutada,true,1', 'nullable', 'numeric'],
             'anomalias_medidor' => ['nullable', 'array'],
             'anomalias_medidor.*' => ['string', $this->reglaAnomalia($request, $anomaliasGuardadas, true)],

@@ -1152,6 +1152,15 @@ class ReporteEdit extends Component implements HasActions, HasForms
     }
 
     /**
+     * Las órdenes que vienen de Survey123 no traen usuario, barrio, dirección ni comentarios:
+     * en ese caso se ocultan en vez de mostrar un guion.
+     */
+    private function mostrarDatoDeLaOrden(?string $valor): bool
+    {
+        return $this->orden->survey_registro_id === null || filled($valor);
+    }
+
+    /**
      * Esquema de la Visita de Calidad — Suspensiones.
      * Las fotos de fachada y suspensión se guardan dentro de datos_servicio.
      *
@@ -1172,6 +1181,10 @@ class ReporteEdit extends Component implements HasActions, HasForms
                     Forms\Components\Placeholder::make('ot_display')
                         ->label('Número de orden')
                         ->content($this->orden->numero_orden),
+                    Forms\Components\Placeholder::make('ot_original_display')
+                        ->label('OT original (técnico de la visita)')
+                        ->content($this->orden->surveyRegistro?->orden_trabajo ?? '—')
+                        ->visible(fn (): bool => $this->orden->survey_registro_id !== null),
                     Forms\Components\Placeholder::make('contrato_display')
                         ->label('Contrato')
                         ->content($this->orden->contrato ?? '—'),
@@ -1180,20 +1193,25 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->content($this->orden->tecnico ?? '—'),
                     Forms\Components\Placeholder::make('cliente_display')
                         ->label('Nombre del Usuario')
-                        ->content($this->orden->cliente ?? '—'),
+                        ->content($this->orden->cliente ?? '—')
+                        ->visible(fn (): bool => $this->mostrarDatoDeLaOrden($this->orden->cliente)),
                     Forms\Components\Placeholder::make('barrio_display')
                         ->label('Barrio / Municipio')
-                        ->content($this->orden->barrio ?? '—'),
+                        ->content($this->orden->barrio ?? '—')
+                        ->visible(fn (): bool => $this->mostrarDatoDeLaOrden($this->orden->barrio)),
                     Forms\Components\Placeholder::make('direccion_display')
                         ->label('Dirección')
                         ->content($this->orden->direccion ?? '—')
+                        ->visible(fn (): bool => $this->mostrarDatoDeLaOrden($this->orden->direccion))
                         ->columnSpanFull(),
                     Forms\Components\Placeholder::make('comentario_usuario_display')
                         ->label('Comentario Usuario / Solicitud')
-                        ->content($this->orden->comentario_usuario ?? '—'),
+                        ->content($this->orden->comentario_usuario ?? '—')
+                        ->visible(fn (): bool => $this->mostrarDatoDeLaOrden($this->orden->comentario_usuario)),
                     Forms\Components\Placeholder::make('comentario_tecnico_display')
                         ->label('Comentario Técnico')
-                        ->content($this->orden->comentario_tecnico ?? '—'),
+                        ->content($this->orden->comentario_tecnico ?? '—')
+                        ->visible(fn (): bool => $this->mostrarDatoDeLaOrden($this->orden->comentario_tecnico)),
                     Forms\Components\Select::make('categoria_campo')
                         ->label('Categoría')
                         ->options([
@@ -1292,14 +1310,16 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->helperText('Indica elementos o componentes rotos, si los hay')
                         ->rows(3)
                         ->columnSpanFull(),
-                    Forms\Components\Placeholder::make('lectura_referencia_display')
-                        ->label('Lectura de referencia (proporcionada)')
-                        ->content($this->orden->lectura_referencia ?? '—')
+                    Forms\Components\TextInput::make('serie_medidor')
+                        ->label('Serie del medidor encontrado')
+                        ->numeric()
+                        ->dehydrateStateUsing(fn (mixed $state): ?string => filled($state) ? (string) $state : null)
+                        ->required(fn (): bool => filled($this->orden->serie_medidor_referencia))
                         ->visible(fn ($get): bool => (bool) $get('suspension_ejecutada'))
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('lectura_medidor')
                         ->label('Lectura del medidor')
-                        ->helperText('Debe coincidir con la lectura de referencia')
+                        ->helperText('Registra la lectura exacta que observas en el medidor')
                         ->numeric()
                         ->dehydrateStateUsing(fn (mixed $state): ?string => filled($state) ? (string) $state : null)
                         ->required()
@@ -1507,7 +1527,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
      */
     private function limpiarCamposSuspensionNoAplicables(array $data): array
     {
-        $camposEjecutada = ['metodo_suspension', 'serie_sonda', 'serie_caps', 'lectura_medidor', 'fotos_suspension', 'fotos_medidor'];
+        $camposEjecutada = ['metodo_suspension', 'serie_sonda', 'serie_caps', 'serie_medidor', 'lectura_medidor', 'fotos_suspension', 'fotos_medidor'];
         $camposNoEjecutada = ['motivo_no_ejecucion', 'justificacion_no_ejecucion', 'fotos_no_ejecucion'];
 
         $descartar = ($data['suspension_ejecutada'] ?? false) ? $camposNoEjecutada : $camposEjecutada;

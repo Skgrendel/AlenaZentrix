@@ -115,3 +115,46 @@ test('la lectura de referencia es obligatoria al crear una orden de suspensiones
         ->call('guardar')
         ->assertHasFormErrors(['lectura_referencia' => 'required']);
 });
+
+test('una orden de suspensiones no exige cliente, barrio ni dirección', function () {
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test(OrdenCreate::class)
+        ->fillForm([
+            'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+            'tipo_auditoria_campo' => 'visita_calidad_suspensiones',
+            'lectura_referencia' => '6972',
+            'tecnico' => 'Luis Quiroga',
+            'contrato' => '296192',
+        ])
+        ->call('guardar')
+        ->assertHasNoFormErrors();
+});
+
+test('otros subtipos de auditoría de campo siguen exigiendo cliente, barrio y dirección', function () {
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test(OrdenCreate::class)
+        ->fillForm([
+            'tipo_servicio' => TipoServicio::AuditoriaCampo->value,
+            'tipo_auditoria_campo' => 'visita_calidad_emergencia',
+        ])
+        ->call('guardar')
+        ->assertHasFormErrors(['cliente' => 'required', 'barrio' => 'required', 'direccion' => 'required']);
+});
+
+test('la orden de suspensiones guarda la serie y las coordenadas de referencia', function () {
+    $orden = OrdenJob::factory()->create([
+        'tipo_servicio' => TipoServicio::AuditoriaCampo,
+        'tipo_auditoria_campo' => 'visita_calidad_suspensiones',
+        'serie_medidor_referencia' => '981797',
+        'latitud_referencia' => 10.407333,
+        'longitud_referencia' => -75.488048,
+    ]);
+
+    expect($orden->fresh()->serie_medidor_referencia)->toBe('981797')
+        ->and((float) $orden->fresh()->latitud_referencia)->toBe(10.407333)
+        ->and((float) $orden->fresh()->longitud_referencia)->toBe(-75.488048);
+});

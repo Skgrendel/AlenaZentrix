@@ -231,9 +231,26 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value && $get('tipo_auditoria_campo') === 'visita_calidad_suspensiones')
                             ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value && $get('tipo_auditoria_campo') === 'visita_calidad_suspensiones')
                             ->columnSpanFull(),
+                        Forms\Components\TextInput::make('serie_medidor_referencia')
+                            ->label('Serie del medidor instalado (reportada)')
+                            ->numeric()
+                            ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value && $get('tipo_auditoria_campo') === 'visita_calidad_suspensiones')
+                            ->columnSpanFull(),
+                        Forms\Components\TextInput::make('latitud_referencia')
+                            ->label('Latitud de la visita (reportada)')
+                            ->numeric()
+                            ->minValue(-90)
+                            ->maxValue(90)
+                            ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value && $get('tipo_auditoria_campo') === 'visita_calidad_suspensiones'),
+                        Forms\Components\TextInput::make('longitud_referencia')
+                            ->label('Longitud de la visita (reportada)')
+                            ->numeric()
+                            ->minValue(-180)
+                            ->maxValue(180)
+                            ->visible(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value && $get('tipo_auditoria_campo') === 'visita_calidad_suspensiones'),
                         Forms\Components\TextInput::make('cliente')
                             ->label('Nombre del Usuario')
-                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value && $get('tipo_auditoria_campo') !== 'visita_calidad_suspensiones')
                             ->maxLength(255),
                         Forms\Components\TextInput::make('tecnico')
                             ->label('Nombre del Técnico que realizó la visita')
@@ -245,11 +262,11 @@ class OrdenCreate extends Component implements HasActions, HasForms
                             ->maxLength(255),
                         Forms\Components\TextInput::make('barrio')
                             ->label('Barrio / Municipio')
-                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value && $get('tipo_auditoria_campo') !== 'visita_calidad_suspensiones')
                             ->maxLength(255),
                         Forms\Components\TextInput::make('direccion')
                             ->label('Dirección')
-                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value)
+                            ->required(fn ($get) => $get('tipo_servicio') === TipoServicio::AuditoriaCampo->value && $get('tipo_auditoria_campo') !== 'visita_calidad_suspensiones')
                             ->maxLength(255)
                             ->columnSpanFull(),
                         Forms\Components\Textarea::make('comentario_usuario')

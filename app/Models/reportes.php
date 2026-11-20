@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Scopes\CompanyScope;
+use App\Services\survey123\ComparacionAuditoriaSuspension;
 use App\Services\TenantService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -57,6 +58,17 @@ class reportes extends Model
                 $model->company_id = app(TenantService::class)->id();
             }
         });
+
+        // Al guardar el reporte de una auditoría de suspensiones, se contrasta con lo reportado en Survey123.
+        static::saved(function (self $model): void {
+            if ($model->wasRecentlyCreated || $model->wasChanged(['datos_servicio', 'ubicacions_id'])) {
+                $orden = $model->ordenJob;
+
+                if ($orden?->tipo_auditoria_campo === 'visita_calidad_suspensiones') {
+                    app(ComparacionAuditoriaSuspension::class)->compararYGuardar($model);
+                }
+            }
+        });
     }
 
     protected $casts = [
@@ -64,6 +76,7 @@ class reportes extends Model
         'imagenes' => 'array',
         'actividades' => 'array',
         'datos_servicio' => 'array',
+        'comparacion' => 'array',
         'coincide_medidor' => 'boolean',
         'hay_fuga_gas' => 'boolean',
         'excede_capacidad' => 'boolean',

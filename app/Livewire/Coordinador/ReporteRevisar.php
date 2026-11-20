@@ -480,6 +480,8 @@ class ReporteRevisar extends Component implements HasActions, HasForms
                     'lectura_medidor' => $datos['lectura_medidor'] ?? null,
                     'lectura_referencia' => $this->orden->lectura_referencia,
                     'lectura_coincide' => $this->orden->lecturaCoincide($datos['lectura_medidor'] ?? null),
+                    'comparacion' => $this->reporte?->comparacion,
+                    'resultado_comparacion' => $this->reporte?->resultado_comparacion,
                     'anomalias_medidor' => $this->nombresAnomaliasMedidor($datos['anomalias_medidor'] ?? []),
                     'condicion_sellos' => $datos['condicion_sellos'] ?? null,
                     'elementos_rotos' => $datos['elementos_rotos'] ?? null,

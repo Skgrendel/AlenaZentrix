@@ -49,6 +49,9 @@ class OrdenJob extends Model
         'tipo_gestion_legal',
         'tipo_auditoria_campo',
         'lectura_referencia',
+        'serie_medidor_referencia',
+        'latitud_referencia',
+        'longitud_referencia',
         'documentos',
         'prioridad',
         'estado',
@@ -60,6 +63,7 @@ class OrdenJob extends Model
         'resultado',
         'proceso_id',
         'origen_informacion_id',
+        'survey_registro_id',
         'sincronizado',
     ];
 
@@ -168,6 +172,12 @@ class OrdenJob extends Model
     public function origenInformacion(): BelongsTo
     {
         return $this->belongsTo(OrigenInformacion::class, 'origen_informacion_id');
+    }
+
+    /** Registro de Survey123 que originó la auditoría, si lo hubo. */
+    public function surveyRegistro(): BelongsTo
+    {
+        return $this->belongsTo(SurveyRegistro::class, 'survey_registro_id');
     }
 
     /** Técnico o investigador asignado a ejecutar la orden. */

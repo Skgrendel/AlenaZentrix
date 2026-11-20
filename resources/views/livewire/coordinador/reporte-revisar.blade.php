@@ -571,6 +571,10 @@
                 </div>
 
 
+                @if (($datosServicio['es_suspensiones'] ?? false) && ! empty($datosServicio['comparacion']['filas'] ?? []))
+                    @include('livewire.coordinador.partials.comparacion-suspension', ['comparacion' => $datosServicio['comparacion'], 'resultado' => $datosServicio['resultado_comparacion'] ?? null])
+                @endif
+
                 @if ($datosServicio['es_suspensiones'] ?? false)
                     <div class="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
                         <h3 class="mb-4 border-b border-zinc-100 pb-3 text-sm font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">Suspensión</h3>

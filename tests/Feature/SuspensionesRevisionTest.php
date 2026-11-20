@@ -10,6 +10,7 @@ use App\Models\OrdenJob;
 use App\Models\reportes;
 use App\Models\TipoAnomalia;
 use App\Models\User;
+use App\Services\survey123\ComparacionAuditoriaSuspension;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -255,4 +256,41 @@ it('muestra las observaciones del medidor cuando la suspensión no fue ejecutada
         ->assertSee('ELEM-NOEJ')
         ->assertDontSee('Lectura de referencia')
         ->assertDontSee('Fotos del medidor');
+});
+
+it('muestra la comparación reportado vs encontrado con el resultado en la revisión', function () {
+    [$user, $orden, $reporte] = crearReporteSuspensiones([
+        'categoria_campo' => 'residencial',
+        'suspension_ejecutada' => true,
+        'metodo_suspension' => 'taponamiento_acometida',
+        'serie_medidor' => '981797',
+        'lectura_medidor' => '1234',
+        'fotos_fachada' => ['reportes/fachada-1.jpg'],
+    ]);
+
+    $orden->forceFill(['lectura_referencia' => '9999', 'serie_medidor_referencia' => '981797'])->save();
+    app(ComparacionAuditoriaSuspension::class)->compararYGuardar($reporte->fresh());
+
+    $this->actingAs($user);
+
+    Livewire::test(ReporteRevisar::class, ['orden' => $orden])
+        ->assertSee('Reportado por el técnico vs encontrado por el auditor')
+        ->assertSee('Lectura del medidor')
+        ->assertSee('9999')
+        ->assertSee('No coincide')
+        ->assertSee('No conforme');
+});
+
+it('no muestra la comparación cuando el reporte no tiene referencia', function () {
+    [$user, $orden] = crearReporteSuspensiones([
+        'categoria_campo' => 'residencial',
+        'suspension_ejecutada' => true,
+        'metodo_suspension' => 'taponamiento_acometida',
+        'lectura_medidor' => '1234',
+    ]);
+
+    $this->actingAs($user);
+
+    Livewire::test(ReporteRevisar::class, ['orden' => $orden])
+        ->assertDontSee('Reportado por el técnico vs encontrado por el auditor');
 });

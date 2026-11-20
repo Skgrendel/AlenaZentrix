@@ -35,6 +35,12 @@
                     wire:navigate>
                     {{ __('Revisión de Medidores') }}
                 </flux:sidebar.item>
+                <flux:sidebar.item icon="clipboard-document-check"
+                    :href="route('operaciones.survey-auditoria.index')"
+                    :current="request()->routeIs('operaciones.survey-auditoria*')"
+                    wire:navigate>
+                    {{ __('Auditoría de Suspensiones') }}
+                </flux:sidebar.item>
             </flux:sidebar.group>
             @endcan
 

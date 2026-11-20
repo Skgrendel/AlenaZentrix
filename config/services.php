@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'survey123' => [
+        'usuario' => env('SURVEY123_USUARIO'),
+        'password' => env('SURVEY123_PASSWORD'),
+        'portal_url' => env('SURVEY123_PORTAL_URL', 'https://www.arcgis.com'),
+        // Disco donde se copian las fotos de los registros ('s3' en producción).
+        'disco_fotos' => env('SURVEY123_DISCO_FOTOS', 's3'),
+        'service_url' => env('SURVEY123_SERVICE_URL', 'https://services1.arcgis.com/7TRgQ327rtmQC0Ev/arcgis/rest/services/service_4397fd08af0043c8a7f7aa6eb5947eb8/FeatureServer/0'),
+    ],
+
 ];

@@ -53,7 +53,10 @@ class OrdenResource extends JsonResource
                 $orden->tipo_servicio === TipoServicio::AuditoriaCampo && $orden->tipo_auditoria_campo !== null,
                 fn () => $orden->subtipoLabel()
             ),
-            'lectura_referencia' => $this->when($orden->lectura_referencia !== null, fn () => $orden->lectura_referencia),
+            'lectura_referencia' => $this->when(
+                $orden->lectura_referencia !== null && $orden->tipo_auditoria_campo !== 'visita_calidad_suspensiones',
+                fn () => $orden->lectura_referencia
+            ),
             'actividades' => $orden->actividades ?? [],
             'documentos' => $orden->documentos ?? [],
             'proceso' => $orden->proceso_id ? [

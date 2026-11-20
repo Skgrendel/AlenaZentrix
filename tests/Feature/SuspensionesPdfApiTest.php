@@ -267,16 +267,17 @@ test('pdf suspensiones calcula si la lectura registrada coincide con la referenc
         ->assertHeader('Content-Type', 'application/pdf');
 })->with('lecturasReferencia');
 
-test('API expone lectura_referencia en la orden del tecnico cuando existe', function () {
+test('API no expone la lectura de referencia al auditor de suspensiones', function () {
     $user = User::factory()->create();
     $token = $user->createToken('test')->plainTextToken;
     $orden = ordenSuspensiones($user);
-    $orden->update(['lectura_referencia' => '100.5']);
+    $orden->update(['lectura_referencia' => '100.5', 'serie_medidor_referencia' => '981797']);
 
-    $this->withToken($token)
+    $respuesta = $this->withToken($token)
         ->getJson("/api/tecnico/ordenes/{$orden->id}")
-        ->assertOk()
-        ->assertJsonPath('data.lectura_referencia', '100.5');
+        ->assertOk();
+
+    expect($respuesta->json('data'))->not->toHaveKeys(['lectura_referencia', 'serie_medidor_referencia']);
 });
 
 test('API suspensiones ejecutada sin anomalia, sellos ni elementos rotos es valida', function () {
@@ -395,4 +396,30 @@ test('API expone subtipo, tecnico y comentario tecnico de la orden de suspension
         ->assertJsonPath('data.tipo_auditoria_campo_label', 'Visita de Calidad — Suspensiones')
         ->assertJsonPath('data.tecnico', 'Carlos Ruiz')
         ->assertJsonPath('data.comentario_tecnico', 'Medidor en patio');
+});
+
+test('API suspensiones exige la serie del medidor cuando la orden trae serie de referencia', function () {
+    $user = User::factory()->create();
+    $token = $user->createToken('test')->plainTextToken;
+    $orden = ordenSuspensiones($user);
+    $orden->update(['serie_medidor_referencia' => '981797']);
+
+    $this->withToken($token)
+        ->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", payloadSuspensiones($user))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('serie_medidor');
+
+    $this->withToken($token)
+        ->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", payloadSuspensiones($user, ['serie_medidor' => '981797']))
+        ->assertCreated();
+});
+
+test('API suspensiones no exige la serie del medidor si la orden no tiene serie de referencia', function () {
+    $user = User::factory()->create();
+    $token = $user->createToken('test')->plainTextToken;
+    $orden = ordenSuspensiones($user);
+
+    $this->withToken($token)
+        ->postJson("/api/tecnico/ordenes/{$orden->id}/reporte", payloadSuspensiones($user))
+        ->assertCreated();
 });
