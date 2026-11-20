@@ -56,6 +56,12 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
 
+                <flux:navlist.group heading="Auditoría de suspensiones">
+                    <flux:navlist.item href="#" x-on:click.prevent="active = 'revision-fotos-ia'" x-bind:data-current="active === 'revision-fotos-ia'">
+                        Revisión de fotos con IA
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
                 <flux:navlist.group heading="Alertas">
                     <flux:navlist.item href="#" x-on:click.prevent="active = 'notificacion-alerta'" x-bind:data-current="active === 'notificacion-alerta'">
                         Notificación Alerta
@@ -138,6 +144,9 @@
             <div x-show="active === 'notificacion-alerta'" x-cloak>
                 <livewire:admin.manage-tipo-notificacion-alerta
                     wire:key="catalog-notificacion-alerta" />
+            </div>
+            <div x-show="active === 'revision-fotos-ia'" x-cloak>
+                <livewire:admin.configuracion-revision-fotos-ia wire:key="revision-fotos-ia" />
             </div>
             <div x-show="active === 'correos-alerta'" x-cloak>
                 <livewire:admin.manage-correos-alerta

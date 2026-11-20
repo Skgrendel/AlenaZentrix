@@ -63,4 +63,20 @@ return [
         'service_url' => env('SURVEY123_SERVICE_URL', 'https://services1.arcgis.com/7TRgQ327rtmQC0Ev/arcgis/rest/services/service_4397fd08af0043c8a7f7aa6eb5947eb8/FeatureServer/0'),
     ],
 
+    // Revisión de fotos con IA (prueba en modo sombra: no cambia el resultado de la auditoría).
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'modelo' => env('OPENAI_MODELO_FOTOS', 'gpt-4o'),
+        // Detalle con que el modelo mira cada foto: 'low' (barato) o 'high' (lee números de medidor).
+        'detalle_imagen' => env('OPENAI_DETALLE_FOTOS', 'high'),
+        // Modelos con visión que se ofrecen en la configuración, con su tarifa en USD por millón de tokens.
+        // Las tarifas son de referencia para estimar costos: confirmarlas en la tarifa vigente del proveedor.
+        'modelos' => [
+            'gpt-4o-mini' => ['entrada' => 0.15, 'salida' => 0.60],
+            'gpt-4o' => ['entrada' => 2.50, 'salida' => 10.00],
+            'gpt-4.1-mini' => ['entrada' => 0.40, 'salida' => 1.60],
+            'gpt-4.1' => ['entrada' => 2.00, 'salida' => 8.00],
+        ],
+    ],
+
 ];
