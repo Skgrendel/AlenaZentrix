@@ -24,7 +24,6 @@ use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -136,7 +135,6 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ->visible(fn (): bool => $this->puedeExportar())
                     ->action(fn (): BinaryFileResponse => $this->exportar($this->getFilteredTableQuery())),
             ])
-            ->recordActionsPosition(RecordActionsPosition::BeforeColumns)
             ->actions([
                 ActionGroup::make([
                     Action::make('ver_detalle')
