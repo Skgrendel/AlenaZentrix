@@ -4,6 +4,7 @@ namespace App\Livewire\Coordinador\SurveyAuditoria;
 
 use App\Models\SurveyAdjunto;
 use App\Models\SurveyRegistro;
+use App\Services\survey123\RequisitosDeFotos;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
@@ -13,18 +14,17 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 #[Title('Detalle del registro')]
 /**
- * Detalle de un registro de Survey123: datos reportados, hallazgos de la auditoría y fotos,
+ * Detalle de un registro de suspensión: datos reportados, hallazgos de la auditoría y fotos,
  * con una lista de verificación de las fotos requeridas.
  */
 class SurveyRegistroShow extends Component
 {
     public SurveyRegistro $registro;
 
-    /** @var array<string, string> */
-    private const ETIQUETAS_FOTO = [
-        'foto_fachada' => 'Fachada',
-        'foto_medidor' => 'Medidor',
-        'foto_actividad' => 'Actividad (suspensión o novedad)',
+    /** Orden en que se muestran los tipos de foto. */
+    private const ORDEN_DE_FOTOS = [
+        'foto_fachada', 'foto_medidor', 'foto_ivt',
+        'foto_actividad', 'foto_actividad1', 'foto_actividad2', 'foto_actividad3',
     ];
 
     public function mount(SurveyRegistro $registro): void
@@ -47,26 +47,10 @@ class SurveyRegistroShow extends Component
         ]);
     }
 
-    /** @return array<int, array{campo: string, etiqueta: string, requeridas: int, subidas: int, completa: bool, aplica: bool}> */
+    /** @return array<int, array{campo: string, etiqueta: string, requeridas: int, subidas: int, completa: bool, aplica: bool, mensaje: string}> */
     private function listaDeVerificacion(SurveyRegistro $registro): array
     {
-        $conteo = $registro->adjuntos->groupBy('campo')->map->count();
-
-        return collect(config('survey_auditoria.parametros.fotos_minimas'))
-            ->map(function (int $minimo, string $campo) use ($conteo, $registro): array {
-                $subidas = (int) ($conteo[$campo] ?? 0);
-
-                return [
-                    'campo' => $campo,
-                    'etiqueta' => self::ETIQUETAS_FOTO[$campo] ?? $campo,
-                    'requeridas' => $minimo,
-                    'subidas' => $subidas,
-                    'completa' => $subidas >= $minimo,
-                    'aplica' => $campo === 'foto_fachada' || $registro->suspension_ejecutada === true,
-                ];
-            })
-            ->values()
-            ->all();
+        return app(RequisitosDeFotos::class)->evaluar($registro)['requisitos'];
     }
 
     /**
@@ -90,11 +74,16 @@ class SurveyRegistroShow extends Component
                 $a->setAttribute('repetida_aqui', $repetidasAqui->contains($a->hash));
                 $a->setAttribute('usada_en_otra_visita', $usadasEnOtros->contains($a->hash));
             })
-            ->groupBy(fn (SurveyAdjunto $a): string => $a->campo ?? 'otros');
+            ->groupBy(fn (SurveyAdjunto $a): string => $a->campo ?? 'otros')
+            ->sortBy(function ($grupo, string $campo): int {
+                $posicion = array_search($campo, self::ORDEN_DE_FOTOS, true);
+
+                return $posicion === false ? count(self::ORDEN_DE_FOTOS) : $posicion;
+            });
     }
 
     public function etiquetaFoto(string $campo): string
     {
-        return self::ETIQUETAS_FOTO[$campo] ?? 'Otras fotos';
+        return app(RequisitosDeFotos::class)->etiqueta($campo);
     }
 }

@@ -16,6 +16,7 @@ use App\Models\ubicacion;
 use App\Models\User;
 use App\Services\coordinador\DataGisServices;
 use App\Services\survey123\AuditoriaSurveyRegistro;
+use App\Services\survey123\RequisitosDeFotos;
 use Database\Seeders\PermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -149,7 +150,7 @@ test('la hoja Auditoría replica el formato del libro: variables con su Validar 
         'ObjectID', 'GlobalID', 'Fecha de registro', 'Nombre del Técnico', 'Contrato', 'Orden de Trabajo',
         'Categoría en campo', 'Serie de medidor instalado', 'Lectura del medidor instalado', '¿Qué actividad va a ejecutar?',
         '¿Se pudo ejecutar la suspensión?', '¿Método de suspensión instalado?', 'Serie de la sonda utilizada', 'Serie del Caps',
-        'Motivo por el cual no se pudo ejecutar la suspensión', 'Fotografías de la fachada (3 fotos)', 'Fotografías del medidor',
+        'Motivo por el cual no se pudo ejecutar la suspensión', 'Fotografías de la fachada (3 fotos)', 'Fotografías del medidor', 'Fotografía del IVT',
         'Fotografías de la suspensión, reconexión ejecutada o novedad encontrada', 'JUSTIFICACIÓN', 'CreationDate', 'EditDate', 'x', 'y',
     ];
 
@@ -273,7 +274,7 @@ test('incluye identificadores, coordenadas, fechas y estado de asignación', fun
         ->and($fila['¿Se pudo ejecutar la suspensión?'])->toBe('si')
         ->and($fila['Estado de asignación'])->toBe('Asignado a campo')
         ->and($hoja->getCell('E2')->getFormattedValue())->toBe('2026-11-10 07:45:00')
-        ->and($hoja->getCell('AM2')->getFormattedValue())->toBe('2026-11-10 08:00:00');
+        ->and($hoja->getCell('AO2')->getFormattedValue())->toBe('2026-11-10 08:00:00');
 });
 
 test('la hoja de visitas muestra lo reportado, lo encontrado y la validación por campo', function () {
@@ -674,7 +675,11 @@ function columnasPorCampo(): array
         'foto_fachada' => ['Fotografías de la fachada (3 fotos)'],
         'fotos' => ['Fotografías de la fachada (3 fotos)'],
         'foto_medidor' => ['Fotografías del medidor'],
+        'foto_ivt' => ['Fotografía del IVT'],
         'foto_actividad' => [$actividad],
+        'foto_actividad1' => [$actividad],
+        'foto_actividad2' => [$actividad],
+        'foto_actividad3' => [$actividad],
         'ubicacion' => ['x', 'y'],
     ];
 }
@@ -720,6 +725,8 @@ test('todo campo de hallazgo que produce la auditoría tiene una columna Validar
         $coincidencias[1],
         ['serie_sonda', 'serie_caps'],
         array_keys(config('survey_auditoria.parametros.fotos_minimas')),
+        [RequisitosDeFotos::ACTIVIDAD_ANTERIOR],
+        array_keys(RequisitosDeFotos::FOTOS_NUEVAS),
     ));
 
     $cubiertos = (new HojaAuditoriaExport(SurveyRegistro::query()))->camposValidados();
@@ -809,26 +816,26 @@ test('los colores de fila con errores y con alertas están en el archivo', funct
 
     $hoja = libroDe(exportacionDe($empresa))->getSheetByName('Auditoría');
 
-    expect($hoja->getHighestColumn())->toBe('AX');
+    expect($hoja->getHighestColumn())->toBe('AZ');
 
     $condicionales = $hoja->getConditionalStyles('A2');
     expect($condicionales)->toHaveCount(2)
-        ->and($condicionales[0]->getConditions()[0])->toContain('$AX2')->toContain('Con errores')
+        ->and($condicionales[0]->getConditions()[0])->toContain('$AZ2')->toContain('Con errores')
         ->and($condicionales[0]->getStyle()->getFill()->getEndColor()->getRGB())->toBe('FDE2E2')
         ->and($condicionales[1]->getConditions()[0])->toContain('Con alertas')
         ->and($condicionales[1]->getStyle()->getFill()->getEndColor()->getRGB())->toBe('FFF1CC')
-        ->and($hoja->getConditionalStyles('AW4'))->not->toBeEmpty();
+        ->and($hoja->getConditionalStyles('AY4'))->not->toBeEmpty();
 
     $relleno = fn (string $celda) => $hoja->getStyle($celda)->getFill()->getFillType() === 'solid'
         ? $hoja->getStyle($celda)->getFill()->getStartColor()->getRGB()
         : null;
 
-    expect([$relleno('AV2'), $relleno('AW2'), $relleno('AX2')])->toBe(['FDE2E2', 'FDE2E2', 'FDE2E2'])
-        ->and([$relleno('AV3'), $relleno('AX3')])->toBe(['FFF1CC', 'FFF1CC'])
-        ->and([$relleno('AV4'), $relleno('AX4')])->toBe([null, null])
+    expect([$relleno('AX2'), $relleno('AY2'), $relleno('AZ2')])->toBe(['FDE2E2', 'FDE2E2', 'FDE2E2'])
+        ->and([$relleno('AX3'), $relleno('AZ3')])->toBe(['FFF1CC', 'FFF1CC'])
+        ->and([$relleno('AX4'), $relleno('AZ4')])->toBe([null, null])
         ->and($relleno('A1'))->toBe('1F3864')
         ->and($relleno('B1'))->toBe('2E7D32')
-        ->and($relleno('AX1'))->toBe('7F1D1D');
+        ->and($relleno('AZ1'))->toBe('7F1D1D');
 });
 
 test('la hoja de visitas replica conforme, no conforme y no verificable fila a fila', function () {
@@ -1061,12 +1068,39 @@ test('las fechas salen con la hora de la zona de la aplicación, sin desfase', f
             $libro = libroDe(exportacionDe($empresa));
 
             expect($libro->getSheetByName('Auditoría')->getCell('E2')->getFormattedValue())->toBe('2026-11-10 07:45:00', $zona)
-                ->and($libro->getSheetByName('Auditoría')->getCell('AM2')->getFormattedValue())->toBe('2026-11-10 08:00:00')
-                ->and($libro->getSheetByName('Auditoría')->getCell('AO2')->getFormattedValue())->toBe('2026-11-10 09:30:00')
+                ->and($libro->getSheetByName('Auditoría')->getCell('AO2')->getFormattedValue())->toBe('2026-11-10 08:00:00')
+                ->and($libro->getSheetByName('Auditoría')->getCell('AQ2')->getFormattedValue())->toBe('2026-11-10 09:30:00')
                 ->and($libro->getSheetByName('Visitas de auditoría')->getCell('E2')->getFormattedValue())->toBe('2026-11-10 10:00:00');
         }
     } finally {
         date_default_timezone_set($zonaOriginal);
         Carbon::setTestNow();
     }
+});
+
+test('el Excel cuenta la foto del IVT y suma las fotos de actividad de ambas versiones del formulario', function () {
+    $empresa = Company::factory()->create();
+    $nuevo = registroExportable($empresa, ['orden_trabajo' => '300000001']);
+    $anterior = registroExportable($empresa, ['orden_trabajo' => '300000002']);
+
+    $agregar = function (SurveyRegistro $registro, string $campo, int $n) {
+        SurveyAdjunto::create([
+            'survey_registro_id' => $registro->id, 'attachment_id' => $registro->object_id * 100 + $n,
+            'campo' => $campo, 'nombre' => "{$campo}-{$n}.jpg", 'hash' => sha1($registro->id.$campo.$n),
+        ]);
+    };
+
+    foreach (['foto_ivt', 'foto_actividad1', 'foto_actividad2', 'foto_actividad3'] as $n => $campo) {
+        $agregar($nuevo, $campo, $n + 1);
+    }
+    $agregar($anterior, 'foto_actividad', 1);
+    $agregar($anterior, 'foto_actividad', 2);
+
+    $actividad = 'Fotografías de la suspensión, reconexión ejecutada o novedad encontrada';
+    $filas = collect(filasDeHoja(libroDe(exportacionDe($empresa))->getSheetByName('Auditoría')))->keyBy('Orden de Trabajo');
+
+    expect($filas[300000001]['Fotografía del IVT'])->toBe(1)
+        ->and($filas[300000001][$actividad])->toBe(3)
+        ->and($filas[300000002]['Fotografía del IVT'])->toBe(0)
+        ->and($filas[300000002][$actividad])->toBe(2);
 });

@@ -463,3 +463,33 @@ it('en una orden normal sigue mostrando un guion cuando no hay dato', function (
         ->assertSee('Nombre del Usuario')
         ->assertDontSee('OT original (técnico de la visita)');
 });
+
+it('indica al auditor que las fotos de la actividad son antes, durante y después, al crear y al editar', function () {
+    [$user, $orden] = suspensionesContexto(EstadoOrden::Rechazada);
+
+    Livewire::actingAs($user)
+        ->test(ReporteCreate::class, ['orden' => $orden->fresh()])
+        ->fillForm(['suspension_ejecutada' => 1])
+        ->assertSee('Toma al menos 3 fotos: antes, durante y después de la actividad.');
+
+    reportes::create([
+        'orden_job_id' => $orden->id,
+        'personals_id' => $user->personals_id,
+        'numero_orden' => $orden->numero_orden,
+        'requiere_correccion' => true,
+        'datos_servicio' => ['categoria_campo' => 'residencial', 'suspension_ejecutada' => true],
+    ]);
+
+    Livewire::actingAs($user)
+        ->test(ReporteEdit::class, ['orden' => $orden->fresh()])
+        ->assertSee('Toma al menos 3 fotos: antes, durante y después de la actividad.');
+});
+
+it('el formulario del auditor no pide la foto del IVT', function () {
+    [$user, $orden] = suspensionesContexto();
+
+    Livewire::actingAs($user)
+        ->test(ReporteCreate::class, ['orden' => $orden->fresh()])
+        ->fillForm(['suspension_ejecutada' => 1])
+        ->assertDontSee('IVT');
+});

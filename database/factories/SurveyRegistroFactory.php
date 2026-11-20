@@ -6,6 +6,7 @@ use App\Enums\EstadoSurveyRegistro;
 use App\Models\Company;
 use App\Models\SurveyRegistro;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Carbon;
 
 /**
  * @extends Factory<SurveyRegistro>
@@ -21,7 +22,8 @@ class SurveyRegistroFactory extends Factory
             'company_id' => Company::factory(),
             'object_id' => fake()->unique()->numberBetween(1, 100000),
             'global_id' => fake()->uuid(),
-            'fecha_registro' => now()->subDay(),
+            // Anterior al cambio del formulario (foto del IVT y de la actividad por momento).
+            'fecha_registro' => Carbon::parse('2026-11-10 12:00:00', 'UTC'),
             'tecnico' => 'Luis Quiroga',
             'contrato' => fake()->numerify('######'),
             'orden_trabajo' => fake()->numerify('3########'),

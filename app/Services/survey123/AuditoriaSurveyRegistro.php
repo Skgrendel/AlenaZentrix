@@ -227,16 +227,16 @@ class AuditoriaSurveyRegistro
     private function fotos(SurveyRegistro $r): array
     {
         $h = [];
-        $conteo = $r->adjuntos->groupBy('campo')->map->count();
+        $fotos = app(RequisitosDeFotos::class)->evaluar($r);
 
-        foreach ($this->param('fotos_minimas') as $campo => $minimo) {
-            $aplica = $campo === 'foto_fachada' || $r->suspension_ejecutada === true;
-            $total = (int) ($conteo[$campo] ?? 0);
-
-            if ($aplica && $total < $minimo) {
-                $nombre = str_replace('foto_', '', $campo);
-                $h[] = $this->hallazgo('fotos_minimas', self::ERROR, $campo, "Hay {$total} foto(s) de {$nombre} y se requieren al menos {$minimo}.");
+        foreach ($fotos['requisitos'] as $requisito) {
+            if ($requisito['aplica'] && ! $requisito['completa']) {
+                $h[] = $this->hallazgo('fotos_minimas', self::ERROR, $requisito['campo'], $requisito['mensaje']);
             }
+        }
+
+        if ($fotos['version_anterior'] && $r->suspension_ejecutada === true) {
+            $h[] = $this->hallazgo('fotos_minimas', self::ALERTA, 'foto_ivt', 'Se envió con una versión anterior del formulario: no trae la foto del IVT ni las de la actividad por momento.');
         }
 
         $conHash = $r->adjuntos->whereNotNull('hash');

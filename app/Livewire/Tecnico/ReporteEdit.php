@@ -1358,6 +1358,7 @@ class ReporteEdit extends Component implements HasActions, HasForms
                         ->columnSpanFull(),
                     Forms\Components\FileUpload::make('fotos_suspension')
                         ->label('Fotografías de la suspensión ejecutada y del método aplicado')
+                        ->helperText('Toma al menos 3 fotos: antes, durante y después de la actividad.')
                         ->disk('s3')
                         ->directory($directorio)
                         ->fetchFileInformation(false)

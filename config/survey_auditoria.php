@@ -44,12 +44,18 @@ return [
         // Horas máximas entre el registro de la visita y su envío.
         'horas_max_entre_registro_y_envio' => 24,
 
-        // Fotos mínimas por tipo (nombre del campo de la foto en Survey123).
+        // Fotos mínimas fijas (nombre de la pregunta en la encuesta => cantidad). La del medidor solo si se ejecutó.
         'fotos_minimas' => [
             'foto_fachada' => 3,
             'foto_medidor' => 1,
-            'foto_actividad' => 1,
         ],
+
+        // Desde esta fecha (UTC) la encuesta pide foto del IVT y tres de la actividad (antes, durante y después).
+        // Es la última modificación del formulario; los registros anteriores traen una sola foto de actividad.
+        'formulario_nuevo_desde' => '2026-11-17 13:21:00',
+
+        // Fotos de actividad exigidas a los registros del formulario anterior.
+        'foto_actividad_anterior_minimo' => 1,
 
         // Distancia (m) por debajo de la cual dos contratos distintos se consideran en el mismo punto.
         'distancia_punto_repetido_m' => 30,

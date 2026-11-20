@@ -4,6 +4,7 @@ namespace App\Exports\SurveyAuditoria;
 
 use App\Models\SurveyRegistro;
 use App\Services\survey123\AuditoriaSurveyRegistro;
+use App\Services\survey123\RequisitosDeFotos;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
@@ -68,7 +69,8 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
             ->withCount([
                 'adjuntos as fotos_fachada' => $foto('foto_fachada'),
                 'adjuntos as fotos_medidor' => $foto('foto_medidor'),
-                'adjuntos as fotos_actividad' => $foto('foto_actividad'),
+                'adjuntos as fotos_ivt' => $foto('foto_ivt'),
+                'adjuntos as fotos_actividad' => fn ($q) => $q->whereIn('campo', RequisitosDeFotos::CAMPOS_ACTIVIDAD),
             ])
             ->orderBy('survey_registros.fecha_registro')
             ->orderBy('survey_registros.id');
@@ -293,7 +295,8 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
             ['titulo' => 'Motivo por el cual no se pudo ejecutar la suspensión', 'valor' => fn ($r) => $r->motivo_no_ejecucion, 'campos' => ['motivo_no_ejecucion'], 'ancho' => 26],
             ['titulo' => 'Fotografías de la fachada (3 fotos)', 'valor' => fn ($r) => (int) $r->fotos_fachada, 'campos' => ['foto_fachada', 'fotos'], 'ancho' => 14],
             ['titulo' => 'Fotografías del medidor', 'valor' => fn ($r) => (int) $r->fotos_medidor, 'campos' => ['foto_medidor'], 'ancho' => 14],
-            ['titulo' => 'Fotografías de la suspensión, reconexión ejecutada o novedad encontrada', 'valor' => fn ($r) => (int) $r->fotos_actividad, 'campos' => ['foto_actividad'], 'ancho' => 18],
+            ['titulo' => 'Fotografía del IVT', 'valor' => fn ($r) => (int) $r->fotos_ivt, 'campos' => ['foto_ivt'], 'ancho' => 14],
+            ['titulo' => 'Fotografías de la suspensión, reconexión ejecutada o novedad encontrada', 'valor' => fn ($r) => (int) $r->fotos_actividad, 'campos' => RequisitosDeFotos::CAMPOS_ACTIVIDAD, 'ancho' => 18],
             ['titulo' => 'JUSTIFICACIÓN', 'valor' => fn ($r) => $r->justificacion, 'campos' => ['justificacion'], 'ancho' => 44],
             ['titulo' => 'CreationDate', 'valor' => fn ($r) => $this->fecha($r->creado_en_origen), 'campos' => [], 'ancho' => 20, 'fecha' => true],
             ['titulo' => 'EditDate', 'valor' => fn ($r) => $this->fecha($r->editado_en_origen), 'campos' => [], 'ancho' => 20, 'fecha' => true],
