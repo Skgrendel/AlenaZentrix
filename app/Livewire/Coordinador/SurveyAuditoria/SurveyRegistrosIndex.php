@@ -51,7 +51,7 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
     public function table(Table $table): Table
     {
         return $table
-            ->query(SurveyRegistro::query()->with('ordenes'))
+            ->query(SurveyRegistro::query()->with(['ordenes', 'ultimaRevisionIA']))
             ->columns([
                 Tables\Columns\TextColumn::make('orden_trabajo')
                     ->label('OT')
@@ -95,6 +95,19 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ->badge()
                     ->formatStateUsing(fn (EstadoSurveyRegistro $state): string => $state->label())
                     ->color(fn (EstadoSurveyRegistro $state): string => $state->color()),
+                Tables\Columns\TextColumn::make('revision_ia')
+                    ->label('IA')
+                    ->badge()
+                    ->state(fn (SurveyRegistro $record): string => match (true) {
+                        $record->ultimaRevisionIA === null => 'Sin revisar',
+                        $record->ultimaRevisionIA->con_observaciones => 'Con observaciones',
+                        default => 'Sin observaciones',
+                    })
+                    ->color(fn (string $state): string => match ($state) {
+                        'Con observaciones' => 'warning',
+                        'Sin observaciones' => 'success',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('total_errores')
                     ->label('Errores ✖')
                     ->badge()
@@ -113,6 +126,19 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                         true: fn ($query) => $query->where('total_errores', '>', 0),
                         false: fn ($query) => $query->where('total_errores', 0),
                     ),
+                Tables\Filters\SelectFilter::make('revision_ia')
+                    ->label('Revisión con IA')
+                    ->options([
+                        'sin_revisar' => 'Sin revisar',
+                        'con_observaciones' => 'Con observaciones',
+                        'sin_observaciones' => 'Sin observaciones',
+                    ])
+                    ->query(fn (Builder $query, array $data): Builder => match ($data['value'] ?? null) {
+                        'sin_revisar' => $query->whereDoesntHave('revisionesIA'),
+                        'con_observaciones' => $query->whereHas('ultimaRevisionIA', fn (Builder $q) => $q->where('con_observaciones', true)),
+                        'sin_observaciones' => $query->whereHas('ultimaRevisionIA', fn (Builder $q) => $q->where('con_observaciones', false)),
+                        default => $query,
+                    }),
                 Tables\Filters\SelectFilter::make('estado')
                     ->label('Estado')
                     ->options(

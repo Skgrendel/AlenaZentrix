@@ -24,6 +24,8 @@ class ConfiguracionRevisionFotosIA extends Component
 
     public string $instrucciones = '';
 
+    public bool $revision_automatica = false;
+
     public ?string $registroPrueba = null;
 
     /** @var array<string, mixed>|null */
@@ -40,6 +42,7 @@ class ConfiguracionRevisionFotosIA extends Component
         $this->modelo = $ajuste->modelo;
         $this->detalle_imagen = $ajuste->detalle_imagen;
         $this->instrucciones = $ajuste->instrucciones;
+        $this->revision_automatica = $ajuste->revision_automatica;
     }
 
     /** @return array<string, array<int, string>> */
@@ -49,6 +52,7 @@ class ConfiguracionRevisionFotosIA extends Component
             'modelo' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9._:-]+$/'],
             'detalle_imagen' => ['required', 'in:low,high,auto'],
             'instrucciones' => ['required', 'string', 'min:30', 'max:12000'],
+            'revision_automatica' => ['boolean'],
         ];
     }
 

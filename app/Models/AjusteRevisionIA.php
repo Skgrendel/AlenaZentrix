@@ -15,7 +15,12 @@ class AjusteRevisionIA extends Model
 
     protected $table = 'ajustes_revision_ia';
 
-    protected $fillable = ['company_id', 'modelo', 'detalle_imagen', 'instrucciones'];
+    protected $fillable = ['company_id', 'modelo', 'detalle_imagen', 'instrucciones', 'revision_automatica'];
+
+    protected function casts(): array
+    {
+        return ['revision_automatica' => 'boolean'];
+    }
 
     /**
      * Ajustes vigentes de la empresa; si no se han guardado, los valores recomendados (sin crearlos).
@@ -29,6 +34,7 @@ class AjusteRevisionIA extends Model
             'modelo' => (string) config('services.openai.modelo'),
             'detalle_imagen' => (string) config('services.openai.detalle_imagen', 'low'),
             'instrucciones' => RevisorFotosIA::INSTRUCCIONES_RECOMENDADAS,
+            'revision_automatica' => false,
         ]);
     }
 }

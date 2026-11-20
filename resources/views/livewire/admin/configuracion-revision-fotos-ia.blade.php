@@ -38,6 +38,11 @@
             </div>
         </div>
 
+        <div class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+            <flux:switch wire:model="revision_automatica" label="Revisar automáticamente al sincronizar" align="left"
+                description="Cada registro que llegue con fotos nuevas se revisa solo, en segundo plano, y la sugerencia queda guardada en su detalle. Cada revisión se cobra. Los registros que ya estaban cargados no se revisan solos: se lanzan por tandas con el comando survey123:revisar-ia." />
+        </div>
+
         <div>
             <flux:textarea wire:model="instrucciones" label="Instrucciones para la revisión" rows="22" class="font-mono text-xs" />
             <flux:text class="mt-1 text-xs">

@@ -2,6 +2,8 @@
 
 namespace App\Services\survey123;
 
+use App\Jobs\RevisarFotosIAJob;
+use App\Models\AjusteRevisionIA;
 use App\Models\SurveyAdjunto;
 use App\Models\SurveyRegistro;
 use Illuminate\Support\Carbon;
@@ -16,6 +18,9 @@ use Throwable;
  */
 class Survey123Sincronizador
 {
+    /** Si la empresa tiene encendida la revisión automática de fotos con IA (se consulta una vez por corrida). */
+    private bool $revisarConIA = false;
+
     public function __construct(private readonly Survey123Client $cliente) {}
 
     /**
@@ -30,6 +35,8 @@ class Survey123Sincronizador
                 $progreso($resumen, $etapa);
             }
         };
+
+        $this->revisarConIA = $conFotos && AjusteRevisionIA::de($companyId)->revision_automatica;
 
         $avisar('Consultando los registros');
 
@@ -106,6 +113,10 @@ class Survey123Sincronizador
 
             if ($cambio || $fotosNuevas > 0 || $registro->auditado_en === null) {
                 (new AuditoriaSurveyRegistro)->auditarYGuardar($registro->unsetRelation('adjuntos'));
+            }
+
+            if ($fotosNuevas > 0 && $this->revisarConIA) {
+                RevisarFotosIAJob::dispatch($registro->id);
             }
         }
     }

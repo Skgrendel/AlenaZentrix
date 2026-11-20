@@ -1,5 +1,7 @@
 <?php
 
+use App\Jobs\RevisarFotosIAJob;
+use App\Models\AjusteRevisionIA;
 use App\Models\Company;
 use App\Models\SurveyAdjunto;
 use App\Models\SurveyRegistro;
@@ -9,6 +11,7 @@ use App\Services\survey123\Survey123Sincronizador;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
@@ -268,4 +271,40 @@ test('una fecha de edición con milisegundos no hace que el registro se vea camb
     $segunda = $sincronizador->sincronizar($empresa->id, conFotos: false);
 
     expect($segunda)->toMatchArray(['actualizados' => 0, 'sin_cambios' => 1]);
+});
+
+test('sincronizar con la revisión automática encendida encola la revisión con IA de cada registro con fotos nuevas', function () {
+    Storage::fake('s3');
+    Queue::fake();
+    $empresa = Company::factory()->create();
+    AjusteRevisionIA::query()->create([
+        'company_id' => $empresa->id, 'modelo' => 'gpt-4o', 'detalle_imagen' => 'high',
+        'instrucciones' => 'Instrucciones de prueba para la revisión de las fotos de suspensión.', 'revision_automatica' => true,
+    ]);
+    $adjuntos = [['parentObjectId' => 2, 'attachmentInfos' => [
+        ['id' => 10, 'globalId' => 'a-10', 'name' => 'foto_fachada.jpg', 'contentType' => 'image/jpeg', 'size' => 17, 'keywords' => 'foto_fachada'],
+    ]]];
+    simularArcGis([featureSurvey()], $adjuntos);
+
+    (new Survey123Sincronizador(clienteSurvey()))->sincronizar($empresa->id);
+
+    $registro = SurveyRegistro::query()->withoutGlobalScopes()->firstOrFail();
+    Queue::assertPushed(RevisarFotosIAJob::class, fn ($job) => $job->registroId === $registro->id && $job->automatica === true);
+
+    // Una segunda corrida sin fotos nuevas no vuelve a encolar nada.
+    (new Survey123Sincronizador(clienteSurvey()))->sincronizar($empresa->id);
+    Queue::assertPushed(RevisarFotosIAJob::class, 1);
+});
+
+test('sincronizar con la revisión automática apagada no encola nada', function () {
+    Storage::fake('s3');
+    Queue::fake();
+    $empresa = Company::factory()->create();
+    simularArcGis([featureSurvey()], [['parentObjectId' => 2, 'attachmentInfos' => [
+        ['id' => 10, 'globalId' => 'a-10', 'name' => 'foto_fachada.jpg', 'contentType' => 'image/jpeg', 'size' => 17, 'keywords' => 'foto_fachada'],
+    ]]]);
+
+    (new Survey123Sincronizador(clienteSurvey()))->sincronizar($empresa->id);
+
+    Queue::assertNothingPushed();
 });

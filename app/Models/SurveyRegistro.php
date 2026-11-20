@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Suspensión reportada por un técnico en Survey123, a la espera de ser auditada en campo.
@@ -96,6 +97,12 @@ class SurveyRegistro extends Model
     public function revisionesIA(): HasMany
     {
         return $this->hasMany(RevisionFotosIA::class, 'survey_registro_id');
+    }
+
+    /** @return HasOne<RevisionFotosIA, $this> */
+    public function ultimaRevisionIA(): HasOne
+    {
+        return $this->hasOne(RevisionFotosIA::class, 'survey_registro_id')->latestOfMany();
     }
 
     /** @return HasMany<OrdenJob, $this> */
