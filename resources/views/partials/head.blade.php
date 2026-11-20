@@ -9,6 +9,19 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
+{{-- Aplicación instalable (PWA) --}}
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#17222e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Alena">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script data-navigate-once>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {}));
+    }
+</script>
+
 @fonts
 
 @vite(['resources/css/app.css', 'resources/js/app.js'])

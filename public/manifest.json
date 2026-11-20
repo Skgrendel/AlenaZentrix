@@ -1,0 +1,25 @@
+{
+    "id": "/",
+    "name": "Alena Zentrix",
+    "short_name": "Alena",
+    "description": "Órdenes de trabajo y auditorías de campo.",
+    "lang": "es",
+    "start_url": "/dashboard",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#17222e",
+    "icons": [
+        { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+        { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ],
+    "shortcuts": [
+        {
+            "name": "Mis órdenes",
+            "short_name": "Mis órdenes",
+            "url": "/tecnico/mis-ordenes",
+            "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+        }
+    ]
+}
