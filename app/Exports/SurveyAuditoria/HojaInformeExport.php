@@ -225,6 +225,7 @@ class HojaInformeExport implements FromArray, WithCharts, WithColumnWidths, With
             'Una fila roja tiene errores y una amarilla tiene alertas; la última columna resume el estado de la fila.',
             'Visitas de auditoría: lo que reportó el técnico frente a lo que encontró el auditor en campo, variable por variable.',
             'Revisión IA: sugerencia automática sobre las fotos. No cambia el resultado de la auditoría; la decisión es de una persona.',
+            'Conclusión: propuesta automática según los hallazgos (sin hallazgos, se aprueba; solo alertas, se aprueba solicitando correcciones; con errores, no se aprueba). Se puede cambiar con la lista de cada fila.',
             'Resumen: cifras por técnico, por regla y por resultado de las visitas. Todas las fechas están en hora de Colombia.',
         ] as $nota) {
             $fila = $agregar([$nota]);

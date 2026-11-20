@@ -1168,7 +1168,7 @@ test('el Excel trae Creator y Editor del origen, vacíos si no llegaron, y sigue
         ->and($filas[300000003]['Editor'])->toBeNull();
 });
 
-test('la última columna es «Conclusión»: vacía al exportar y con una lista desplegable de tres opciones en cada fila', function () {
+test('la última columna es «Conclusión», con una lista desplegable de tres opciones en cada fila', function () {
     $empresa = Company::factory()->create();
     auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000001']), [['lectura', 'error', 'lectura_medidor', 'b']]);
     auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000002']));
@@ -1183,8 +1183,7 @@ test('la última columna es «Conclusión»: vacía al exportar y con una lista 
     foreach ([2, 3, 4] as $fila) {
         $validacion = $hoja->getCell("{$ultima}{$fila}")->getDataValidation();
 
-        expect($hoja->getCell("{$ultima}{$fila}")->getValue())->toBeNull()
-            ->and($validacion->getType())->toBe('list')
+        expect($validacion->getType())->toBe('list')
             ->and($validacion->getFormula1())->toBe('"Se aprueba,Se aprueba solicitando correcciones,No se aprueba"')
             ->and($validacion->getShowErrorMessage())->toBeTrue()
             ->and($validacion->getErrorStyle())->toBe('stop')
@@ -1199,4 +1198,35 @@ test('las opciones de la conclusión caben en el límite de Excel para listas es
 
     expect(strlen($texto))->toBeLessThan(255)
         ->and(HojaAuditoriaExport::CONCLUSIONES)->each->not->toContain(',');
+});
+
+test('la conclusión viene propuesta según los hallazgos: sin hallazgos se aprueba, con alertas pide correcciones, con errores no se aprueba', function () {
+    $empresa = Company::factory()->create();
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000001']));
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000002']), [['fecha', 'alerta', 'fecha_registro', 'a']]);
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000003']), [['lectura', 'error', 'lectura_medidor', 'b']]);
+    auditadoCon(registroExportable($empresa, ['orden_trabajo' => '300000004']), [['lectura', 'error', 'lectura_medidor', 'b'], ['fecha', 'alerta', 'fecha_registro', 'a']]);
+    registroExportable($empresa, ['orden_trabajo' => '300000005']); // todavía sin auditar
+
+    $conclusiones = collect(filasDeHoja(libroDe(exportacionDe($empresa))->getSheetByName('Auditoría')))
+        ->pluck('Conclusión', 'Orden de Trabajo')->all();
+
+    expect($conclusiones)->toBe([
+        300000001 => 'Se aprueba',
+        300000002 => 'Se aprueba solicitando correcciones',
+        300000003 => 'No se aprueba',
+        300000004 => 'No se aprueba',
+        300000005 => null,
+    ]);
+});
+
+test('lo que pone el sistema en la conclusión es siempre una de las tres opciones de la lista', function () {
+    $empresa = Company::factory()->create();
+    auditadoCon(registroExportable($empresa), [['fecha', 'alerta', 'fecha_registro', 'a']]);
+    auditadoCon(registroExportable($empresa), [['lectura', 'error', 'lectura_medidor', 'b']]);
+    auditadoCon(registroExportable($empresa));
+
+    $valores = collect(filasDeHoja(libroDe(exportacionDe($empresa))->getSheetByName('Auditoría')))->pluck('Conclusión');
+
+    expect($valores->every(fn ($v) => in_array($v, HojaAuditoriaExport::CONCLUSIONES, true)))->toBeTrue();
 });

@@ -126,8 +126,8 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         };
         $fila[] = $revision?->veredicto['resumen'] ?? null;
 
-        // La conclusión la elige quien revisa dentro del Excel, con la lista desplegable de la columna.
-        $fila[] = null;
+        // Propuesta según los hallazgos; quien revisa puede cambiarla con la lista desplegable de la columna.
+        $fila[] = $this->conclusionSugerida($registro);
 
         return $fila;
     }
@@ -310,6 +310,20 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         for ($fila = 3; $fila <= $ultimaFila; $fila++) {
             $hoja->getCell("{$columna}{$fila}")->setDataValidation(clone $validacion);
         }
+    }
+
+    /**
+     * Sin errores ni alertas: se aprueba. Solo alertas: se aprueba solicitando correcciones. Con errores: no se aprueba.
+     * Un registro que todavía no se ha auditado no tiene propuesta (queda vacío).
+     */
+    private function conclusionSugerida(SurveyRegistro $registro): ?string
+    {
+        return match (true) {
+            $registro->auditado_en === null => null,
+            $registro->total_errores > 0 => self::CONCLUSIONES[2],
+            $registro->total_alertas > 0 => self::CONCLUSIONES[1],
+            default => self::CONCLUSIONES[0],
+        };
     }
 
     private function estadoDeLaFila(SurveyRegistro $registro): string
