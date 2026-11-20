@@ -220,6 +220,39 @@
                 'tokens_salida' => $revisionIA->tokens_salida,
                 'costo_usd' => $revisionIA->costo_usd,
             ]])
+
+            <div class="mt-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-700" data-test="evaluacion-ia">
+                @if ($revisionIA->evaluacion)
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="text-sm">
+                            <span class="font-semibold {{ $revisionIA->evaluacion === 'de_acuerdo' ? 'text-green-700' : 'text-red-700' }}">
+                                {{ $revisionIA->evaluacion === 'de_acuerdo' ? 'De acuerdo con la IA' : 'En desacuerdo con la IA' }}
+                            </span>
+                            <span class="text-zinc-500">
+                                · {{ $revisionIA->evaluador?->fullName() }} · {{ $revisionIA->evaluado_en?->timezone(config('survey_auditoria.zona_horaria_excel'))->format('d/m/Y h:i a') }}
+                            </span>
+                            @if ($revisionIA->comentario_evaluacion)
+                                <div class="mt-1 text-zinc-700 dark:text-zinc-300">{{ $revisionIA->comentario_evaluacion }}</div>
+                            @endif
+                        </div>
+                        @if ($puedeRevisarConIA)
+                            <flux:button size="xs" variant="ghost" wire:click="reabrirEvaluacionIA">Cambiar mi opinión</flux:button>
+                        @endif
+                    </div>
+                @elseif ($puedeRevisarConIA)
+                    <div class="space-y-2">
+                        <div class="text-sm font-medium">¿Qué opinas de esta revisión?</div>
+                        <flux:textarea wire:model="comentarioEvaluacion" rows="2" placeholder="Comentario opcional: qué acertó o qué se le pasó a la IA" />
+                        @error('comentarioEvaluacion') <div class="text-xs text-red-600">{{ $message }}</div> @enderror
+                        <div class="flex flex-wrap gap-2">
+                            <flux:button size="sm" icon="hand-thumb-up" wire:click="evaluarRevisionIA('de_acuerdo')">De acuerdo</flux:button>
+                            <flux:button size="sm" icon="hand-thumb-down" wire:click="evaluarRevisionIA('en_desacuerdo')">En desacuerdo</flux:button>
+                        </div>
+                    </div>
+                @else
+                    <flux:text class="text-sm">Todavía nadie ha dado su opinión sobre esta revisión.</flux:text>
+                @endif
+            </div>
         @else
             <flux:text class="text-sm">Todavía no se ha revisado con IA.</flux:text>
         @endif

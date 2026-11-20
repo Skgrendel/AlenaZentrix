@@ -136,3 +136,80 @@ test('un registro sin fotos no ofrece la revisión con IA', function () {
         ->assertOk()
         ->assertDontSee('Revisar con IA');
 });
+
+function registroConRevisionParaEvaluar(User $user): SurveyRegistro
+{
+    $registro = registroConFotoParaIA($user);
+    $registro->revisionesIA()->create([
+        'modelo' => 'gpt-4o', 'detalle_imagen' => 'high', 'instrucciones_hash' => sha1('x'),
+        'veredicto' => json_decode(respuestaIAConResumen('Revisión a evaluar.')['choices'][0]['message']['content'], true),
+        'fotos' => 1, 'tokens_entrada' => 1, 'tokens_salida' => 1,
+    ]);
+
+    return $registro;
+}
+
+test('una persona marca si está de acuerdo con la revisión de la IA y deja un comentario', function () {
+    $user = usuarioDeRevisionIA('Coordinador');
+    $registro = registroConRevisionParaEvaluar($user);
+
+    Livewire::actingAs($user)->test(SurveyRegistroShow::class, ['registro' => $registro])
+        ->assertSee('¿Qué opinas de esta revisión?')
+        ->set('comentarioEvaluacion', 'Acertó con las fotos repetidas.')
+        ->call('evaluarRevisionIA', 'de_acuerdo')
+        ->assertSee('De acuerdo con la IA')
+        ->assertSee('Acertó con las fotos repetidas.');
+
+    $revision = $registro->revisionesIA()->first();
+
+    expect($revision->evaluacion)->toBe('de_acuerdo')
+        ->and($revision->comentario_evaluacion)->toBe('Acertó con las fotos repetidas.')
+        ->and($revision->evaluado_por)->toBe($user->id)
+        ->and($revision->evaluado_en)->not->toBeNull();
+});
+
+test('en desacuerdo se guarda sin comentario y se puede cambiar la opinión', function () {
+    $user = usuarioDeRevisionIA('Coordinador');
+    $registro = registroConRevisionParaEvaluar($user);
+
+    Livewire::actingAs($user)->test(SurveyRegistroShow::class, ['registro' => $registro])
+        ->call('evaluarRevisionIA', 'en_desacuerdo')
+        ->assertSee('En desacuerdo con la IA')
+        ->call('reabrirEvaluacionIA')
+        ->assertSee('¿Qué opinas de esta revisión?');
+
+    expect($registro->revisionesIA()->first()->evaluacion)->toBeNull()
+        ->and($registro->revisionesIA()->first()->comentario_evaluacion)->toBeNull();
+});
+
+test('solo quien puede revisar da su opinión y no se aceptan valores inventados', function () {
+    $legal = usuarioDeRevisionIA('Legal');
+    $registro = registroConRevisionParaEvaluar($legal);
+
+    Livewire::actingAs($legal)->test(SurveyRegistroShow::class, ['registro' => $registro])
+        ->assertSee('Todavía nadie ha dado su opinión')
+        ->assertDontSee('De acuerdo')
+        ->call('evaluarRevisionIA', 'de_acuerdo')->assertForbidden();
+
+    $coordinador = usuarioDeRevisionIA('Coordinador');
+    $propio = registroConRevisionParaEvaluar($coordinador);
+
+    Livewire::actingAs($coordinador)->test(SurveyRegistroShow::class, ['registro' => $propio])
+        ->call('evaluarRevisionIA', 'quizas');
+
+    expect(RevisionFotosIA::query()->whereNotNull('evaluacion')->count())->toBe(0);
+});
+
+test('la opinión es de cada revisión: una nueva revisión empieza sin evaluar', function () {
+    config(['services.openai.api_key' => 'clave-de-prueba']);
+    Http::fake(['api.openai.com/*' => Http::response(respuestaIAConResumen('Nueva revisión.'))]);
+    $user = usuarioDeRevisionIA('Coordinador');
+    $registro = registroConRevisionParaEvaluar($user);
+
+    $componente = Livewire::actingAs($user)->test(SurveyRegistroShow::class, ['registro' => $registro]);
+    $componente->call('evaluarRevisionIA', 'de_acuerdo')->call('revisarConIA')
+        ->assertSee('Nueva revisión.')->assertSee('¿Qué opinas de esta revisión?');
+
+    expect(RevisionFotosIA::query()->whereNotNull('evaluacion')->count())->toBe(1)
+        ->and(RevisionFotosIA::query()->count())->toBe(2);
+});

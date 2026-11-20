@@ -16,14 +16,18 @@ class RevisionFotosIA extends Model
     protected $table = 'revisiones_ia_survey';
 
     protected $fillable = [
-        'survey_registro_id', 'modelo', 'detalle_imagen', 'instrucciones_hash', 'veredicto', 'con_observaciones',
+        'survey_registro_id', 'modelo', 'detalle_imagen', 'instrucciones_hash', 'veredicto', 'con_observaciones', 'evaluacion', 'comentario_evaluacion', 'evaluado_por', 'evaluado_en',
         'fotos', 'tokens_entrada', 'tokens_salida', 'costo_usd', 'user_id',
     ];
 
     protected function casts(): array
     {
-        return ['veredicto' => 'array', 'costo_usd' => 'float', 'con_observaciones' => 'boolean'];
+        return ['veredicto' => 'array', 'costo_usd' => 'float', 'con_observaciones' => 'boolean', 'evaluado_en' => 'datetime'];
     }
+
+    public const DE_ACUERDO = 'de_acuerdo';
+
+    public const EN_DESACUERDO = 'en_desacuerdo';
 
     protected static function booted(): void
     {
@@ -57,5 +61,11 @@ class RevisionFotosIA extends Model
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function evaluador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'evaluado_por');
     }
 }

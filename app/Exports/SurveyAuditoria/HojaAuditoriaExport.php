@@ -72,7 +72,7 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
                 'survey_registros.id', 'object_id', 'global_id', 'fecha_registro', 'tecnico', 'contrato', 'orden_trabajo',
                 'categoria', 'serie_medidor', 'lectura_medidor', 'actividad', 'suspension_ejecutada', 'metodo_suspension',
                 'serie_sonda', 'serie_caps', 'motivo_no_ejecucion', 'justificacion', 'latitud', 'longitud',
-                'creado_en_origen', 'editado_en_origen', 'estado', 'hallazgos', 'total_errores', 'total_alertas', 'auditado_en',
+                'creado_en_origen', 'editado_en_origen', 'payload', 'estado', 'hallazgos', 'total_errores', 'total_alertas', 'auditado_en',
             ])
             ->withCount([
                 'adjuntos as fotos_fachada' => $foto('foto_fachada'),
@@ -266,6 +266,14 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         }
     }
 
+    /** Usuario que creó o editó el registro en ArcGIS, tal como llega en el origen (puede venir vacío). */
+    private function textoDelPayload(SurveyRegistro $registro, string $clave): ?string
+    {
+        $valor = trim((string) ($registro->payload[$clave] ?? ''));
+
+        return $valor === '' ? null : $valor;
+    }
+
     private function estadoDeLaFila(SurveyRegistro $registro): string
     {
         return match (true) {
@@ -330,7 +338,9 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
             ['titulo' => 'Fotografías de la suspensión, reconexión ejecutada o novedad encontrada', 'valor' => fn ($r) => (int) $r->fotos_actividad, 'campos' => RequisitosDeFotos::CAMPOS_ACTIVIDAD, 'ancho' => 18],
             ['titulo' => 'JUSTIFICACIÓN', 'valor' => fn ($r) => $r->justificacion, 'campos' => ['justificacion'], 'ancho' => 44],
             ['titulo' => 'CreationDate', 'valor' => fn ($r) => $this->fecha($r->creado_en_origen), 'campos' => [], 'ancho' => 20, 'fecha' => true],
+            ['titulo' => 'Creator', 'valor' => fn ($r) => $this->textoDelPayload($r, 'Creator'), 'campos' => [], 'ancho' => 26],
             ['titulo' => 'EditDate', 'valor' => fn ($r) => $this->fecha($r->editado_en_origen), 'campos' => [], 'ancho' => 20, 'fecha' => true],
+            ['titulo' => 'Editor', 'valor' => fn ($r) => $this->textoDelPayload($r, 'Editor'), 'campos' => [], 'ancho' => 26],
             ['titulo' => 'x', 'valor' => fn ($r) => $r->longitud === null ? null : (float) $r->longitud, 'campos' => ['ubicacion'], 'ancho' => 14],
             ['titulo' => 'y', 'valor' => fn ($r) => $r->latitud === null ? null : (float) $r->latitud, 'campos' => ['ubicacion'], 'ancho' => 14],
         ];

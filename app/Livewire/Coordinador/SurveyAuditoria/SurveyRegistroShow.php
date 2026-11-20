@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Coordinador\SurveyAuditoria;
 
+use App\Models\RevisionFotosIA;
 use App\Models\SurveyAdjunto;
 use App\Models\SurveyRegistro;
 use App\Services\survey123\RequisitosDeFotos;
@@ -23,6 +24,8 @@ use Throwable;
 class SurveyRegistroShow extends Component
 {
     public SurveyRegistro $registro;
+
+    public string $comentarioEvaluacion = '';
 
     /** Orden en que se muestran los tipos de foto. */
     private const ORDEN_DE_FOTOS = [
@@ -51,6 +54,45 @@ class SurveyRegistroShow extends Component
         Notification::make()->success()->title('Revisión con IA guardada')->send();
     }
 
+    /** Guarda lo que opina una persona de la última revisión de la IA: de acuerdo o en desacuerdo. */
+    public function evaluarRevisionIA(string $evaluacion): void
+    {
+        abort_unless(auth()->user()?->can('ordenes.revisar'), 403);
+
+        $this->validate(['comentarioEvaluacion' => ['nullable', 'string', 'max:1000']]);
+
+        if (! in_array($evaluacion, [RevisionFotosIA::DE_ACUERDO, RevisionFotosIA::EN_DESACUERDO], true)) {
+            return;
+        }
+
+        $revision = $this->registro->revisionesIA()->latest()->first();
+
+        if ($revision === null) {
+            return;
+        }
+
+        $revision->update([
+            'evaluacion' => $evaluacion,
+            'comentario_evaluacion' => filled($this->comentarioEvaluacion) ? trim($this->comentarioEvaluacion) : null,
+            'evaluado_por' => auth()->id(),
+            'evaluado_en' => now(),
+        ]);
+
+        $this->comentarioEvaluacion = '';
+
+        Notification::make()->success()->title('Tu opinión quedó guardada')->send();
+    }
+
+    /** Quita la opinión para poder darla de nuevo. */
+    public function reabrirEvaluacionIA(): void
+    {
+        abort_unless(auth()->user()?->can('ordenes.revisar'), 403);
+
+        $this->registro->revisionesIA()->latest()->first()?->update([
+            'evaluacion' => null, 'comentario_evaluacion' => null, 'evaluado_por' => null, 'evaluado_en' => null,
+        ]);
+    }
+
     public function render(): View
     {
         $registro = $this->registro->load(['adjuntos', 'ordenes.reportes']);
@@ -62,7 +104,7 @@ class SurveyRegistroShow extends Component
             'hallazgos' => collect($registro->hallazgos ?? [])->sortBy(fn (array $h): int => $h['severidad'] === 'error' ? 0 : 1),
             'listaFotos' => $this->listaDeVerificacion($registro),
             'grupos' => $this->gruposDeFotos($registro),
-            'revisionIA' => $registro->revisionesIA()->with('usuario.personal')->latest()->first(),
+            'revisionIA' => $registro->revisionesIA()->with(['usuario.personal', 'evaluador.personal'])->latest()->first(),
             'puedeRevisarConIA' => auth()->user()?->can('ordenes.revisar') ?? false,
             'orden' => $registro->ordenes->sortByDesc('created_at')->first(),
         ]);

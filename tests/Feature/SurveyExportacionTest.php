@@ -151,7 +151,7 @@ test('la hoja Auditoría replica el formato del libro: variables con su Validar 
         'Categoría en campo', 'Serie de medidor instalado', 'Lectura del medidor instalado', '¿Qué actividad va a ejecutar?',
         '¿Se pudo ejecutar la suspensión?', '¿Método de suspensión instalado?', 'Serie de la sonda utilizada', 'Serie del Caps',
         'Motivo por el cual no se pudo ejecutar la suspensión', 'Fotografías de la fachada (3 fotos)', 'Fotografías del medidor', 'Fotografía del IVT',
-        'Fotografías de la suspensión, reconexión ejecutada o novedad encontrada', 'JUSTIFICACIÓN', 'CreationDate', 'EditDate', 'x', 'y',
+        'Fotografías de la suspensión, reconexión ejecutada o novedad encontrada', 'JUSTIFICACIÓN', 'CreationDate', 'Creator', 'EditDate', 'Editor', 'x', 'y',
     ];
 
     $esperados = [];
@@ -816,26 +816,26 @@ test('los colores de fila con errores y con alertas están en el archivo', funct
 
     $hoja = libroDe(exportacionDe($empresa))->getSheetByName('Auditoría');
 
-    expect($hoja->getHighestColumn())->toBe('BB');
+    expect($hoja->getHighestColumn())->toBe('BF');
 
     $condicionales = $hoja->getConditionalStyles('A2');
     expect($condicionales)->toHaveCount(2)
-        ->and($condicionales[0]->getConditions()[0])->toContain('$AZ2')->toContain('Con errores')
+        ->and($condicionales[0]->getConditions()[0])->toContain('$BD2')->toContain('Con errores')
         ->and($condicionales[0]->getStyle()->getFill()->getEndColor()->getRGB())->toBe('FDE2E2')
         ->and($condicionales[1]->getConditions()[0])->toContain('Con alertas')
         ->and($condicionales[1]->getStyle()->getFill()->getEndColor()->getRGB())->toBe('FFF1CC')
-        ->and($hoja->getConditionalStyles('AY4'))->not->toBeEmpty();
+        ->and($hoja->getConditionalStyles('BC4'))->not->toBeEmpty();
 
     $relleno = fn (string $celda) => $hoja->getStyle($celda)->getFill()->getFillType() === 'solid'
         ? $hoja->getStyle($celda)->getFill()->getStartColor()->getRGB()
         : null;
 
-    expect([$relleno('AX2'), $relleno('AY2'), $relleno('AZ2')])->toBe(['FDE2E2', 'FDE2E2', 'FDE2E2'])
-        ->and([$relleno('AX3'), $relleno('AZ3')])->toBe(['FFF1CC', 'FFF1CC'])
-        ->and([$relleno('AX4'), $relleno('AZ4')])->toBe([null, null])
+    expect([$relleno('BB2'), $relleno('BC2'), $relleno('BD2')])->toBe(['FDE2E2', 'FDE2E2', 'FDE2E2'])
+        ->and([$relleno('BB3'), $relleno('BD3')])->toBe(['FFF1CC', 'FFF1CC'])
+        ->and([$relleno('BB4'), $relleno('BD4')])->toBe([null, null])
         ->and($relleno('A1'))->toBe('17222E')
         ->and($relleno('B1'))->toBe('4D7C0F')
-        ->and($relleno('AZ1'))->toBe('7F1D1D');
+        ->and($relleno('BD1'))->toBe('7F1D1D');
 });
 
 test('la hoja de visitas replica conforme, no conforme y no verificable fila a fila', function () {
@@ -1073,7 +1073,7 @@ test('las fechas del Excel salen siempre en hora de Colombia, sin importar la zo
 
             expect($libro->getSheetByName('Auditoría')->getCell('E2')->getFormattedValue())->toBe($enBogota('07:45:00'), $zona)
                 ->and($libro->getSheetByName('Auditoría')->getCell('AO2')->getFormattedValue())->toBe($enBogota('08:00:00'))
-                ->and($libro->getSheetByName('Auditoría')->getCell('AQ2')->getFormattedValue())->toBe($enBogota('09:30:00'))
+                ->and($libro->getSheetByName('Auditoría')->getCell('AS2')->getFormattedValue())->toBe($enBogota('09:30:00'))
                 ->and($libro->getSheetByName('Visitas de auditoría')->getCell('E2')->getFormattedValue())->toBe($enBogota('10:00:00'));
         }
     } finally {
@@ -1149,4 +1149,20 @@ test('la hoja Informe es la portada: título, empresa, filtros, cifras, logo, gr
         ->and($hoja->getPageSetup()->getFitToWidth())->toBe(1)
         ->and($partes->contains(fn ($p) => str_starts_with($p, 'xl/charts/')))->toBeTrue()
         ->and($partes->contains(fn ($p) => str_starts_with($p, 'xl/media/')))->toBeTrue();
+});
+
+test('el Excel trae Creator y Editor del origen, vacíos si no llegaron, y siguen protegidos contra fórmulas', function () {
+    $empresa = Company::factory()->create();
+    registroExportable($empresa, ['orden_trabajo' => '300000001', 'payload' => ['Creator' => 'ana.perez_surtigas', 'Editor' => 'brayan.mogollon_surtigas']]);
+    registroExportable($empresa, ['orden_trabajo' => '300000002', 'payload' => ['Creator' => '', 'Editor' => '=1+1']]);
+    registroExportable($empresa, ['orden_trabajo' => '300000003', 'payload' => null]);
+
+    $filas = collect(filasDeHoja(libroDe(exportacionDe($empresa))->getSheetByName('Auditoría')))->keyBy('Orden de Trabajo');
+
+    expect($filas[300000001]['Creator'])->toBe('ana.perez_surtigas')
+        ->and($filas[300000001]['Editor'])->toBe('brayan.mogollon_surtigas')
+        ->and($filas[300000002]['Creator'])->toBeNull()
+        ->and($filas[300000002]['Editor'])->toBe('=1+1')
+        ->and($filas[300000003]['Creator'])->toBeNull()
+        ->and($filas[300000003]['Editor'])->toBeNull();
 });
