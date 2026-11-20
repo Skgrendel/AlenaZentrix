@@ -24,6 +24,7 @@ use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Enums\RecordActionsPosition;
 use Filament\Tables\Table;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -73,18 +74,22 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ->sortable(),
                 Tables\Columns\TextColumn::make('categoria')
                     ->label('Categoría')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->formatStateUsing(fn (?string $state): string => $state ? ucfirst($state) : '—'),
                 Tables\Columns\IconColumn::make('suspension_ejecutada')
                     ->label('Ejecutada')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('metodo_suspension')
                     ->label('Método')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->formatStateUsing(fn (?string $state): string => self::METODOS[$state] ?? '—'),
                 Tables\Columns\TextColumn::make('serie_medidor')
                     ->label('Serie medidor')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('lectura_medidor')
                     ->label('Lectura')
+                    ->toggleable(isToggledHiddenByDefault: true)
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('estado')
                     ->label('Estado')
@@ -131,6 +136,7 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ->visible(fn (): bool => $this->puedeExportar())
                     ->action(fn (): BinaryFileResponse => $this->exportar($this->getFilteredTableQuery())),
             ])
+            ->recordActionsPosition(RecordActionsPosition::BeforeColumns)
             ->actions([
                 ActionGroup::make([
                     Action::make('ver_detalle')

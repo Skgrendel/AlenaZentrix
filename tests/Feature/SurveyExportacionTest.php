@@ -273,8 +273,8 @@ test('incluye identificadores, coordenadas, fechas y estado de asignación', fun
         ->and($fila['y'])->toEqual(10.407333)
         ->and($fila['¿Se pudo ejecutar la suspensión?'])->toBe('si')
         ->and($fila['Estado de asignación'])->toBe('Asignado a campo')
-        ->and($hoja->getCell('E2')->getFormattedValue())->toBe('2026-11-10 07:45:00')
-        ->and($hoja->getCell('AO2')->getFormattedValue())->toBe('2026-11-10 08:00:00');
+        ->and($hoja->getCell('E2')->getFormattedValue())->toBe('2026-11-10 02:45:00')
+        ->and($hoja->getCell('AO2')->getFormattedValue())->toBe('2026-11-10 03:00:00');
 });
 
 test('la hoja de visitas muestra lo reportado, lo encontrado y la validación por campo', function () {
@@ -856,8 +856,8 @@ test('la hoja de visitas replica conforme, no conforme y no verificable fila a f
     $hoja = libroDe(exportacionDe($empresa))->getSheetByName('Visitas de auditoría');
     [$a, $b, $c] = filasDeHoja($hoja);
 
-    expect($hoja->getCell('E2')->getFormattedValue())->toBe('2026-11-10 10:00:00')
-        ->and($hoja->getCell('E4')->getFormattedValue())->toBe('2026-11-10 12:00:00');
+    expect($hoja->getCell('E2')->getFormattedValue())->toBe('2026-11-10 05:00:00')
+        ->and($hoja->getCell('E4')->getFormattedValue())->toBe('2026-11-10 07:00:00');
 
     expect($a['OT original'])->toBe(300000001)
         ->and($a['Contrato'])->toBe(111111)
@@ -1052,7 +1052,7 @@ test('la cantidad de consultas no crece con el número de registros', function (
     expect($grande)->toBeLessThanOrEqual($pequeno + 6);
 });
 
-test('las fechas salen con la hora de la zona de la aplicación, sin desfase', function () {
+test('las fechas del Excel salen siempre en hora de Colombia, sin importar la zona de la aplicación', function () {
     $zonaOriginal = date_default_timezone_get();
 
     try {
@@ -1067,10 +1067,12 @@ test('las fechas salen con la hora de la zona de la aplicación, sin desfase', f
 
             $libro = libroDe(exportacionDe($empresa));
 
-            expect($libro->getSheetByName('Auditoría')->getCell('E2')->getFormattedValue())->toBe('2026-11-10 07:45:00', $zona)
-                ->and($libro->getSheetByName('Auditoría')->getCell('AO2')->getFormattedValue())->toBe('2026-11-10 08:00:00')
-                ->and($libro->getSheetByName('Auditoría')->getCell('AQ2')->getFormattedValue())->toBe('2026-11-10 09:30:00')
-                ->and($libro->getSheetByName('Visitas de auditoría')->getCell('E2')->getFormattedValue())->toBe('2026-11-10 10:00:00');
+            $enBogota = fn (string $hora): string => Carbon::parse("2026-11-10 {$hora}", $zona)->setTimezone('America/Bogota')->format('Y-m-d H:i:s');
+
+            expect($libro->getSheetByName('Auditoría')->getCell('E2')->getFormattedValue())->toBe($enBogota('07:45:00'), $zona)
+                ->and($libro->getSheetByName('Auditoría')->getCell('AO2')->getFormattedValue())->toBe($enBogota('08:00:00'))
+                ->and($libro->getSheetByName('Auditoría')->getCell('AQ2')->getFormattedValue())->toBe($enBogota('09:30:00'))
+                ->and($libro->getSheetByName('Visitas de auditoría')->getCell('E2')->getFormattedValue())->toBe($enBogota('10:00:00'));
         }
     } finally {
         date_default_timezone_set($zonaOriginal);

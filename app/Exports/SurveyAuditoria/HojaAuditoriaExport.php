@@ -7,6 +7,7 @@ use App\Services\survey123\AuditoriaSurveyRegistro;
 use App\Services\survey123\RequisitosDeFotos;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
@@ -307,6 +308,8 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
 
     private function fecha(mixed $fecha): ?float
     {
-        return $fecha === null ? null : Date::dateTimeToExcel($fecha);
+        return $fecha === null ? null : Date::dateTimeToExcel(
+            Carbon::parse($fecha)->setTimezone(config('survey_auditoria.zona_horaria_excel'))->toDateTime()
+        );
     }
 }

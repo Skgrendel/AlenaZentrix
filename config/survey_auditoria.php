@@ -10,6 +10,9 @@
 
 return [
 
+    /** Zona horaria en la que se escriben las fechas del Excel (la base guarda UTC). */
+    'zona_horaria_excel' => 'America/Bogota',
+
     'reglas' => [
         'tecnico' => true,
         'contrato' => true,

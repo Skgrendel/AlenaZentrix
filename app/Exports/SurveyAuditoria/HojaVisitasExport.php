@@ -109,7 +109,9 @@ class HojaVisitasExport implements FromQuery, WithColumnFormatting, WithColumnWi
             $this->numeroOTexto($reporte->contrato_original),
             $reporte->orden_auditoria,
             $auditor === '' ? null : $auditor,
-            $reporte->created_at === null ? null : Date::dateTimeToExcel($reporte->created_at),
+            $reporte->created_at === null ? null : Date::dateTimeToExcel(
+                $reporte->created_at->copy()->setTimezone(config('survey_auditoria.zona_horaria_excel'))->toDateTime()
+            ),
             ResultadoComparacion::tryFrom((string) $reporte->resultado_comparacion)?->label() ?? self::SIN_RESULTADO,
         ];
 
