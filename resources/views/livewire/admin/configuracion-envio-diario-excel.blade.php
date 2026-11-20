@@ -24,7 +24,7 @@
             <div>
                 <flux:checkbox.group wire:model="dias" label="Días en que se envía">
                     <div class="mt-1 grid grid-cols-2 gap-x-4 gap-y-1">
-                        @foreach ($dias as $numero => $nombre)
+                        @foreach ($nombresDeDias as $numero => $nombre)
                             <flux:checkbox value="{{ $numero }}" label="{{ $nombre }}" />
                         @endforeach
                     </div>
