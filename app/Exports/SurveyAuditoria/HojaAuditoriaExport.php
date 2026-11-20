@@ -19,6 +19,7 @@ use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Color;
@@ -41,6 +42,9 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
     public const ESTADO_ERRORES = 'Con errores';
 
     public const ESTADO_SIN_AUDITAR = 'Sin auditar';
+
+    /** Opciones de la columna «Conclusión», que quien revisa elige dentro del Excel. */
+    public const CONCLUSIONES = ['Se aprueba', 'Se aprueba solicitando correcciones', 'No se aprueba'];
 
     public const IA_SIN_REVISAR = 'Sin revisar';
 
@@ -94,7 +98,7 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
             $encabezados[] = 'Validar ▸ '.$variable['titulo'];
         }
 
-        return array_merge($encabezados, ['Estado de asignación', 'Errores ✖', 'Alertas ⚠', 'Estado de la fila', 'Revisión IA', 'Resumen IA']);
+        return array_merge($encabezados, ['Estado de asignación', 'Errores ✖', 'Alertas ⚠', 'Estado de la fila', 'Revisión IA', 'Resumen IA', 'Conclusión']);
     }
 
     /** @return array<int, mixed> */
@@ -121,6 +125,9 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
             default => self::IA_SIN_OBSERVACIONES,
         };
         $fila[] = $revision?->veredicto['resumen'] ?? null;
+
+        // La conclusión la elige quien revisa dentro del Excel, con la lista desplegable de la columna.
+        $fila[] = null;
 
         return $fila;
     }
@@ -156,6 +163,7 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         $anchos[Coordinate::stringFromColumnIndex($primera + 3)] = 16;
         $anchos[Coordinate::stringFromColumnIndex($primera + 4)] = 20;
         $anchos[Coordinate::stringFromColumnIndex($primera + 5)] = 70;
+        $anchos[Coordinate::stringFromColumnIndex($primera + 6)] = 36;
 
         return $anchos;
     }
@@ -167,7 +175,8 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
             AfterSheet::class => function (AfterSheet $evento): void {
                 $hoja = $evento->sheet->getDelegate();
                 $estadoDeLaFila = count($this->variables()) * 2 + 4;
-                $totalColumnas = $estadoDeLaFila + 2;
+                $columnaConclusion = $estadoDeLaFila + 3;
+                $totalColumnas = $columnaConclusion;
                 $ultima = Coordinate::stringFromColumnIndex($totalColumnas);
                 $hayDatos = $hoja->getHighestRow() >= 2;
                 $ultimaFila = max($hoja->getHighestRow(), 2);
@@ -187,8 +196,14 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
                     $this->estiloEncabezado($hoja, $c, '7F1D1D');
                 }
 
-                for ($c = $estadoDeLaFila + 1; $c <= $totalColumnas; $c++) {
+                for ($c = $estadoDeLaFila + 1; $c < $columnaConclusion; $c++) {
                     $this->estiloEncabezado($hoja, $c, '0F766E');
+                }
+
+                $this->estiloEncabezado($hoja, $columnaConclusion, EstiloDeInforme::OSCURO);
+
+                if ($hayDatos) {
+                    $this->listaDeConclusiones($hoja, Coordinate::stringFromColumnIndex($columnaConclusion), $ultimaFila);
                 }
 
                 $hoja->getRowDimension(1)->setRowHeight(48);
@@ -272,6 +287,29 @@ class HojaAuditoriaExport implements FromQuery, WithColumnFormatting, WithColumn
         $valor = trim((string) ($registro->payload[$clave] ?? ''));
 
         return $valor === '' ? null : $valor;
+    }
+
+    /**
+     * Lista desplegable de la columna «Conclusión»: solo admite las tres opciones (o vacío), con un aviso al elegir otra cosa.
+     */
+    private function listaDeConclusiones(mixed $hoja, string $columna, int $ultimaFila): void
+    {
+        $validacion = $hoja->getCell("{$columna}2")->getDataValidation();
+        $validacion->setType(DataValidation::TYPE_LIST)
+            ->setErrorStyle(DataValidation::STYLE_STOP)
+            ->setAllowBlank(true)
+            ->setShowDropDown(false)
+            ->setShowInputMessage(true)
+            ->setShowErrorMessage(true)
+            ->setPromptTitle('Conclusión')
+            ->setPrompt('Elige una de las tres opciones de la lista.')
+            ->setErrorTitle('Opción no válida')
+            ->setError('Elige una de las opciones de la lista.')
+            ->setFormula1('"'.implode(',', self::CONCLUSIONES).'"');
+
+        for ($fila = 3; $fila <= $ultimaFila; $fila++) {
+            $hoja->getCell("{$columna}{$fila}")->setDataValidation(clone $validacion);
+        }
     }
 
     private function estadoDeLaFila(SurveyRegistro $registro): string
