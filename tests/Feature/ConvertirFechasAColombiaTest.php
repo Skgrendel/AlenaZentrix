@@ -1,6 +1,7 @@
 <?php
 
 use App\Console\Commands\ConvertirFechasAColombia;
+use App\Models\OrdenJob;
 use App\Models\SurveyRegistro;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -144,6 +145,49 @@ test('no convierte los trabajos fallidos: su fecha la pone la propia base y ya e
             ->doesntExpectOutputToContain('failed_jobs')
             ->assertSuccessful();
     });
+});
+
+test('no convierte lo que escribe una persona: fecha de entrega y fecha límite de las órdenes normales', function () {
+    $survey = SurveyRegistro::factory()->create();
+    $normal = OrdenJob::factory()->create();
+    $deSuspension = OrdenJob::factory()->create(['survey_registro_id' => $survey->id]);
+
+    foreach ([$normal, $deSuspension] as $orden) {
+        DB::table('orden_jobs')->where('id', $orden->id)->update([
+            'fecha_asignacion' => '2026-11-20 21:00:07',
+            'fecha_limite' => '2026-11-21 17:00:00',
+            'fecha_entrega' => '2026-11-20 10:30:00',
+            'created_at' => '2026-11-20 21:00:07',
+        ]);
+    }
+
+    conZonaDeLaBase('+00:00', function () {
+        $this->artisan('fechas:convertir-a-colombia')
+            ->expectsOutputToContain('orden_jobs.fecha_entrega')
+            ->expectsOutputToContain('solo auditorías de suspensiones')
+            ->assertSuccessful();
+
+        $this->artisan('fechas:convertir-a-colombia', ['--ejecutar' => true, '--respaldo-hecho' => true])->assertSuccessful();
+    });
+
+    // Lo que pone el sistema pasa de UTC a hora de Colombia.
+    expect(fechaGuardada('orden_jobs', 'fecha_asignacion', $normal->id))->toBe('2026-11-20 16:00:07')
+        ->and(fechaGuardada('orden_jobs', 'created_at', $normal->id))->toBe('2026-11-20 16:00:07')
+        // Lo que escribió una persona ya está en hora de Colombia: no se toca.
+        ->and(fechaGuardada('orden_jobs', 'fecha_entrega', $normal->id))->toBe('2026-11-20 10:30:00')
+        ->and(fechaGuardada('orden_jobs', 'fecha_limite', $normal->id))->toBe('2026-11-21 17:00:00')
+        ->and(fechaGuardada('orden_jobs', 'fecha_entrega', $deSuspension->id))->toBe('2026-11-20 10:30:00')
+        // En las auditorías de suspensiones la fecha límite la calcula el sistema (UTC): sí se convierte.
+        ->and(fechaGuardada('orden_jobs', 'fecha_limite', $deSuspension->id))->toBe('2026-11-21 12:00:00');
+
+    conZonaDeLaBase('+00:00', function () {
+        $this->artisan('fechas:convertir-a-colombia', ['--revertir' => true, '--ejecutar' => true, '--respaldo-hecho' => true])->assertSuccessful();
+    });
+
+    expect(fechaGuardada('orden_jobs', 'fecha_asignacion', $normal->id))->toBe('2026-11-20 21:00:07')
+        ->and(fechaGuardada('orden_jobs', 'fecha_limite', $normal->id))->toBe('2026-11-21 17:00:00')
+        ->and(fechaGuardada('orden_jobs', 'fecha_limite', $deSuspension->id))->toBe('2026-11-21 17:00:00')
+        ->and(fechaGuardada('orden_jobs', 'fecha_entrega', $normal->id))->toBe('2026-11-20 10:30:00');
 });
 
 test('se niega a convertir si la aplicación no está en hora de Colombia', function () {

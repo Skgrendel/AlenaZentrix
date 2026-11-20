@@ -26,6 +26,25 @@ class ConvertirFechasAColombia extends Command
      */
     private const EXCLUIDAS = ['conversiones_de_hora', 'migrations', 'failed_jobs'];
 
+    /**
+     * Columnas que NO se convierten porque las escribe una persona con un selector de fecha y hora: ya están en la
+     * hora que escribió (Colombia), no en UTC. Convertirlas las dejaría 5 horas antes de lo que se escribió.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private const COLUMNAS_ESCRITAS_A_MANO = ['orden_jobs' => ['fecha_entrega']];
+
+    /**
+     * Columnas que se convierten solo en las filas donde las pone el sistema. `fecha_limite` la escribe a mano el
+     * coordinador en las órdenes normales, pero en las auditorías de suspensiones la calcula el sistema (48 horas
+     * desde la asignación), y esas sí están en UTC.
+     *
+     * @var array<string, array<string, array{condicion: string, nota: string}>>
+     */
+    private const COLUMNAS_SOLO_DEL_SISTEMA = [
+        'orden_jobs' => ['fecha_limite' => ['condicion' => '`survey_registro_id` IS NOT NULL', 'nota' => 'solo auditorías de suspensiones']],
+    ];
+
     protected $signature = 'fechas:convertir-a-colombia
         {--ejecutar : Aplica el cambio. Sin esto solo simula y no modifica nada}
         {--respaldo-hecho : Confirmo que hice un respaldo de la base de datos antes de ejecutar}
@@ -74,12 +93,16 @@ class ConvertirFechasAColombia extends Command
         foreach ($columnas as $tabla => $lista) {
             $cantidad = (int) DB::table($tabla)->count();
             $total += $cantidad;
-            $filas[] = [$tabla, implode(', ', $lista), $cantidad];
+            $filas[] = [$tabla, implode(', ', array_map(fn (string $c): string => $c.$this->anotacion($tabla, $c), $lista)), $cantidad];
         }
 
         $accion = $revertir ? 'sumar' : 'restar';
         $this->info(($revertir ? 'REVERTIR' : 'CONVERTIR')." — se van a {$accion} ".self::HORAS.' horas a '.array_sum(array_map('count', $columnas)).' columnas de fecha en '.count($columnas).' tablas.');
         $this->table(['Tabla', 'Columnas de fecha', 'Filas'], $filas);
+
+        foreach (self::COLUMNAS_ESCRITAS_A_MANO as $tabla => $lista) {
+            $this->line("No se convierten (las escribe una persona, ya están en hora de Colombia): {$tabla}.".implode(", {$tabla}.", $lista));
+        }
 
         $this->mostrarEjemplo($columnas, $revertir);
 
@@ -101,7 +124,12 @@ class ConvertirFechasAColombia extends Command
 
                 foreach ($columnas as $tabla => $lista) {
                     // Una sola sentencia por tabla: todas sus columnas cambian juntas y ninguna se pisa.
-                    $cambios = implode(', ', array_map(fn (string $c): string => "`{$c}` = {$funcion}(`{$c}`, INTERVAL ".self::HORAS.' HOUR)', $lista));
+                    $cambios = implode(', ', array_map(function (string $c) use ($tabla, $funcion): string {
+                        $nuevo = "{$funcion}(`{$c}`, INTERVAL ".self::HORAS.' HOUR)';
+                        $condicion = self::COLUMNAS_SOLO_DEL_SISTEMA[$tabla][$c]['condicion'] ?? null;
+
+                        return $condicion === null ? "`{$c}` = {$nuevo}" : "`{$c}` = IF({$condicion}, {$nuevo}, `{$c}`)";
+                    }, $lista));
                     DB::statement("UPDATE `{$tabla}` SET {$cambios}");
                 }
 
@@ -166,12 +194,23 @@ class ConvertirFechasAColombia extends Command
         $columnas = [];
 
         foreach ($filas as $fila) {
-            if (! in_array($fila->tabla, self::EXCLUIDAS, true)) {
-                $columnas[$fila->tabla][] = $fila->columna;
+            if (in_array($fila->tabla, self::EXCLUIDAS, true)
+                || in_array($fila->columna, self::COLUMNAS_ESCRITAS_A_MANO[$fila->tabla] ?? [], true)) {
+                continue;
             }
+
+            $columnas[$fila->tabla][] = $fila->columna;
         }
 
         return $columnas;
+    }
+
+    /** Aclaración que se muestra junto a las columnas que solo se convierten en algunas filas. */
+    private function anotacion(string $tabla, string $columna): string
+    {
+        $nota = self::COLUMNAS_SOLO_DEL_SISTEMA[$tabla][$columna]['nota'] ?? null;
+
+        return $nota === null ? '' : " ({$nota})";
     }
 
     /** @param  array<string, array<int, string>>  $columnas */
