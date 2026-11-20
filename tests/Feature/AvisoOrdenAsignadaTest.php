@@ -202,3 +202,21 @@ test('el service worker muestra el aviso y abre solo rutas del propio sitio', fu
         ->and($sw)->toContain('destino.origin !== self.location.origin')
         ->and($sw)->toContain("const VERSION = 'v2'");
 });
+
+test('el botón de avisos explica el motivo real del fallo en lugar de un mensaje genérico', function () {
+    avisosConfigurados();
+    [$tecnico] = personaDeCampo(rol: 'Lector');
+
+    $html = $this->actingAs($tecnico)->get(route('tecnico.mis-ordenes'))->assertOk()->getContent();
+
+    foreach ([
+        'Tu sesión venció', 'no tiene permiso para activar los avisos', 'no dio permiso para mostrar avisos',
+        'servicio de avisos', 'clave de avisos del servidor no es válida', 'conexión segura (HTTPS)', 'No se pudo comunicar con el servidor',
+    ] as $frase) {
+        expect($html)->toContain($frase);
+    }
+
+    expect($html)->toContain("fallo.name = 'Http' + respuesta.status")
+        ->and($html)->toContain('this.motivo(error)')
+        ->and($html)->not->toContain('No se pudieron activar los avisos. Inténtalo de nuevo.');
+});
