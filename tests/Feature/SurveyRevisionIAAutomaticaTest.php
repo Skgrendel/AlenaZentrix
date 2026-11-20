@@ -1,7 +1,7 @@
 <?php
 
 use App\Jobs\RevisarFotosIAJob;
-use App\Livewire\Admin\ConfiguracionRevisionFotosIA;
+use App\Livewire\Admin\ConfiguracionRevisionFotosIa;
 use App\Livewire\Coordinador\SurveyAuditoria\SurveyRegistrosIndex;
 use App\Models\AjusteRevisionIA;
 use App\Models\Company;
@@ -70,7 +70,7 @@ test('la revisión automática viene apagada y se enciende y guarda desde Config
 
     expect(AjusteRevisionIA::de($admin->company_id)->revision_automatica)->toBeFalse();
 
-    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIA::class)
+    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIa::class)
         ->assertSet('revision_automatica', false)
         ->set('revision_automatica', true)
         ->call('guardar')

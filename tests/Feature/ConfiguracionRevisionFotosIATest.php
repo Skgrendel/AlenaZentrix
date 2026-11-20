@@ -1,7 +1,7 @@
 <?php
 
 use App\Enums\EstadoSurveyRegistro;
-use App\Livewire\Admin\ConfiguracionRevisionFotosIA;
+use App\Livewire\Admin\ConfiguracionRevisionFotosIa;
 use App\Models\AjusteRevisionIA;
 use App\Models\Company;
 use App\Models\SurveyAdjunto;
@@ -12,6 +12,7 @@ use Database\Seeders\PermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -63,7 +64,7 @@ test('sin ajustes guardados se usan el modelo y las instrucciones recomendadas',
 test('un administrador guarda el modelo, el detalle y las instrucciones de su empresa', function () {
     $admin = usuarioConRol('Administrador');
 
-    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIA::class)
+    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIa::class)
         ->set('modelo', 'gpt-4.1')
         ->set('detalle_imagen', 'low')
         ->set('instrucciones', 'Busca que la fachada muestre el frente del predio y no un primer plano del medidor.')
@@ -79,7 +80,7 @@ test('un administrador guarda el modelo, el detalle y las instrucciones de su em
 });
 
 test('el desplegable ofrece los modelos y la tarifa cambia al elegir otro', function () {
-    Livewire::actingAs(usuarioConRol('Administrador'))->test(ConfiguracionRevisionFotosIA::class)
+    Livewire::actingAs(usuarioConRol('Administrador'))->test(ConfiguracionRevisionFotosIa::class)
         ->assertSeeHtml('>gpt-4o</option>')
         ->assertSeeHtml('>gpt-4.1-mini</option>')
         ->assertSee('US$ 2.50')
@@ -89,7 +90,7 @@ test('el desplegable ofrece los modelos y la tarifa cambia al elegir otro', func
 
 test('guardar dos veces actualiza los ajustes en lugar de duplicarlos', function () {
     $admin = usuarioConRol('Administrador');
-    $componente = Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIA::class);
+    $componente = Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIa::class);
 
     $componente->set('modelo', 'gpt-4o')->call('guardar')->set('modelo', 'gpt-4.1-mini')->call('guardar');
 
@@ -98,7 +99,7 @@ test('guardar dos veces actualiza los ajustes en lugar de duplicarlos', function
 });
 
 test('valida el modelo, el detalle y que haya instrucciones', function () {
-    Livewire::actingAs(usuarioConRol('Administrador'))->test(ConfiguracionRevisionFotosIA::class)
+    Livewire::actingAs(usuarioConRol('Administrador'))->test(ConfiguracionRevisionFotosIa::class)
         ->set('modelo', 'gpt 4o; drop')
         ->set('detalle_imagen', 'enorme')
         ->set('instrucciones', 'corto')
@@ -111,7 +112,7 @@ test('valida el modelo, el detalle y que haya instrucciones', function () {
 test('restablecer devuelve las instrucciones recomendadas sin guardar', function () {
     $admin = usuarioConRol('Administrador');
 
-    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIA::class)
+    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIa::class)
         ->set('instrucciones', 'Un texto cualquiera que escribí yo mismo para la revisión.')
         ->call('restablecerInstrucciones')
         ->assertSet('instrucciones', RevisorFotosIA::INSTRUCCIONES_RECOMENDADAS);
@@ -120,7 +121,7 @@ test('restablecer devuelve las instrucciones recomendadas sin guardar', function
 });
 
 test('quien no tiene el permiso de configuración no entra a la pestaña', function () {
-    Livewire::actingAs(usuarioConRol('Coordinador'))->test(ConfiguracionRevisionFotosIA::class)->assertForbidden();
+    Livewire::actingAs(usuarioConRol('Coordinador'))->test(ConfiguracionRevisionFotosIa::class)->assertForbidden();
 });
 
 test('la pestaña aparece en la página de configuración', function () {
@@ -171,7 +172,7 @@ test('probar muestra el veredicto con lo que hay en pantalla y no toca el regist
     $admin = usuarioConRol('Administrador');
     $registro = registroConUnaFoto($admin);
 
-    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIA::class)
+    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIa::class)
         ->set('modelo', 'gpt-4o')
         ->set('instrucciones', 'Instrucciones todavía sin guardar para probar antes de aplicarlas.')
         ->set('registroPrueba', $registro->id)
@@ -192,7 +193,7 @@ test('probar sin elegir registro o sin clave avisa y no llama al proveedor', fun
     $admin = usuarioConRol('Administrador');
     $registro = registroConUnaFoto($admin);
 
-    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIA::class)
+    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIa::class)
         ->call('probar')
         ->assertSet('errorPrueba', 'Elige un registro para probar.')
         ->set('registroPrueba', $registro->id)
@@ -208,9 +209,24 @@ test('si el proveedor responde con error se muestra el motivo', function () {
     $admin = usuarioConRol('Administrador');
     $registro = registroConUnaFoto($admin);
 
-    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIA::class)
+    Livewire::actingAs($admin)->test(ConfiguracionRevisionFotosIa::class)
         ->set('registroPrueba', $registro->id)
         ->call('probar')
         ->assertSet('resultadoPrueba', null)
         ->assertSee('The model does not exist');
+});
+
+test('los componentes de Livewire se encuentran por su nombre en servidores que distinguen mayúsculas', function () {
+    // Livewire arma el nombre de la clase con «Ia»; en Linux «IA» no se encuentra aunque en Windows sí.
+    // La vista de Configuración usa este nombre.
+    $clase = Str::studly('configuracion-revision-fotos-ia');
+
+    // scandir devuelve el nombre real del archivo (is_file en Windows no distingue mayúsculas).
+    expect(scandir(app_path('Livewire/Admin')))->toContain($clase.'.php')
+        ->and((new ReflectionClass(ConfiguracionRevisionFotosIa::class))->getShortName())->toBe($clase);
+
+    $this->actingAs(usuarioConRol('Administrador'))
+        ->get(route('admin.configuracion'))
+        ->assertOk()
+        ->assertSeeLivewire('admin.configuracion-revision-fotos-ia');
 });

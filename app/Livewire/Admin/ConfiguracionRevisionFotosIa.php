@@ -16,7 +16,7 @@ use Throwable;
  * Pestaña de configuración de la revisión de fotos con IA: modelo, detalle de imagen e instrucciones,
  * con una prueba sobre un registro real para ajustar el texto antes de guardarlo.
  */
-class ConfiguracionRevisionFotosIA extends Component
+class ConfiguracionRevisionFotosIa extends Component
 {
     public string $modelo = '';
 
