@@ -54,6 +54,11 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
      */
     protected array $columnPresenceCache = [];
 
+    /**
+     * @var array<int, string>|null
+     */
+    protected ?array $nombresTipoAnomalia = null;
+
     public function table(Table $table): Table
     {
         return $table
@@ -105,6 +110,13 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->badge()
                     ->formatStateUsing(fn ($state) => $state instanceof EstadoOrden ? $state->label() : $state)
                     ->color(fn ($state) => $state instanceof EstadoOrden ? $state->color() : 'gray'),
+                Tables\Columns\TextColumn::make('anomalias_reporte')
+                    ->label('Tipo de Anomalía')
+                    ->badge()
+                    ->color('warning')
+                    ->state(fn (OrdenJob $record): array => $this->nombresAnomaliasDeOrden($record))
+                    ->placeholder('—')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('personal.nombres')
                     ->label('Personal Asignado')
                     ->formatStateUsing(fn ($state, OrdenJob $record): string => $record->personal
@@ -130,11 +142,6 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                         : null)
                     ->formatStateUsing(fn ($state) => $state instanceof EstadoAuditoria ? $state->label() : '—')
                     ->color(fn ($state) => $state instanceof EstadoAuditoria ? $state->color() : 'gray'),
-                Tables\Columns\TextColumn::make('reportes.auditoria.tipoAnomalia.nombre')
-                    ->label('Tipo de Anomalía')
-                    ->state(fn (OrdenJob $record) => $record->reportes->first()?->auditoria?->tipoAnomalia?->nombre)
-                    ->placeholder('—')
-                    ->toggleable(),
                 Tables\Columns\TextColumn::make('fecha_limite')
                     ->label('Fecha Límite')
                     ->dateTime('d/m/Y h:i a')
@@ -198,8 +205,11 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     ->query(fn ($query, array $data) => $query->when(
                         $data['value'] ?? null,
                         fn ($query, $value) => $query->whereHas(
-                            'reportes.auditoria',
-                            fn ($q) => $q->where('tipo_anomalia_id', $value)
+                            'reportes',
+                            fn ($q) => $q->where(
+                                fn ($q) => $q->whereJsonContains('anomalia', (int) $value)
+                                    ->orWhereJsonContains('anomalia', (string) $value)
+                            )
                         )
                     )),
                 Tables\Filters\SelectFilter::make('proceso_id')
@@ -399,6 +409,24 @@ class OrdenesTrabajoIndex extends Component implements HasActions, HasForms, Has
                     // 2. El resto de las órdenes se ordenarán por fecha de creación descendente
                     ->orderBy('created_at', 'desc');
             });
+    }
+
+    /**
+     * Nombres de las anomalías registradas en los reportes de la orden.
+     *
+     * @return array<int, string>
+     */
+    protected function nombresAnomaliasDeOrden(OrdenJob $orden): array
+    {
+        $this->nombresTipoAnomalia ??= TipoAnomalia::query()->pluck('nombre', 'id')->all();
+
+        return $orden->reportes
+            ->flatMap(fn ($reporte): array => (array) ($reporte->anomalia ?? []))
+            ->unique()
+            ->map(fn ($id) => $this->nombresTipoAnomalia[$id] ?? null)
+            ->filter()
+            ->values()
+            ->all();
     }
 
     protected function tableColumnHasData(string $column): bool
