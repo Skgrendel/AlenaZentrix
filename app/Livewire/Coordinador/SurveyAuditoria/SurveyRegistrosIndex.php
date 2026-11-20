@@ -70,7 +70,7 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                     ->sortable(),
                 Tables\Columns\TextColumn::make('fecha_registro')
                     ->label('Fecha de registro')
-                    ->dateTime('d/m/Y h:i a')
+                    ->dateTime('d/m/Y h:i a', config('survey_auditoria.zona_horaria_excel'))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('categoria')
                     ->label('Categoría')

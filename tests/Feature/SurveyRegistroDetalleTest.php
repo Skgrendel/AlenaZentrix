@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Coordinador\SurveyAuditoria\SurveyRegistrosIndex;
 use App\Models\Company;
 use App\Models\OrdenJob;
 use App\Models\SurveyAdjunto;
@@ -9,6 +10,7 @@ use App\Services\survey123\AuditoriaSurveyRegistro;
 use Database\Seeders\PermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -219,4 +221,34 @@ test('los totales y el estado del registro se muestran en la tarjeta de hallazgo
         ->get(route('operaciones.survey-auditoria.show', $registro))
         ->assertOk()
         ->assertSeeInOrder(['Hallazgos de la auditoría', '1 error', '2 alertas', 'Pendiente por asignar']);
+});
+
+test('las fechas de la lista y del detalle se muestran en hora de Colombia, como en el formulario de los técnicos', function () {
+    [$user, $survey] = coordinadorConDetalle([
+        // 21:23 UTC es 4:23 p. m. en Colombia (el formulario de ArcGIS muestra 16:23).
+        'fecha_registro' => '2026-11-20 21:23:00',
+        'creado_en_origen' => '2026-11-20 21:30:02',
+        'editado_en_origen' => '2026-11-20 22:05:00',
+    ]);
+
+    $this->actingAs($user)->get(route('operaciones.survey-auditoria.show', $survey))
+        ->assertOk()
+        ->assertSee('20/11/2026 04:23 pm')
+        ->assertSee('20/11/2026 04:30 pm')
+        ->assertSee('20/11/2026 05:05 pm')
+        ->assertDontSee('09:23 pm');
+
+    Livewire::actingAs($user)->test(SurveyRegistrosIndex::class)
+        ->assertSee('20/11/2026 04:23 p. m.')
+        ->assertDontSee('09:23 p. m.');
+
+    // Lo guardado no cambia: sigue siendo UTC.
+    expect($survey->fresh()->fecha_registro->utc()->format('H:i'))->toBe('21:23');
+});
+
+test('un registro de las 7 p. m. en Colombia (00:xx UTC del día siguiente) se muestra en su día', function () {
+    [$user, $survey] = coordinadorConDetalle(['fecha_registro' => '2026-11-21 00:30:00']);
+
+    $this->actingAs($user)->get(route('operaciones.survey-auditoria.show', $survey))
+        ->assertOk()->assertSee('20/11/2026 07:30 pm');
 });

@@ -10,7 +10,10 @@
 
 return [
 
-    /** Zona horaria en la que se escriben las fechas del Excel (la base guarda UTC). */
+    /**
+     * Zona horaria en la que se muestran las fechas de los registros (lista, detalle) y se escriben en el Excel.
+     * La base guarda UTC; así se ve la misma hora que en el formulario de los técnicos.
+     */
     'zona_horaria_excel' => 'America/Bogota',
 
     'reglas' => [
