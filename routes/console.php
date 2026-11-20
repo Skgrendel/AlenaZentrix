@@ -6,3 +6,6 @@ Schedule::command('backup:run --only-db')->daily()->at('20:00');
 
 // Cada 10 minutos revisa si toca sincronizar (el intervalo real lo define SURVEY123_SYNC_CADA_MINUTOS).
 Schedule::command('survey123:sincronizar-programado')->everyTenMinutes()->withoutOverlapping();
+
+// Cada minuto revisa si a alguna empresa le toca el envío diario del Excel (hora, días y destinatarios de Configuración).
+Schedule::command('survey123:enviar-excel-diario')->everyMinute()->withoutOverlapping();
