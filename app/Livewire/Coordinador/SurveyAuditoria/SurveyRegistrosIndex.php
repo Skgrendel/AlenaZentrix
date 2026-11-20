@@ -140,6 +140,33 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
                         'sin_observaciones' => $query->whereHas('ultimaRevisionIA', fn (Builder $q) => $q->where('con_observaciones', false)),
                         default => $query,
                     }),
+                Tables\Filters\Filter::make('fecha_registro')
+                    ->label('Fecha de registro')
+                    ->form([
+                        Forms\Components\DatePicker::make('desde')
+                            ->label('Desde'),
+                        Forms\Components\DatePicker::make('hasta')
+                            ->label('Hasta')
+                            ->afterOrEqual('desde'),
+                    ])
+                    ->columns(2)
+                    // El día completo, de 00:00:00 a 23:59:59 en hora de Colombia (la zona de la aplicación).
+                    ->query(fn (Builder $query, array $data): Builder => $query
+                        ->when($data['desde'] ?? null, fn (Builder $q, string $dia) => $q->where('fecha_registro', '>=', Carbon::parse($dia)->startOfDay()))
+                        ->when($data['hasta'] ?? null, fn (Builder $q, string $dia) => $q->where('fecha_registro', '<=', Carbon::parse($dia)->endOfDay())))
+                    ->indicateUsing(function (array $data): array {
+                        $indicadores = [];
+
+                        if ($data['desde'] ?? null) {
+                            $indicadores['desde'] = 'Desde '.Carbon::parse($data['desde'])->format('d/m/Y');
+                        }
+
+                        if ($data['hasta'] ?? null) {
+                            $indicadores['hasta'] = 'Hasta '.Carbon::parse($data['hasta'])->format('d/m/Y');
+                        }
+
+                        return $indicadores;
+                    }),
                 Tables\Filters\SelectFilter::make('estado')
                     ->label('Estado')
                     ->options(
@@ -295,6 +322,17 @@ class SurveyRegistrosIndex extends Component implements HasActions, HasForms, Ha
 
         if (filled($ia = $this->tableFilters['revision_ia']['value'] ?? null)) {
             $lineas[] = 'Revisión con IA: '.['sin_revisar' => 'sin revisar', 'con_observaciones' => 'con observaciones', 'sin_observaciones' => 'sin observaciones'][$ia] ?? $ia;
+        }
+
+        $desde = $this->tableFilters['fecha_registro']['desde'] ?? null;
+        $hasta = $this->tableFilters['fecha_registro']['hasta'] ?? null;
+
+        if (filled($desde) || filled($hasta)) {
+            $lineas[] = 'Fecha de registro: '.match (true) {
+                filled($desde) && filled($hasta) => 'del '.Carbon::parse($desde)->format('d/m/Y').' al '.Carbon::parse($hasta)->format('d/m/Y'),
+                filled($desde) => 'desde el '.Carbon::parse($desde)->format('d/m/Y'),
+                default => 'hasta el '.Carbon::parse($hasta)->format('d/m/Y'),
+            };
         }
 
         if (filled($this->tableSearch)) {
