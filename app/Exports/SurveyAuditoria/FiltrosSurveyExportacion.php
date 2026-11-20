@@ -36,9 +36,19 @@ final class FiltrosSurveyExportacion
             ->when($this->estado, fn (Builder $q) => $q->where('survey_registros.estado', $this->estado->value))
             ->when($this->soloConErrores, fn (Builder $q) => $q->where('survey_registros.total_errores', '>', 0))
             ->when($this->soloConAlertas, fn (Builder $q) => $q->where('survey_registros.total_alertas', '>', 0))
-            ->when($this->desde, fn (Builder $q) => $q->where('survey_registros.fecha_registro', '>=', $this->desde->copy()->startOfDay()))
-            ->when($this->hasta, fn (Builder $q) => $q->where('survey_registros.fecha_registro', '<=', $this->hasta->copy()->endOfDay()))
+            ->when($this->desde, fn (Builder $q) => $q->where('survey_registros.fecha_registro', '>=', $this->inicioDelDia($this->desde)))
+            ->when($this->hasta, fn (Builder $q) => $q->where('survey_registros.fecha_registro', '<=', $this->finDelDia($this->hasta)))
             ->when(filled($this->tecnico), fn (Builder $q) => $q->where('survey_registros.tecnico', 'like', '%'.addcslashes((string) $this->tecnico, '%_\\').'%'))
             ->when($this->ids !== null, fn (Builder $q) => $q->whereIn('survey_registros.id', $this->ids));
+    }
+
+    private function inicioDelDia(Carbon $dia): Carbon
+    {
+        return $dia->copy()->shiftTimezone(config('survey_auditoria.zona_horaria_excel'))->startOfDay()->setTimezone(config('app.timezone'));
+    }
+
+    private function finDelDia(Carbon $dia): Carbon
+    {
+        return $dia->copy()->shiftTimezone(config('survey_auditoria.zona_horaria_excel'))->endOfDay()->setTimezone(config('app.timezone'));
     }
 }

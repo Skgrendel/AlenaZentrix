@@ -386,10 +386,10 @@ test('los filtros de solo errores y solo alertas', function () {
 
 test('el filtro por rango de fechas incluye los días de los extremos', function () {
     $empresa = Company::factory()->create();
-    registroExportable($empresa, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-01 23:59:00']);
-    registroExportable($empresa, ['orden_trabajo' => '300000002', 'fecha_registro' => '2026-11-05 00:00:00']);
-    registroExportable($empresa, ['orden_trabajo' => '300000003', 'fecha_registro' => '2026-11-10 23:30:00']);
-    registroExportable($empresa, ['orden_trabajo' => '300000004', 'fecha_registro' => '2026-11-11 00:00:00']);
+    registroExportable($empresa, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-02 04:59:00']);
+    registroExportable($empresa, ['orden_trabajo' => '300000002', 'fecha_registro' => '2026-11-02 05:00:00']);
+    registroExportable($empresa, ['orden_trabajo' => '300000003', 'fecha_registro' => '2026-11-11 04:59:00']);
+    registroExportable($empresa, ['orden_trabajo' => '300000004', 'fecha_registro' => '2026-11-11 05:00:00']);
 
     $filtros = new FiltrosSurveyExportacion($empresa->id, desde: Carbon::parse('2026-11-02'), hasta: Carbon::parse('2026-11-10'));
 
@@ -1105,4 +1105,16 @@ test('el Excel cuenta la foto del IVT y suma las fotos de actividad de ambas ver
         ->and($filas[300000001][$actividad])->toBe(3)
         ->and($filas[300000002]['Fotografía del IVT'])->toBe(0)
         ->and($filas[300000002][$actividad])->toBe(2);
+});
+
+test('el filtro de fechas cuenta el día en hora de Colombia', function () {
+    $empresa = Company::factory()->create();
+    // 9:00 pm del 5/11 en Colombia = 02:00 UTC del 6/11.
+    $noche = registroExportable($empresa, ['orden_trabajo' => '300000001', 'fecha_registro' => '2026-11-06 02:00:00']);
+    registroExportable($empresa, ['orden_trabajo' => '300000002', 'fecha_registro' => '2026-11-06 06:00:00']);
+
+    $ids = fn (Carbon $desde, Carbon $hasta) => (new FiltrosSurveyExportacion($empresa->id, desde: $desde, hasta: $hasta))->query()->pluck('id')->all();
+
+    expect($ids(Carbon::parse('2026-11-05'), Carbon::parse('2026-11-05')))->toBe([$noche->id])
+        ->and($ids(Carbon::parse('2026-11-06'), Carbon::parse('2026-11-06')))->toHaveCount(1);
 });
