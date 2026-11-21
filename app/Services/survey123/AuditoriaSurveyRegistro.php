@@ -2,6 +2,7 @@
 
 namespace App\Services\survey123;
 
+use App\Models\AjusteAuditoria;
 use App\Models\SurveyAdjunto;
 use App\Models\SurveyRegistro;
 use Illuminate\Database\Eloquent\Builder;
@@ -9,10 +10,17 @@ use Illuminate\Support\Str;
 
 /**
  * Reglas de auditoría automática de un registro de suspensión de Survey123.
- * Cada hallazgo es un error (el dato es inválido o falta) o una alerta (conviene revisarlo).
+ * Cada hallazgo es un error (bloqueante: el dato es inválido o falta) o una alerta (corregible: conviene revisarlo).
+ * Cada empresa puede ajustar qué tan grave es cada regla (AjusteAuditoria), por ejemplo para que una foto mal colocada
+ * obligue a corregir pero no impida aprobar.
  */
 class AuditoriaSurveyRegistro
 {
+    /** @var array<string, string> nivel de cada regla para la empresa del registro que se está auditando */
+    private array $pesos = [];
+
+    private ?string $pesosDeLaEmpresa = null;
+
     public const ERROR = 'error';
 
     public const ALERTA = 'alerta';
@@ -23,6 +31,7 @@ class AuditoriaSurveyRegistro
     public function auditar(SurveyRegistro $registro): array
     {
         $registro->loadMissing('adjuntos');
+        $this->cargarPesos($registro->company_id);
 
         $hallazgos = array_merge(
             $this->datosBasicos($registro),
@@ -322,6 +331,24 @@ class AuditoriaSurveyRegistro
             return [];
         }
 
-        return compact('regla', 'severidad', 'campo', 'mensaje');
+        $severidad = match ($this->pesos[$regla] ?? AjusteAuditoria::SEGUN_EL_CASO) {
+            AjusteAuditoria::NO_APLICAR => null,
+            AjusteAuditoria::BLOQUEANTE => self::ERROR,
+            AjusteAuditoria::CORREGIBLE => self::ALERTA,
+            default => $severidad,
+        };
+
+        return $severidad === null ? [] : compact('regla', 'severidad', 'campo', 'mensaje');
+    }
+
+    /** Lee una sola vez por empresa lo que ésta configuró para cada regla. */
+    private function cargarPesos(?string $companyId): void
+    {
+        if ($this->pesosDeLaEmpresa === $companyId && $this->pesos !== []) {
+            return;
+        }
+
+        $this->pesos = AjusteAuditoria::pesosDe($companyId);
+        $this->pesosDeLaEmpresa = $companyId;
     }
 }

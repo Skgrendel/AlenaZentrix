@@ -3,6 +3,7 @@
 namespace App\Exports\SurveyAuditoria;
 
 use App\Enums\EstadoSurveyRegistro;
+use App\Models\AjusteAuditoria;
 use App\Models\SurveyRegistro;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
@@ -37,25 +38,6 @@ class HojaInformeExport implements FromArray, WithCharts, WithColumnWidths, With
     use ValoresSeguros;
 
     private const COLUMNAS = 12;
-
-    /** Nombre legible de cada regla de auditoría, tal como se muestra en la portada. */
-    private const ETIQUETAS_DE_REGLAS = [
-        'tecnico' => 'Técnico',
-        'contrato' => 'Contrato',
-        'orden_trabajo' => 'Orden de trabajo',
-        'categoria' => 'Categoría',
-        'serie_medidor' => 'Serie del medidor',
-        'lectura' => 'Lectura del medidor',
-        'fecha' => 'Fecha de registro',
-        'actividad' => 'Actividad',
-        'suspension' => 'Suspensión',
-        'serie_sonda_caps' => 'Serie de la sonda y del caps',
-        'justificacion' => 'Justificación',
-        'fotos_minimas' => 'Fotos mínimas',
-        'fotos_repetidas' => 'Fotos repetidas',
-        'ubicacion' => 'Ubicación',
-        'punto_repetido' => 'Punto repetido',
-    ];
 
     /** @var array<int, array{fila: int, columna: int, color: string}> tarjetas de cifras (fila de la etiqueta) */
     private array $tarjetas = [];
@@ -205,7 +187,7 @@ class HojaInformeExport implements FromArray, WithCharts, WithColumnWidths, With
         $reglas = $this->resumen->reglasConMasHallazgos(8);
 
         foreach ($reglas as [$regla, $severidad, $hallazgos, $afectados]) {
-            $fila = $agregar([self::ETIQUETAS_DE_REGLAS[$regla] ?? ucfirst(str_replace('_', ' ', (string) $regla)), null, null, null, null, null, $severidad, null, $hallazgos, null, $afectados]);
+            $fila = $agregar([(AjusteAuditoria::REGLAS[$regla]['nombre'] ?? null) ?? ucfirst(str_replace('_', ' ', (string) $regla)), null, null, null, null, null, $severidad, null, $hallazgos, null, $afectados]);
             $this->combinadas[$fila] = [1, 6];
         }
 

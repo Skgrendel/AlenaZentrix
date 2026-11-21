@@ -8,6 +8,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
+// Estas pruebas verifican la gravedad original de cada regla; los valores sugeridos de la empresa se prueban aparte.
+beforeEach(fn () => config(['survey_auditoria.pesos_sugeridos' => []]));
+
 /** @param  array<string, int>  $porCampo */
 function agregarFotos(SurveyRegistro $registro, array $porCampo = ['foto_fachada' => 3, 'foto_medidor' => 1, 'foto_actividad' => 1]): void
 {
