@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
+// Estas pruebas verifican la gravedad original de cada regla; los valores sugeridos de la empresa se prueban aparte.
+beforeEach(fn () => config(['survey_auditoria.pesos_sugeridos' => []]));
+
 const ANTES_DEL_CAMBIO = '2026-11-10 12:00:00';
 const DESPUES_DEL_CAMBIO = '2026-11-18 02:05:00';
 

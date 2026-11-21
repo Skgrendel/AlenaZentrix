@@ -60,6 +60,9 @@
                     <flux:navlist.item href="#" x-on:click.prevent="active = 'revision-fotos-ia'" x-bind:data-current="active === 'revision-fotos-ia'">
                         Revisión de fotos con IA
                     </flux:navlist.item>
+                    <flux:navlist.item href="#" x-on:click.prevent="active = 'reglas-auditoria'" x-bind:data-current="active === 'reglas-auditoria'">
+                        Reglas de la auditoría
+                    </flux:navlist.item>
                     <flux:navlist.item href="#" x-on:click.prevent="active = 'envio-diario-excel'" x-bind:data-current="active === 'envio-diario-excel'">
                         Envío diario del Excel
                     </flux:navlist.item>
@@ -150,6 +153,9 @@
             </div>
             <div x-show="active === 'revision-fotos-ia'" x-cloak>
                 <livewire:admin.configuracion-revision-fotos-ia wire:key="revision-fotos-ia" />
+            </div>
+            <div x-show="active === 'reglas-auditoria'" x-cloak>
+                <livewire:admin.configuracion-reglas-auditoria wire:key="reglas-auditoria" />
             </div>
             <div x-show="active === 'envio-diario-excel'" x-cloak>
                 <livewire:admin.configuracion-envio-diario-excel wire:key="envio-diario-excel" />

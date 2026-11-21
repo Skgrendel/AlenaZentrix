@@ -11,8 +11,8 @@
 return [
 
     /**
-     * Zona horaria en la que se muestran las fechas de los registros (lista, detalle) y se escriben en el Excel.
-     * La base guarda UTC; así se ve la misma hora que en el formulario de los técnicos.
+     * Zona horaria en la que se escriben las fechas del Excel. Coincide con la de la aplicación (Colombia);
+     * se deja aparte para que el Excel salga siempre en hora de Colombia aunque la aplicación cambie de zona.
      */
     'zona_horaria_excel' => 'America/Bogota',
 
@@ -32,6 +32,21 @@ return [
         'fotos_repetidas' => true,
         'ubicacion' => true,
         'punto_repetido' => true,
+    ],
+
+    /**
+     * Qué tan grave es cada regla mientras la empresa no lo configure (Configuración → Reglas de la auditoría).
+     * Las que no aparecen son «según el caso»: cada hallazgo conserva la gravedad con que se programó (error o alerta).
+     *  - bloqueante: cuenta como error y propone «No se aprueba».
+     *  - corregible: cuenta como alerta y propone «Se aprueba solicitando correcciones».
+     *  - no_aplicar: la regla no se aplica.
+     * Por defecto lo que se puede corregir sin repetir la visita (fotos, justificación, series de sonda y caps) es corregible.
+     */
+    'pesos_sugeridos' => [
+        'fotos_minimas' => 'corregible',
+        'fotos_repetidas' => 'corregible',
+        'justificacion' => 'corregible',
+        'serie_sonda_caps' => 'corregible',
     ],
 
     'parametros' => [
